@@ -1,0 +1,55 @@
+import User from '../models/user.js';
+
+/**
+ * GET /api/user/points
+ * Returns the authenticated user's current points balance.
+ */
+export const getPoints = async (req, res) => {
+    try {
+        const userId = req.user._id;
+
+        const user = await User.findById(userId).select('points').lean();
+        if (!user) {
+            return res.status(404).json({ success: false, message: 'User not found' });
+        }
+
+        return res.status(200).json({ success: true, points: user.points ?? 0 });
+    } catch (error) {
+        return res.status(500).json({ success: false, message: error.message });
+    }
+};
+
+/**
+ * POST /api/user/points/add
+ * Internal/admin endpoint — adds (or subtracts) points for the authenticated user.
+ * Body: { amount: number, reason: string }
+ */
+export const addPoints = async (req, res) => {
+    try {
+        const userId = req.user._id;
+        const { amount, reason } = req.body;
+
+        if (amount === undefined || typeof amount !== 'number') {
+            return res.status(400).json({ success: false, message: '`amount` must be a number' });
+        }
+
+        const user = await User.findByIdAndUpdate(
+            userId,
+            { $inc: { points: amount } },
+            { new: true, select: 'points' }
+        );
+
+        if (!user) {
+            return res.status(404).json({ success: false, message: 'User not found' });
+        }
+
+        return res.status(200).json({
+            success: true,
+            points: user.points,
+            applied: amount,
+            reason: reason || 'manual adjustment'
+        });
+    } catch (error) {
+        return res.status(500).json({ success: false, message: error.message });
+    }
+};
