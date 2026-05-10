@@ -2,27 +2,19 @@
 import { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { checkAuth } from "@/app/slices/authSlice";
-import { useRouter } from "next/navigation";
 import { RootState, AppDispatch } from "@/app/store/store";
 import { motion } from 'framer-motion';
 
 export default function AuthInitializer({ children }: { children: React.ReactNode }) {
   const dispatch = useDispatch<AppDispatch>();
-  const router = useRouter();
 
-  const { loading, error } = useSelector((state: RootState) => state.auth);
+  const { isCheckingAuth } = useSelector((state: RootState) => state.auth);
 
   useEffect(() => {
     dispatch(checkAuth());
   }, [dispatch]);
 
-  useEffect(() => {
-    if (!loading && error) {
-      router.push("/");
-    }
-  }, [loading, error, router]);
-
-  if (loading) {
+  if (isCheckingAuth) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-primary">
         <div className="text-center p-12 bg-elevated rounded-2xl border border-border-primary shadow-lg max-w-md w-full mx-4">

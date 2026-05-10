@@ -20,8 +20,8 @@ export const getProblem = createAsyncThunk<
     try {
       const response = await axiosClient.get(`/api/user/problem/${slug}`);
       
-      // Check if the response indicates a premium problem
-      if (response.data.requiresSubscription || response.data.isPremium) {
+      // Only reject when backend explicitly denies access.
+      if (response.data.requiresSubscription) {
         return rejectWithValue('Premium problem - subscription required');
       }
       

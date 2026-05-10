@@ -28,15 +28,18 @@ export default function ProblemSubmissionsPage() {
   const [selectedSubmission, setSelectedSubmission] = useState<Submission | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [noteValue, setNoteValue] = useState("");
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchSubmissions = async () => {
       try {
+        setErrorMessage(null);
         setLoading(true);
         if (!problem) return;
         const res = await axiosClient.get(`/api/problems/${problem._id}/submissions`);
         setSubmissions(res.data.submissions);
       } catch (error) {
+        setErrorMessage('Failed to load submissions');
       } finally {
         setLoading(false);
       }
@@ -75,9 +78,11 @@ export default function ProblemSubmissionsPage() {
 
   const handleRowClick = async (id: string) => {
     try {
+      setErrorMessage(null);
       const res = await axiosClient.get(`/api/submissions/${id}`);
       setSelectedSubmission(res.data.submission);
     } catch (error) {
+      setErrorMessage('Failed to load submission details');
     }
   };
 
@@ -88,12 +93,14 @@ export default function ProblemSubmissionsPage() {
 
   const handleSaveNote = async (id: string) => {
     try {
+      setErrorMessage(null);
       await axiosClient.post(`/api/submissions/${id}/notes`, { text: noteValue });
       setSubmissions(prev =>
         prev.map(s => (s.id === id ? { ...s, notes: { ...s.notes, text: noteValue } } : s))
       );
       setEditingId(null);
     } catch (error) {
+      setErrorMessage('Failed to save note');
     }
   };
 
@@ -136,6 +143,9 @@ export default function ProblemSubmissionsPage() {
                 </span>
               )}
             </p>
+            {errorMessage && (
+              <p className="text-error text-sm mt-2">{errorMessage}</p>
+            )}
           </div>
 
           {submissions.length === 0 ? (

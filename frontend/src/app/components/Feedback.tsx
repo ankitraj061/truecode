@@ -14,6 +14,7 @@ export default function FeedbackModal({ isOpen, onClose }: FeedbackModalProps) {
   const { slug } = useParams();
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     type: "bug",
     message: "",
@@ -59,6 +60,7 @@ export default function FeedbackModal({ isOpen, onClose }: FeedbackModalProps) {
     }
 
     setLoading(true);
+    setSubmitError(null);
 
     try {
       const response = await axiosClient.post("/api/feedback", {
@@ -76,13 +78,11 @@ export default function FeedbackModal({ isOpen, onClose }: FeedbackModalProps) {
         }, 2000);
       }
     } catch (error: unknown) {
-
       let errorMessage = "Failed to submit feedback";
       if (error instanceof AxiosError) {
         errorMessage = error.response?.data?.message || errorMessage;
       }
-
-      alert(errorMessage);
+      setSubmitError(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -95,6 +95,7 @@ export default function FeedbackModal({ isOpen, onClose }: FeedbackModalProps) {
       message: "",
       problemSlug: typeof slug === "string" ? slug : "",
     });
+    setSubmitError(null);
     onClose();
   };
 
@@ -220,6 +221,11 @@ export default function FeedbackModal({ isOpen, onClose }: FeedbackModalProps) {
 
             {/* Content */}
             <form onSubmit={handleSubmit} className="p-6 space-y-6">
+              {submitError && (
+                <div className="rounded-lg border border-error bg-error-light px-3 py-2 text-sm text-error">
+                  {submitError}
+                </div>
+              )}
               {/* Feedback Type */}
               <div>
                 <label

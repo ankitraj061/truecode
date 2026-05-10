@@ -1,6 +1,8 @@
 import Discussion from "../models/discussion.js";
 import Problem from "../models/problem.js";
 
+const hasVoted = (arr, userId) => Array.isArray(arr) && arr.some((id) => id.toString() === userId.toString());
+
 // Get discussions for a specific problem
 export const getProblemDiscussions = async (req, res) => {
     try {
@@ -12,6 +14,8 @@ export const getProblemDiscussions = async (req, res) => {
             page = 1,
             limit = 20 
         } = req.query;
+        const pageNumber = parseInt(page, 10) || 1;
+        const limitNumber = parseInt(limit, 10) || 20;
         
         // Verify problem exists and user has access
         const problem = await Problem.findById(problemId);
@@ -39,8 +43,8 @@ export const getProblemDiscussions = async (req, res) => {
             .populate('userId', 'username profilePicture')
             .populate('replies.userId', 'username profilePicture')
             .sort(sortOptions)
-            .limit(limit * 1)
-            .skip((page - 1) * limit);
+            .limit(limitNumber)
+            .skip((pageNumber - 1) * limitNumber);
             
         const total = await Discussion.countDocuments(filter);
         
@@ -49,10 +53,10 @@ export const getProblemDiscussions = async (req, res) => {
             discussions,
             pagination: {
                 currentPage: parseInt(page),
-                totalPages: Math.ceil(total / limit),
+                totalPages: Math.ceil(total / limitNumber),
                 totalDiscussions: total,
-                hasNext: page * limit < total,
-                hasPrev: page > 1
+                hasNext: pageNumber * limitNumber < total,
+                hasPrev: pageNumber > 1
             }
         });
         
@@ -83,16 +87,16 @@ export const getDiscussion = async (req, res) => {
         // Discussion vote info
         discussionResponse.upvoteCount = discussion.upvotes.length;
         discussionResponse.downvoteCount = discussion.downvotes.length;
-        discussionResponse.userVote = discussion.upvotes.includes(userId) ? 'upvote' : 
-                                     discussion.downvotes.includes(userId) ? 'downvote' : null;
+        discussionResponse.userVote = hasVoted(discussion.upvotes, userId) ? 'upvote' : 
+                                     hasVoted(discussion.downvotes, userId) ? 'downvote' : null;
         
         // Reply vote info
         discussionResponse.replies = discussionResponse.replies.map(reply => ({
             ...reply,
             upvoteCount: reply.upvotes.length,
             downvoteCount: reply.downvotes.length,
-            userVote: reply.upvotes.includes(userId) ? 'upvote' : 
-                     reply.downvotes.includes(userId) ? 'downvote' : null
+            userVote: hasVoted(reply.upvotes, userId) ? 'upvote' : 
+                     hasVoted(reply.downvotes, userId) ? 'downvote' : null
         }));
         
         res.json({
@@ -251,6 +255,7 @@ export const addReply = async (req, res) => {
             { $push: { replies: reply } },
             { new: true }
         ).populate('userId', 'username profilePicture')
+         .populate('problemId', 'title difficulty')
          .populate('replies.userId', 'username profilePicture');
         
         res.json({
@@ -289,9 +294,9 @@ export const voteDiscussion = async (req, res) => {
         }
         
         // Check if user is in upvotes array
-        const isInUpvotes = discussion.upvotes.includes(userId);
+        const isInUpvotes = hasVoted(discussion.upvotes, userId);
         // Check if user is in downvotes array
-        const isInDownvotes = discussion.downvotes.includes(userId);
+        const isInDownvotes = hasVoted(discussion.downvotes, userId);
         
         let message;
         let updateQuery = {};
@@ -353,8 +358,8 @@ export const voteDiscussion = async (req, res) => {
         }
         
         // Determine user's current vote status
-        const userHasUpvoted = updatedDiscussion.upvotes.includes(userId);
-        const userHasDownvoted = updatedDiscussion.downvotes.includes(userId);
+        const userHasUpvoted = hasVoted(updatedDiscussion.upvotes, userId);
+        const userHasDownvoted = hasVoted(updatedDiscussion.downvotes, userId);
         
         let userVote = null;
         if (userHasUpvoted) userVote = 'upvote';
@@ -405,8 +410,8 @@ export const voteReply = async (req, res) => {
         }
         
         // Check if user is in upvotes/downvotes arrays
-        const isInUpvotes = reply.upvotes.includes(userId);
-        const isInDownvotes = reply.downvotes.includes(userId);
+        const isInUpvotes = hasVoted(reply.upvotes, userId);
+        const isInDownvotes = hasVoted(reply.downvotes, userId);
         
         let message;
         
@@ -451,8 +456,8 @@ export const voteReply = async (req, res) => {
         await discussion.save();
         
         // Determine user's current vote status for this reply
-        const userHasUpvoted = reply.upvotes.includes(userId);
-        const userHasDownvoted = reply.downvotes.includes(userId);
+        const userHasUpvoted = hasVoted(reply.upvotes, userId);
+        const userHasDownvoted = hasVoted(reply.downvotes, userId);
         
         let userVote = null;
         if (userHasUpvoted) userVote = 'upvote';
@@ -591,8 +596,8 @@ export const editOwnReply = async (req, res) => {
         if (!Array.isArray(updatedReply.downvotes)) updatedReply.downvotes = [];
         
         // Determine user's vote status for this reply
-        const userVote = updatedReply.upvotes.includes(userId) ? 'upvote' : 
-                         updatedReply.downvotes.includes(userId) ? 'downvote' : null;
+        const userVote = hasVoted(updatedReply.upvotes, userId) ? 'upvote' : 
+                         hasVoted(updatedReply.downvotes, userId) ? 'downvote' : null;
         
         res.json({
             success: true,
@@ -613,4 +618,3 @@ export const editOwnReply = async (req, res) => {
         res.status(500).json({ error: 'Failed to edit reply' });
     }
 };
-

@@ -9,6 +9,12 @@ import passport from "../config/passport.js";
 import dotenv from "dotenv";
 dotenv.config();
 
+const AUTH_COOKIE_OPTIONS = {
+    maxAge: 7 * 24 * 60 * 60 * 1000,
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'lax'
+};
 
 
 
@@ -58,12 +64,7 @@ export const googleCallback = async (req, res, next) => {
             );
 
             // Set cookie (same as your existing auth)
-            res.cookie('token', token, { 
-                maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
-                httpOnly: true,
-                secure: process.env.NODE_ENV === 'production',
-                sameSite: 'lax'
-            });
+            res.cookie('token', token, AUTH_COOKIE_OPTIONS);
 
             // Redirect to frontend dashboard
             res.redirect(`${process.env.FRONTEND_URL}/`);
@@ -99,7 +100,7 @@ export const register = async (req, res) => {
         }
 
         const token = jwt.sign({ _id: user._id, emailId:emailId,role,username }, process.env.JWT_SECRET_KEY, { expiresIn: '7d' });
-        res.cookie('token', token, { maxAge: 7 * 24 * 60 * 60 * 1000 });
+        res.cookie('token', token, AUTH_COOKIE_OPTIONS);
         res.status(201).json( {
             message: 'User registered successfully',
             user:reply
@@ -116,10 +117,7 @@ export const adminRegister = async (req, res) => {
         const { firstName,lastName, emailId, password} = req.body;
         const username = generateUsername(firstName);
         const hashedPassword = await bcrypt.hash(password, 10);
-        let role ='user';
-        if(req.body.role=='admin'){ 
-            role = 'admin';
-        }
+        const role ='admin';
 
         const user = await User.create({ firstName,lastName, emailId, password: hashedPassword, role ,username});
 
@@ -136,7 +134,7 @@ export const adminRegister = async (req, res) => {
         }
 
         const token = jwt.sign({ _id: user._id, emailId:emailId,role,username }, process.env.JWT_SECRET_KEY, { expiresIn: '7d' });
-        res.cookie('token', token, { maxAge: 7 * 24 * 60 * 60 * 1000 });
+        res.cookie('token', token, AUTH_COOKIE_OPTIONS);
         res.status(201).json(  {
             message: 'User registered successfully',
             user:reply
@@ -154,6 +152,10 @@ export const login = async (req, res) => {
         }
 
         const user = await User.findOne({ emailId });
+        if (!user) {
+            throw new Error('Invalid credentials');
+        }
+
         const isPasswordValid = await bcrypt.compare(password,user.password);
         if(!isPasswordValid){
             throw new Error('Invalid credentials');
@@ -172,7 +174,7 @@ export const login = async (req, res) => {
         }
 
         const token = jwt.sign({ _id: user._id, emailId:emailId ,role:user.role,username:user.username}, process.env.JWT_SECRET_KEY, { expiresIn: '7d' });
-        res.cookie('token', token, { maxAge: 7 * 24 * 60 * 60 * 1000 });
+        res.cookie('token', token, AUTH_COOKIE_OPTIONS);
         res.status(200).json({ 
             user: reply,
             message: 'User logged in successfully' 
@@ -208,7 +210,7 @@ export const logout = async (req, res) => {
         }
 
         // Clear the token cookie (your existing logic)
-        res.cookie('token', null, { expires: new Date(Date.now()) });
+        res.cookie('token', '', { ...AUTH_COOKIE_OPTIONS, maxAge: 0, expires: new Date(0) });
         
         res.status(200).json({ message: 'User logged out successfully' });
 

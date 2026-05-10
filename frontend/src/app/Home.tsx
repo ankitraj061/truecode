@@ -8,6 +8,7 @@ import Footer from './components/Footer';
 import { FlickeringGrid } from "@/components/ui/flickering-grid";
 import ShowcaseModal from './components/ShowcaseModal';
 import { AchievementBadgesStrip } from './components/AchievementBadgesStrip';
+import UserStatsCard from './components/UserStatsCard';
 export default function Home() {
   const { isAuthenticated, user } = useSelector((state: RootState) => state.auth);
   const [mounted, setMounted] = useState(false);
@@ -124,108 +125,14 @@ export default function Home() {
 
             </div>
             
-            {/* Right Content - Code Editor with Syntax Highlighting */}
-            <div className="relative animate-slide-up">
-              {/* Floating Elements */}
-              <div className="absolute -top-4 -left-4 w-24 h-24 bg-brand/20 rounded-full blur-3xl animate-pulse"></div>
-              <div className="absolute -bottom-4 -right-4 w-32 h-32 bg-purple-500/20 rounded-full blur-3xl animate-pulse delay-1000"></div>
-              
-              <div className="relative card p-8 glass border-2 border-primary hover:border-brand/50 transition-all">
-                {/* Window Controls */}
-                <div className="flex items-center space-x-2 mb-4">
-                  <div className="w-3 h-3 rounded-full bg-error"></div>
-                  <div className="w-3 h-3 rounded-full bg-warning"></div>
-                  <div className="w-3 h-3 rounded-full bg-success"></div>
-                  <span className="ml-4 text-xs text-secondary font-mono">solution.js</span>
-                </div>
-
-                {/* Code Editor with Syntax Highlighting */}
-                <div className="bg-secondary rounded-lg p-6 font-mono text-sm leading-relaxed">
-                  <div className="text-gray-500 mb-3">{/* Two Sum - Optimal Solution */}</div>
-                  <div className="space-y-2">
-                    <div>
-                      <span className="text-purple-400">function</span>{" "}
-                      <span className="text-yellow-300">twoSum</span>
-                      <span className="text-gray-300">(</span>
-                      <span className="text-orange-300">nums</span>
-                      <span className="text-gray-300">, </span>
-                      <span className="text-orange-300">target</span>
-                      <span className="text-gray-300">) &#123;</span>
-                    </div>
-                    
-                    <div className="ml-4">
-                      <span className="text-purple-400">const</span>{" "}
-                      <span className="text-blue-300">map</span>
-                      <span className="text-gray-300"> = </span>
-                      <span className="text-purple-400">new</span>{" "}
-                      <span className="text-yellow-300">Map</span>
-                      <span className="text-gray-300">();</span>
-                    </div>
-                    
-                    <div className="ml-4">
-                      <span className="text-purple-400">for</span>{" "}
-                      <span className="text-gray-300">(</span>
-                      <span className="text-purple-400">let</span>{" "}
-                      <span className="text-blue-300">i</span>
-                      <span className="text-gray-300"> = </span>
-                      <span className="text-green-400">0</span>
-                      <span className="text-gray-300">; i &lt; nums.length; i++) &#123;</span>
-                    </div>
-                    
-                    <div className="ml-8">
-                      <span className="text-purple-400">const</span>{" "}
-                      <span className="text-blue-300">complement</span>
-                      <span className="text-gray-300"> = target - nums[i];</span>
-                    </div>
-                    
-                    <div className="ml-8">
-                      <span className="text-purple-400">if</span>{" "}
-                      <span className="text-gray-300">(map.</span>
-                      <span className="text-yellow-300">has</span>
-                      <span className="text-gray-300">(complement)) &#123;</span>
-                    </div>
-                    
-                    <div className="ml-12">
-                      <span className="text-purple-400">return</span>{" "}
-                      <span className="text-gray-300">[map.</span>
-                      <span className="text-yellow-300">get</span>
-                      <span className="text-gray-300">(complement), i];</span>
-                    </div>
-                    
-                    <div className="ml-8 text-gray-300">&#125;</div>
-                    
-                    <div className="ml-8">
-                      <span className="text-gray-300">map.</span>
-                      <span className="text-yellow-300">set</span>
-                      <span className="text-gray-300">(nums[i], i);</span>
-                    </div>
-                    
-                    <div className="ml-4 text-gray-300">&#125;</div>
-                    <div className="text-gray-300">&#125;</div>
-                  </div>
-                  
-                  {/* AI Hint Badge */}
-                  <div className="mt-4 flex items-start space-x-2 bg-brand/10 border border-brand/30 rounded-lg p-3">
-                    <span className="text-brand text-lg">🤖</span>
-                    <div className="flex-1">
-                      <div className="text-xs text-brand font-semibold mb-1">AI ChatAI Hint</div>
-                      <div className="text-xs text-secondary">
-                        Use a hash map to store complements for O(n) time complexity...
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Stats Footer */}
-                <div className="mt-4 flex items-center justify-between text-xs">
-                  <div className="flex items-center space-x-4">
-                    <span className="text-success">✓ Accepted</span>
-                    <span className="text-secondary">Runtime: 68ms</span>
-                  </div>
-                  <span className="text-tertiary">Beats 94.2%</span>
-                </div>
-              </div>
-            </div>
+            {/* Right Content - User Stats Card */}
+            <UserStatsCard
+              totalPoints={user?.points || 0}
+              solvedProblems={user?.problemsSolved?.length || 0}
+              contestsParticipated={user?.contestsParticipated || 0}
+              currentStreak={user?.streak?.current || 0}
+              redeemablePoints={Math.floor((user?.points || 0) / 100) * 100}
+            />
           </div>
         </div>
       </section>

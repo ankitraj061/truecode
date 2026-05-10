@@ -99,11 +99,11 @@ const problemSchema = new Schema({
     },
     videoUrl: {
       type: String,
-      default: 'xyx.com' // Video solution URL
+      default: '' // Video solution URL
     },
     thumbnailUrl: {
       type: String,
-      default: 'xyx.com' // Video thumbnail
+      default: '' // Video thumbnail
     },
     videoDuration: {
       type: Number,

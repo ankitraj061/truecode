@@ -4,6 +4,7 @@
   "main": "index.js",
   "type": "module",
   "scripts": {
+    "dev": "nodemon src/index.js",
     "test": "echo \"Error: no test specified\" && exit 1",
     "seed:admin": "node ./src/scripts/seedAdmin.js"
   },
@@ -31,5 +32,8 @@
     "razorpay": "^2.9.6",
     "redis": "^5.8.2",
     "validator": "^13.15.15"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.2"
   }
 }

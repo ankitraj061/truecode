@@ -64,12 +64,27 @@ export interface User {
   profilePicture?: string;
   subscriptionType: 'free' | 'premium';
   subscriptionExpiry?: string;
+  points?: number;
+  problemsSolved?: Array<{ problemId: string }>;
+  streak?: {
+    current: number;
+    longest: number;
+    lastSolvedDate?: string;
+  };
+  badges?: Array<{
+    name: string;
+    description: string;
+    earnedAt: string;
+    iconUrl: string;
+  }>;
+  contestsParticipated?: number;
 }
 
 export interface AuthState {
   user: User | null;
   isAuthenticated: boolean;
   loading: boolean;
+  isCheckingAuth: boolean;
   error: string | null;
   isInitialized: boolean;
 }

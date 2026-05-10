@@ -77,14 +77,7 @@ export default function ProblemLayout({ children }: { children: React.ReactNode 
   // Handle premium error and other errors
   useEffect(() => {
     if (error) {
-      // Check if it's a premium problem error - comprehensive check
-      const lowerCaseError = error.toLowerCase();
-      const isPremiumError = 
-        lowerCaseError.includes('premium') ||
-        lowerCaseError.includes('subscribe') ||
-        lowerCaseError.includes('unlock') ||
-        lowerCaseError.includes('subscription') ||
-        lowerCaseError.includes('please subscribe');
+      const isPremiumError = error === 'Premium problem - subscription required';
 
       if (isPremiumError) {
         setPremiumProblemTitle(problem?.title || "This Problem");
@@ -92,14 +85,6 @@ export default function ProblemLayout({ children }: { children: React.ReactNode 
       }
     }
   }, [error, problem]);
-
-  // Also check if the problem itself is marked as premium
-  useEffect(() => {
-    if (problem?.isPremium) {
-      setPremiumProblemTitle(problem.title || "This Problem");
-      setShowPremiumModal(true);
-    }
-  }, [problem]);
 
   // Listen for submission overlay events
   useEffect(() => {

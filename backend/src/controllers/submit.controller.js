@@ -45,20 +45,6 @@ export const submitProblem = async (req, res) => {
 
         const totalTestCases = problem.hiddenTestCases.length + problem.visibleTestCases.length;
 
-        // Create initial submission record
-        const submissionResponse = await Submission.create({
-            problemId,
-            userId,
-            code,
-            language,
-            status: 'pending',
-            testCasesTotal: totalTestCases,
-            notes: {
-                timeTaken: notes?.timeTaken || 0,
-                text: notes?.text || ''
-            }
-        });
-
         const lang = language.toLowerCase();
         const language_id = getLanguageId(lang);
         
@@ -158,17 +144,22 @@ export const submitProblem = async (req, res) => {
         const runtime = Math.round(totalRuntime); // Total time in milliseconds
         const memory = maxMemory; // Peak memory in KB
         
-        // Update submission record
-        const submission = await Submission.findById(submissionResponse._id);
-        if (!submission) throw new Error('Submission not found');
-        
-        submission.status = status;
-        submission.errorMessage = errorMessage;
-        submission.testCasesPassed = testCasesPassed;
-        submission.runtime = runtime;
-        submission.memory = memory;
-        
-        await submission.save();
+        const submission = await Submission.create({
+            problemId,
+            userId,
+            code,
+            language,
+            status,
+            errorMessage,
+            testCasesTotal: totalTestCases,
+            testCasesPassed,
+            runtime,
+            memory,
+            notes: {
+                timeTaken: notes?.timeTaken || 0,
+                text: notes?.text || ''
+            }
+        });
 
         // Call user service only on accepted submission
         if (status === 'accepted') {
@@ -356,8 +347,8 @@ export const runProblem = async (req, res) => {
         const passedTests = processedResults.filter(r => r.passed).length;
         const totalTests = processedResults.length;
         const allPassed = passedTests === totalTests;
-        const maxTime = Math.max(...processedResults.map(r => r.executionTime));
-        const maxMemory = Math.max(...processedResults.map(r => r.memoryUsage));
+        const maxTime = processedResults.length > 0 ? Math.max(...processedResults.map(r => r.executionTime)) : 0;
+        const maxMemory = processedResults.length > 0 ? Math.max(...processedResults.map(r => r.memoryUsage)) : 0;
 
         // SIMPLIFIED RESPONSE
         res.status(200).json({
@@ -433,16 +424,6 @@ export const submitContestProblem = async (req, res) => {
         }
 
         const totalTestCases = problem.hiddenTestCases.length + problem.visibleTestCases.length;
-        const submissionResponse = await Submission.create({
-            problemId,
-            userId,
-            contestId,
-            code,
-            language,
-            status: 'pending',
-            testCasesTotal: totalTestCases,
-            notes: { timeTaken: notes?.timeTaken || 0, text: notes?.text || '' }
-        });
 
         const lang = language.toLowerCase();
         const language_id = getLanguageId(lang);
@@ -508,20 +489,68 @@ export const submitContestProblem = async (req, res) => {
         const runtime = Math.round(totalRuntime);
         const memory = maxMemory;
 
-        const submission = await Submission.findById(submissionResponse._id);
-        if (!submission) throw new Error('Submission not found');
-        submission.status = status;
-        submission.errorMessage = errorMessage;
-        submission.testCasesPassed = testCasesPassed;
-        submission.runtime = runtime;
-        submission.memory = memory;
-        await submission.save();
+        const submission = await Submission.create({
+            problemId,
+            userId,
+            contestId,
+            code,
+            language,
+            status,
+            errorMessage,
+            testCasesTotal: totalTestCases,
+            testCasesPassed,
+            runtime,
+            memory,
+            notes: { timeTaken: notes?.timeTaken || 0, text: notes?.text || '' }
+        });
 
         let contestScore = participant.score || 0;
         let contestPenalty = participant.penalty || 0;
         let rank = null;
 
         if (status === 'accepted') {
+            const alreadyAccepted = await Submission.exists({
+                contestId,
+                userId,
+                problemId,
+                status: 'accepted',
+                _id: { $ne: submission._id }
+            });
+
+            if (alreadyAccepted) {
+                return res.status(200).json({
+                    success: true,
+                    message: 'Code submitted successfully',
+                    submission: {
+                        id: submission._id,
+                        status,
+                        testCasesPassed,
+                        totalTestCases: submission.testCasesTotal,
+                        executionTime: runtime,
+                        memoryUsage: memory,
+                        language,
+                        submittedAt: submission.createdAt,
+                        notes: submission.notes
+                    },
+                    results: {
+                        overall: {
+                            status,
+                            passed: status === 'accepted',
+                            passedTests: testCasesPassed,
+                            totalTests: submission.testCasesTotal,
+                            visibleTests: problem.visibleTestCases.length,
+                            hiddenTests: problem.hiddenTestCases.length,
+                            executionTime: runtime,
+                            memoryUsage: memory
+                        },
+                        testDetails: detailedResults.filter((r) => r.isVisible || !r.passed || r.statusId === 6),
+                        errorMessage
+                    },
+                    problem: { id: problem._id, title: problem.title, difficulty: problem.difficulty },
+                    contest: { score: contestScore, penalty: contestPenalty, rank }
+                });
+            }
+
             const wrongBefore = await Submission.countDocuments({
                 contestId,
                 userId,

@@ -131,7 +131,7 @@ export default function ContestNavbar() {
         notes: { timeTaken: timerSeconds, text: '' },
       }) as SubmissionResponse & { contest?: { score?: number; penalty?: number } };
       const status = res.submission?.status || 'error';
-      let tabName = status === 'accepted' ? 'Accepted' : res.results?.errorMessage || res.error ? 'Compilation Error' : 'Wrong Answer';
+      const tabName = status === 'accepted' ? 'Accepted' : res.results?.errorMessage || res.error ? 'Compilation Error' : 'Wrong Answer';
       window.submissionResult = res;
       window.submissionTabName = tabName;
       window.dispatchEvent(new CustomEvent('createSubmissionTab', { detail: { tabName } }));
@@ -229,7 +229,7 @@ export default function ContestNavbar() {
             {`${user.firstName.charAt(0)}${user.lastName.charAt(0)}`}
           </div>
         ) : (
-          <Link href="/auth/login" className="btn-secondary text-sm">Login</Link>
+          <Link href="/accounts/login" className="btn-secondary text-sm">Login</Link>
         )}
       </div>
     </nav>

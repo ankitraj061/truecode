@@ -17,10 +17,6 @@ interface SignupFormData {
 }
 
 // Define the error payload interface
-interface AuthErrorPayload {
-  message?: string;
-}
-
 export default function SignupPageContent() {
   const dispatch = useDispatch<AppDispatch>();
   const router = useRouter();
@@ -78,8 +74,8 @@ export default function SignupPageContent() {
       const result = await dispatch(registerUser(userData));
       
       if (registerUser.rejected.match(result)) {
-        const errorPayload = result.payload as AuthErrorPayload | undefined;
-        setFormError(errorPayload?.message || 'Registration failed');
+        const payload = result.payload;
+        setFormError(typeof payload === 'string' ? payload : 'Registration failed');
       }
     } catch (err) {
       setFormError('An unexpected error occurred');
@@ -150,7 +146,7 @@ export default function SignupPageContent() {
           </div>
 
           {/* Error Messages with animation */}
-          {/* {(error || formError) && (
+          {(error || formError) && (
             <div className="mb-4 p-3 bg-error-light border border-error rounded-lg animate-shake">
               <p className="text-error text-sm flex items-center gap-2">
                 <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
@@ -159,7 +155,7 @@ export default function SignupPageContent() {
                 {formError || error}
               </p>
             </div>
-          )} */}
+          )}
 
           {/* Signup Form with enhanced inputs */}
           <form onSubmit={handleSubmit} className="space-y-5">

@@ -645,7 +645,7 @@ export default function Navbar({ onTimerUpdate, onTimerReset }: TimerProps = {})
             </div>
           ) : (
             <Link
-              href="/auth/login"
+              href="/accounts/login"
               className="btn-secondary text-sm"
             >
               Login

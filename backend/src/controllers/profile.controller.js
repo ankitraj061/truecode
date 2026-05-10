@@ -10,7 +10,7 @@ export const getProfile = async (req, res) => {
 
         // ✅ FIX: Use findOne with username, not findById
         const user = await User.findOne({ username })
-            .select('firstName lastName username emailId bio location gender age streak following followers badges')
+            .select('firstName lastName username bio location gender age streak following followers badges')
             .lean();
 
         if (!user) {
@@ -21,7 +21,6 @@ export const getProfile = async (req, res) => {
             firstName: user.firstName,
             lastName: user.lastName,
             username: user.username,
-            emailId: user.emailId,
             bio: user.bio || '',
             location: user.location || '',
             gender: user.gender || '',
@@ -42,7 +41,7 @@ export const getProfile = async (req, res) => {
 // 2. UPDATE Profile (requires authentication - edits own profile)
 export const updateProfile = async (req, res) => {
     try {
-        const userId = req.user.id; // From auth middleware
+        const userId = req.user._id; // From auth middleware
         const { firstName, lastName, username, bio, location, age, gender } = req.body;
 
         // Validate age if provided
@@ -317,6 +316,9 @@ export const getHeatmapData = async (req, res) => {
 export const getRecentSubmissions = async (req, res) => {
     try {
         const { username } = req.params; // ✅ FIX: Get username from params
+        const page = Math.max(parseInt(req.query.page, 10) || 1, 1);
+        const limit = Math.min(Math.max(parseInt(req.query.limit, 10) || 10, 1), 50);
+        const skip = (page - 1) * limit;
 
         // ✅ FIX: Find user by username first
         const user = await User.findOne({ username }).select('_id').lean();
@@ -325,14 +327,29 @@ export const getRecentSubmissions = async (req, res) => {
             return res.status(404).json({ success: false, message: 'User not found' });
         }
 
-        const submissions = await Submission.find({ userId: user._id })
+        const query = { userId: user._id };
+
+        const [submissions, total] = await Promise.all([
+          Submission.find(query)
             .sort({ createdAt: -1 })
-            .limit(10)
+            .limit(limit)
+            .skip(skip)
             .populate('problemId', 'title slug difficulty')
             .select('problemId language status runtime memory createdAt')
-            .lean();
+            .lean(),
+          Submission.countDocuments(query)
+        ]);
 
-        res.status(200).json({ success: true, data: submissions });
+        res.status(200).json({
+            success: true,
+            data: submissions,
+            pagination: {
+                page,
+                limit,
+                total,
+                totalPages: Math.ceil(total / limit)
+            }
+        });
     } catch (error) {
         res.status(500).json({ success: false, message: 'Server error' });
     }
@@ -345,7 +362,7 @@ export const getRecentSubmissions = async (req, res) => {
 // 7. FOLLOW a User (requires authentication)
 export const followUser = async (req, res) => {
     try {
-        const currentUserId = req.user.id; // From auth middleware
+        const currentUserId = req.user._id; // From auth middleware
         const { username } = req.params; // Username of user to follow
 
         // Find the user to follow
@@ -375,13 +392,13 @@ export const followUser = async (req, res) => {
         // Add to following array of current user
         await User.findByIdAndUpdate(
             currentUserId,
-            { $push: { following: targetUserId } }
+            { $addToSet: { following: targetUserId } }
         );
 
         // Add to followers array of target user
         await User.findByIdAndUpdate(
             targetUserId,
-            { $push: { followers: currentUserId } }
+            { $addToSet: { followers: currentUserId } }
         );
 
         res.status(200).json({ 
@@ -400,7 +417,7 @@ export const followUser = async (req, res) => {
 // 8. UNFOLLOW a User (requires authentication)
 export const unfollowUser = async (req, res) => {
     try {
-        const currentUserId = req.user.id; // From auth middleware
+        const currentUserId = req.user._id; // From auth middleware
         const { username } = req.params; // Username of user to unfollow
 
         // Find the user to unfollow
@@ -455,7 +472,7 @@ export const unfollowUser = async (req, res) => {
 // 9. GET Follow Status (check if current user follows a specific user)
 export const getFollowStatus = async (req, res) => {
     try {
-        const currentUserId = req.user.id; // From auth middleware
+        const currentUserId = req.user._id; // From auth middleware
         const { username } = req.params;
 
         // Find target user
@@ -482,4 +499,3 @@ export const getFollowStatus = async (req, res) => {
         res.status(500).json({ success: false, message: 'Server error' });
     }
 };
-

@@ -12,7 +12,7 @@ export default function NavbarWrapper() {
 
   const hideNavbar =
     pathname?.startsWith('/problems/') ||
-    pathname?.startsWith('/contest/') ||
+    pathname?.startsWith('/contests/') ||
     pathname?.startsWith('/admin') ||
     pathname === '/editor';
 

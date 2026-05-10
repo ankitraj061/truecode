@@ -21,11 +21,19 @@ export const userMiddleware = async (req, res, next) => {
         if(isBlocked)
             throw new Error('User is blocked');
 
+        if (user.subscriptionType === 'premium' && user.subscriptionExpiry && user.subscriptionExpiry <= new Date()) {
+            user.subscriptionType = 'free';
+            await user.save();
+        }
+
         req.user = user;
         next();
 
     }
     catch(error){
-        res.status(400).json({ error: error.message });
+        if (error.message === 'Access denied. Admins only') {
+            return res.status(403).json({ error: error.message });
+        }
+        res.status(401).json({ error: error.message });
     }
 }

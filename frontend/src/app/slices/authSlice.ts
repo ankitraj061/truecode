@@ -64,6 +64,7 @@ const initialState: AuthState = {
   user: null,
   isAuthenticated: false,
   loading: false,
+  isCheckingAuth: false,
   error: null,
   isInitialized: false,
 };
@@ -116,17 +117,17 @@ const authSlice = createSlice({
     // Check auth
     builder
       .addCase(checkAuth.pending, (state) => {
-        state.loading = true;
+        state.isCheckingAuth = true;
         state.error = null;
       })
       .addCase(checkAuth.fulfilled, (state, action) => {
-        state.loading = false;
+        state.isCheckingAuth = false;
         state.isInitialized = true;
         state.isAuthenticated = !!action.payload;
         state.user = action.payload ?? null;
       })
       .addCase(checkAuth.rejected, (state, action) => {
-        state.loading = false;
+        state.isCheckingAuth = false;
         state.isInitialized = true;
         state.error = (action.payload as string) ?? "Something went wrong";
         state.isAuthenticated = false;
@@ -154,7 +155,6 @@ const authSlice = createSlice({
   },
 });
 export default authSlice.reducer;
-
 
 
 

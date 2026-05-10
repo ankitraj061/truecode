@@ -13,22 +13,24 @@ export const adminMiddleware = async (req, res, next) => {
         if(!_id)
             throw new Error('Invalid token');
 
+        const isBlocked = await redisClient.exists(`token:${token}`);
+        if(isBlocked)
+            throw new Error('User is blocked');
+
         const user = await User.findById(_id);
         if(!user)
             throw new Error('User not found');
         if(user.role !== 'admin')
             throw new Error('Access denied. Admins only');
 
-
-        const isBlocked = await redisClient.exists(`token:${token}`);
-        if(isBlocked)
-            throw new Error('User is blocked');
-
         req.user = user;
         next();
 
     }
     catch(error){
-        res.status(400).json({ error: error.message });
+        if (error.message === 'Access denied. Admins only') {
+            return res.status(403).json({ error: error.message });
+        }
+        res.status(401).json({ error: error.message });
     }
 }

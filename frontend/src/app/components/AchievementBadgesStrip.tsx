@@ -68,24 +68,24 @@ export function AchievementBadgesStrip() {
         {BADGES.map((badge) => (
           <div
             key={badge.name}
-            className="flex flex-col items-center rounded-2xl border border-border-primary/60 bg-primary px-4 py-3 min-w-[280px] md:min-w-[360px]"
+            className="flex flex-col items-center rounded-2xl border border-brand/30 bg-gradient-to-br from-brand/5 to-purple-500/5 px-4 py-4 min-w-[280px] md:min-w-[360px] hover:border-brand/60 hover:bg-gradient-to-br hover:from-brand/10 hover:to-purple-500/10 transition-all duration-300"
           >
-            <div className="overflow-hidden rounded-2xl border border-border-primary/80 flex-shrink-0 w-[260px] h-[260px] md:w-[360px] md:h-[360px] bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
+            <div className="overflow-hidden rounded-2xl flex-shrink-0 w-[240px] h-[240px] md:w-[340px] md:h-[340px] flex items-center justify-center p-4 bg-transparent">
               {badge.iconUrl ? (
                 <img
                   src={badge.iconUrl}
                   alt={badge.name}
-                  className="h-full w-full object-contain p-2"
+                  className="h-full w-full object-contain"
                 />
               ) : (
-                <div className="flex h-full w-full items-center justify-center bg-secondary">
-                  <FiAward className="h-10 w-10 text-tertiary" />
+                <div className="flex h-full w-full items-center justify-center">
+                  <FiAward className="h-16 w-16 text-tertiary" />
                 </div>
               )}
             </div>
-            <div className="mt-3 text-center">
+            <div className="mt-4 text-center">
               <p className="text-sm font-semibold text-primary">{badge.name}</p>
-              <p className="text-xs text-tertiary mt-0.5">{badge.short}</p>
+              <p className="text-xs text-secondary mt-1">{badge.short}</p>
             </div>
           </div>
         ))}

@@ -22,6 +22,7 @@ export default function CodeEditorSection() {
   const [isLoadingDraft, setIsLoadingDraft] = useState(false);
   const [lastSaveTime, setLastSaveTime] = useState<Date | null>(null);
   const [saveStatus, setSaveStatus] = useState<'saved' | 'saving' | 'error' | null>(null);
+  const [editorError, setEditorError] = useState<string | null>(null);
   const [fontSize, setFontSize] = useState(14);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [theme, setTheme] = useState<'dark' | 'light'>('light');
@@ -190,6 +191,7 @@ int* twoSum(int* nums, int numsSize, int target, int* returnSize){
     setSaveStatus('saving');
 
     try {
+      setEditorError(null);
       const response = await axiosClient.post(`/api/problems/${problem._id}/draft`, {
         code: codeToSave,
         language: language
@@ -205,6 +207,7 @@ int* twoSum(int* nums, int numsSize, int target, int* returnSize){
       }
     } catch (error: unknown) {
       setSaveStatus('error');
+      setEditorError('Failed to save draft');
     } finally {
       setIsSavingDraft(false);
     }
@@ -228,6 +231,7 @@ int* twoSum(int* nums, int numsSize, int target, int* returnSize){
     setIsLoadingDraft(true);
 
     try {
+      setEditorError(null);
       const response = await axiosClient.get(`/api/problems/${problem._id}/draft`);
 
       if (response.data.success && response.data.draft) {
@@ -240,6 +244,7 @@ int* twoSum(int* nums, int numsSize, int target, int* returnSize){
       
       return null;
     } catch (error: unknown) {
+      setEditorError('Failed to load draft');
       return null;
     } finally {
       setIsLoadingDraft(false);
@@ -524,7 +529,7 @@ int* twoSum(int* nums, int numsSize, int target, int* returnSize){
       
     } catch (error: unknown) {
       const axiosErr = error as AxiosError | undefined;
-      // Handle error silently
+      setEditorError('Failed to reset draft');
     }
     
     try {
@@ -552,6 +557,7 @@ int* twoSum(int* nums, int numsSize, int target, int* returnSize){
     setIsFormatting(true);
     
     try {
+      setEditorError(null);
       const response = await axiosClient.post('/api/format', {
         code: code,
         language: selectedLanguage
@@ -568,7 +574,7 @@ int* twoSum(int* nums, int numsSize, int target, int* returnSize){
       try {
         await editorRef.current.getAction('editor.action.formatDocument')?.run();
       } catch (monacoError) {
-        // Handle error silently
+        setEditorError('Failed to format code');
       }
     } finally {
       setIsFormatting(false);
@@ -695,6 +701,9 @@ int* twoSum(int* nums, int numsSize, int target, int* returnSize){
           
           {/* Save Status Indicator */}
           <SaveStatusIndicator />
+          {editorError && (
+            <span className="text-xs text-error">{editorError}</span>
+          )}
 
           {/* Enhanced Zoom Controls */}
           <div className="flex items-center bg-elevated border border-primary rounded-lg shadow-xs overflow-hidden">

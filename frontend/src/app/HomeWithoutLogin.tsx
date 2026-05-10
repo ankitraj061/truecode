@@ -1,7 +1,6 @@
 'use client';
 import React, { useState } from 'react';
 import Link from 'next/link';
-import Image from 'next/image';
 import { ThemeToggle } from '@/app/components/themeToggle';
 import { FlickeringGrid } from "@/components/ui/flickering-grid";
 import Footer from './components/Footer';
@@ -137,16 +136,7 @@ export default function HomeWithoutLogin() {
             </p>
           </div>
 
-          <div className="bg-elevated rounded-2xl shadow-2xl overflow-hidden mb-8">
-            <Image
-              src="https://ik.imagekit.io/tvz1mupab/Screenshot%20from%202025-11-16%2013-03-53.png"
-              alt="TrueCode Problems Page with advanced filtering options"
-              width={1920}
-              height={1080}
-              className="w-full h-auto"
-              priority
-            />
-          </div>
+
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mt-12">
             <div className="card">
@@ -187,15 +177,7 @@ export default function HomeWithoutLogin() {
             </p>
           </div>
 
-          <div className="bg-elevated rounded-2xl shadow-2xl overflow-hidden mb-8">
-            <Image
-              src="https://ik.imagekit.io/tvz1mupab/Screenshot%20from%202025-11-16%2012-57-47.png"
-              alt="TrueCode Problem Solving Interface with editor and features"
-              width={1920}
-              height={1080}
-              className="w-full h-auto"
-            />
-          </div>
+
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mt-12">
             <div className="card text-center">
@@ -271,15 +253,7 @@ export default function HomeWithoutLogin() {
             </p>
           </div>
 
-          <div className="bg-elevated rounded-2xl shadow-2xl overflow-hidden mb-8">
-            <Image
-              src="https://ik.imagekit.io/tvz1mupab/Screenshot%20from%202025-11-16%2012-59-47.png"
-              alt="ChatAI feature providing hints and problem-solving approaches"
-              width={1920}
-              height={1080}
-              className="w-full h-auto"
-            />
-          </div>
+
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mt-12">
             <div className="card">
@@ -351,15 +325,7 @@ export default function HomeWithoutLogin() {
             </p>
           </div>
 
-          <div className="bg-elevated rounded-2xl shadow-2xl overflow-hidden mb-8">
-            <Image
-              src="https://ik.imagekit.io/tvz1mupab/Screenshot%20from%202025-11-16%2013-01-23.png"
-              alt="TrueCode rewards store with merchandise products"
-              width={1920}
-              height={1080}
-              className="w-full h-auto"
-            />
-          </div>
+
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mt-12">
             <div className="card interactive">
@@ -401,15 +367,7 @@ export default function HomeWithoutLogin() {
             </p>
           </div>
 
-          <div className="bg-elevated rounded-2xl shadow-2xl overflow-hidden mb-8">
-            <Image
-              src="https://ik.imagekit.io/tvz1mupab/Screenshot%20from%202025-11-16%2013-04-21.png"
-              alt="TrueCode premium subscription page"
-              width={1920}
-              height={1080}
-              className="w-full h-auto"
-            />
-          </div>
+
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mt-12">
             <div className="card">
@@ -449,15 +407,7 @@ export default function HomeWithoutLogin() {
             </p>
           </div>
 
-          <div className="bg-elevated rounded-2xl shadow-2xl overflow-hidden mb-8">
-            <Image
-              src="https://ik.imagekit.io/tvz1mupab/Screenshot%20from%202025-11-16%2013-01-42.png"
-              alt="TrueCode user profile with statistics and progress tracking"
-              width={1920}
-              height={1080}
-              className="w-full h-auto"
-            />
-          </div>
+
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mt-12">
             <div className="card text-center">

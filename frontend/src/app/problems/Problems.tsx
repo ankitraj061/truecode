@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useSelector } from 'react-redux';
+import { useRouter } from 'next/navigation';
 import { ProblemsFilters, Problem, Topic, Company, PaginationInfo, RootState } from './utils/types';
 import { problemsAPI } from './utils/globalAPI';
 import TopicsBar from './utils/TopicsBar';
@@ -9,6 +10,7 @@ import SearchAndSort from './utils/SearchAndSort';
 import ProblemsList from './utils/ProblemsList';
 
 const ProblemsPage: React.FC = () => {
+  const router = useRouter();
   // Redux state
   const { user, isAuthenticated } = useSelector((state: RootState) => state.auth);
 
@@ -172,7 +174,7 @@ const ProblemsPage: React.FC = () => {
             Please log in to access the problems dashboard and start your coding journey.
           </p>
           <button
-            onClick={() => window.location.href = '/login'}
+            onClick={() => router.push('/accounts/login')}
             className="btn-primary w-full hover:scale-105 active:scale-95 transition-all duration-300"
           >
             Go to Login

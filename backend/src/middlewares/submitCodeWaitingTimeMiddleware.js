@@ -21,7 +21,7 @@ const submitCodeWaitingTimeMiddleware = async (req, res, next) => {
 
     next();
   } catch (error) {
-    res.status(400).json({ error: error.message });
+    next();
   }
 };
 

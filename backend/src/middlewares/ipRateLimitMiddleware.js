@@ -4,24 +4,23 @@ export const ipRateLimitMiddleware = async (req, res, next) => {
     try {
         const clientIP = req.ip || req.connection.remoteAddress || '127.0.0.1';
         const redisKey = `ip_limit:${clientIP}`;
-        
-        const currentCount = await redisClient.get(redisKey) || 0;
         const maxRequests = 1000;
-        
-        if (parseInt(currentCount) >= maxRequests) {
+
+        const count = await redisClient.incr(redisKey);
+        if (count === 1) {
+            await redisClient.expire(redisKey, 3600);
+        }
+
+        if (count > maxRequests) {
             return res.status(429).json({ 
                 error: 'Too many requests from this IP. Please try again later.',
                 action: 'ip_rate_limit_exceeded'
             });
         }
-        
-        // FIX: Convert to string before passing to Redis
-        const newCount = String(parseInt(currentCount) + 1);
-        await redisClient.setEx(redisKey, 3600, newCount);
-        
+
         next();
     } catch (error) {
-        res.status(400).json({ error: error.message });
+        next();
     }
 };
 

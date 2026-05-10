@@ -8,6 +8,6 @@ submitRouter.use(userMiddleware);
 
 
 submitRouter.post('/submit/:problemId', submitCodeWaitingTimeMiddleware,submitProblem); 
-submitRouter.post('/run/:problemId',submitCodeWaitingTimeMiddleware, runProblem);
+submitRouter.post('/run/:problemId', runProblem);
 
 export default submitRouter;

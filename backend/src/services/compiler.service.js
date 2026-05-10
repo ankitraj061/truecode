@@ -49,7 +49,7 @@ export function compileCode({ code, language }) {
         if (fs.existsSync(fileName)) fs.unlinkSync(fileName);
         const outFile = `${tmpDir}/${fileId}.out`;
         if (fs.existsSync(outFile)) fs.unlinkSync(outFile);
-        if (language === "java") {
+        if (language.toLowerCase() === "java") {
           const classFile = `${tmpDir}/Main_${fileId}.class`;
           if (fs.existsSync(classFile)) fs.unlinkSync(classFile);
         }
