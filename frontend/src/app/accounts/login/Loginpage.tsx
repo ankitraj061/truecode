@@ -261,11 +261,23 @@ export default function LoginPageContent() {
           <div className="mt-6 text-center">
             <p className="text-secondary text-sm">
               Don&apos;t have an account?{' '}
-              <Link 
-                href="/accounts/signup" 
+              <Link
+                href="/accounts/signup"
                 className="text-brand hover:text-brand-hover font-medium relative after:absolute after:bottom-0 after:left-0 after:h-[1px] after:w-0 after:bg-brand-hover hover:after:w-full after:transition-all after:duration-300 inline-block"
               >
                 Sign up
+              </Link>
+            </p>
+          </div>
+
+          <div className="mt-4 text-center">
+            <p className="text-tertiary text-xs">
+              By signing in, you agree to our{' '}
+              <Link href="/terms" className="text-brand hover:text-brand-hover relative after:absolute after:bottom-0 after:left-0 after:h-[1px] after:w-0 after:bg-brand-hover hover:after:w-full after:transition-all after:duration-300">
+                Terms
+              </Link>{' '}and{' '}
+              <Link href="/privacy" className="text-brand hover:text-brand-hover relative after:absolute after:bottom-0 after:left-0 after:h-[1px] after:w-0 after:bg-brand-hover hover:after:w-full after:transition-all after:duration-300">
+                Privacy Policy
               </Link>
             </p>
           </div>

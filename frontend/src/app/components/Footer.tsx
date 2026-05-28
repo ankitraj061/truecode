@@ -2,7 +2,7 @@
 import Link from 'next/link';
 import { useState } from 'react';
 import FeedbackModal from './Feedback';
-import { Code2, Mail, Github, Twitter, ExternalLink } from 'lucide-react';
+import { Code2, Mail, Github, Twitter, Linkedin, ExternalLink } from 'lucide-react';
 
 const Footer = () => {
   const currentYear = new Date().getFullYear();
@@ -59,7 +59,7 @@ const Footer = () => {
               {/* Social links */}
               <div className="flex items-center gap-3">
                 <a
-                  href="https://github.com"
+                  href="https://github.com/ankitraj061/truecode"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="p-2 rounded-lg bg-[var(--muted)] hover:bg-[var(--secondary)] hover:text-[var(--foreground)] transition-colors duration-150"
@@ -68,13 +68,22 @@ const Footer = () => {
                   <Github className="w-4 h-4" />
                 </a>
                 <a
-                  href="https://twitter.com"
+                  href="https://x.com/AnkitRaj432315"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="p-2 rounded-lg bg-[var(--muted)] hover:bg-[var(--secondary)] hover:text-[var(--foreground)] transition-colors duration-150"
                   aria-label="Twitter"
                 >
                   <Twitter className="w-4 h-4" />
+                </a>
+                <a
+                  href="https://www.linkedin.com/in/ankitraj061/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="p-2 rounded-lg bg-[var(--muted)] hover:bg-[var(--secondary)] hover:text-[var(--foreground)] transition-colors duration-150"
+                  aria-label="LinkedIn"
+                >
+                  <Linkedin className="w-4 h-4" />
                 </a>
                 <a
                   href="mailto:ankitwithyou.fam@gmail.com"

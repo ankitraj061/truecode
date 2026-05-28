@@ -1,147 +1,254 @@
 # TrueCode Frontend
 
-Frontend for the TrueCode coding-practice platform, built with Next.js App Router, TypeScript, Redux Toolkit, and Tailwind CSS.
+Next.js 15 frontend for the TrueCode coding platform — problem solving, contests, AI chat, premium subscriptions, and a rewards system.
 
-This README reflects the current frontend implementation, including the new contest system, admin tools, and updated UI.
-
-## What Is Implemented
-
-- Auth flow
-  - Email/password login and signup
-  - Google OAuth redirect flow
-  - Global auth initialization (`checkAuth`) on app load
-- Home experience
-  - Different landing views for authenticated vs unauthenticated users
-- Problems dashboard (`/problems`)
-  - Filters: difficulty, status, type
-  - Topic and company filters
-  - Search, sort, pagination
-  - Save/unsave problem support
-  - Premium-aware filtering behavior
-- Problem workspace (`/problems/[slug]/*`)
-  - Split-pane layout (problem + editor/test area)
-  - Monaco editor with multiple languages (JS, Python, Java, C++, C)
-  - Run code with optional custom test cases
-  - Submit flow and submission result overlay
-  - Draft auto-save/load per problem-language
-  - Timer controls in workspace navbar
-  - Tabs: Description, Editorial, Solutions, Submissions, ChatAI
-- Profile page (`/[username]`)
-  - Header, problem stats, badges, heatmap, recent submissions
-- Premium page (`/premium`)
-  - Plan cards and Razorpay checkout integration
-- Events page (`/events`)
-  - Contest calendar/track view using Clist API credentials
-- Redeem page (`/redeem`)
-  - Rewards catalog UI (currently local client-side state)
-- Contests system
-  - Public contests list (`/contests`) with tabs: Upcoming, Running, Past
-  - Contest detail page (`/contests/[contestId]`) with:
-    - Summary card (title, description, schedule, participants, status)
-    - How‑it‑works section (scoring, penalties, ranking rules)
-    - Problems list that links to:
-      - `/contests/[contestId]/problem/[problemId]/description` while running
-      - `/problems/[slug]/description` after the contest ends
-    - Live leaderboard (score, penalty, time)
-  - Contest problem workspace (`/contests/[contestId]/problem/[problemId]/description`)
-    - Mirrors regular problem layout: description, hints, examples, constraints
-    - Contest‑aware editor + testcases panel and a contest submit route
-    - Timer badge showing “Starts in… / Time left… / Contest ended”
-    - Editorial/solutions only visible after contest ends
-- Admin tools
-  - Problems (`/admin/problems`)
-    - Filtered list + 3‑dot actions: Edit, Make active/inactive, Delete
-    - Dedicated create page (`/admin/create-problem`) that reuses the same `ProblemForm` as edit
-  - Contests (`/admin/contests`)
-    - List with status and participants, matching Problems table styling
-    - 3‑dot actions: Edit (routes to `/admin/contests/[contestId]/edit`), Delete
-    - Admin contest editor:
-      - Update title/description/schedule/type/max participants
-      - Add/remove problems (new problems must still be inactive; existing contest problems may now be active after contest end)
-- Home experience
-  - Logged‑out home (`HomeWithoutLogin`):
-    - Flickering grid hero, feature sections, rewards, premium, progress, and CTA
-    - New “See How It Works” button that opens a shared showcase modal
-  - Logged‑in home (`Home`):
-    - Personalized hero with AI‑style code editor card
-    - “How TrueCode Works” button that opens the same showcase modal
+---
 
 ## Tech Stack
 
-- Next.js `15`
-- React `19`
-- TypeScript
-- Redux Toolkit + React Redux
-- Tailwind CSS `v4`
-- Monaco Editor (`@monaco-editor/react`)
-- Framer Motion
-- Axios
+| Technology | Purpose |
+|---|---|
+| Next.js 15 (App Router) | Framework + routing |
+| React 19 | UI |
+| TypeScript | Type safety |
+| Tailwind CSS v4 | Styling (CSS variables for theming) |
+| Redux Toolkit + React Redux | Global state (auth, user data) |
+| Monaco Editor (`@monaco-editor/react`) | Code editor |
+| Framer Motion | Scroll animations, transitions |
+| Axios | HTTP client |
+| Lucide React | Icons |
+| react-resizable-panels | Split-pane editor layout |
+| react-activity-heatmap | Submission heatmap on profiles |
+| canvas-confetti | Accepted submission celebration |
+| next-themes | Dark/light mode |
 
-## Key Routes
+---
 
-- `/` - home
-- `/accounts/login` - login
-- `/accounts/signup` - signup
-- `/problems` - problem listing
-- `/problems/[slug]/description` - description + discussion
-- `/problems/[slug]/editorial` - editorial content
-- `/problems/[slug]/solutions` - reference solutions
-- `/problems/[slug]/submissions` - submission history
-- `/problems/[slug]/chatai` - problem chat assistant
-- `/:username` - user profile
-- `/premium` - premium plans
-- `/events` - coding events calendar
-- `/redeem` - rewards redeem page
-- `/contests` - contests list (Upcoming / Running / Past)
-- `/contests/[contestId]` - contest detail (summary, how‑it‑works, problems, leaderboard)
-- `/contests/[contestId]/problem/[problemId]/description` - contest problem view
-- `/admin/problems` - admin problems list
-- `/admin/create-problem` - admin create problem
-- `/admin/contests` - admin contests list
-- `/admin/contests/[contestId]/edit` - admin edit contest
+## Project Structure
+
+```
+src/
+  app/
+    layout.tsx                     # Root layout — wraps NavbarWrapper + Providers
+    page.tsx                       # Route: / — renders Home or HomeWithoutLogin
+    Home.tsx                       # Logged-in dashboard
+    HomeWithoutLogin.tsx           # Marketing landing page
+    globals.css                    # Global keyframe animations + CSS variable definitions
+    providers/                     # Client providers (Redux store, theme)
+    accounts/
+      login/                       # /accounts/login
+      signup/                      # /accounts/signup
+      forgot-password/             # /accounts/forgot-password
+    problems/
+      page.tsx                     # /problems — problem listing
+      Problems.tsx                 # Problems list with filter sidebar
+      [slug]/
+        layout.tsx                 # Problem workspace layout (split pane)
+        page.tsx                   # Redirects /problems/[slug] → description
+        description/               # Problem statement + examples
+        editorial/                 # Editorial (locked until solved or premium)
+        solutions/                 # Reference solutions (premium gate)
+        submissions/               # User's submission history
+        chatai/                    # AI chat assistant
+        utils/
+          Navbar.tsx               # Workspace navbar (timer, theme, submit button)
+          CodeEditorSection.tsx    # Monaco editor + language/theme picker
+          ProblemSection.tsx       # Problem statement renderer
+          TestCasesSection.tsx     # Run results panel
+          ProblemListSidebar.tsx   # In-workspace problem list
+          useRunCode.ts            # Hook: run/submit code logic
+          types.ts                 # Shared workspace types
+    contests/
+      page.tsx                     # /contests — tabs: Upcoming, Running, Past
+      [contestId]/
+        page.tsx                   # Contest detail (summary, problems, leaderboard)
+        problem/[problemId]/
+          description/             # Contest problem workspace
+    premium/
+      page.tsx                     # /premium — plan cards + Razorpay checkout
+    events/
+      page.tsx                     # /events — coding events calendar (Clist API)
+    redeem/
+      page.tsx                     # /redeem — rewards catalog
+    my-orders/
+      page.tsx                     # /my-orders — redemption order tracking
+    [username]/
+      page.tsx                     # /:username — public profile
+    admin/
+      layout.tsx                   # Admin layout (guards non-admin users)
+      create-admins/               # Create admin accounts
+      problems/                    # Problems list + actions
+      create-problem/              # Create problem form
+      contests/                    # Contests list + actions
+        [contestId]/edit/          # Edit contest
+      redemptions/                 # Manage redemption orders
+  components/                      # Shared UI components
+  slices/
+    authSlice.ts                   # Redux slice: user, isAuthenticated, loading
+  store/                           # Redux store config
+  hooks/                           # Custom React hooks
+  lib/                             # Utility helpers
+```
+
+---
 
 ## Environment Variables
 
-Create a `.env` file in project root:
+Create `frontend/.env.local`:
 
 ```env
 NEXT_PUBLIC_BACKEND_URL=http://localhost:8000
 NEXT_PUBLIC_CLIST_USERNAME=your_clist_username
 NEXT_PUBLIC_CLIST_API_KEY=your_clist_api_key
-NEXT_PUBLIC_RAZORPAY_KEY_ID=your_razorpay_key
+NEXT_PUBLIC_RAZORPAY_KEY_ID=your_razorpay_key_id
 ```
 
-Notes:
-- `NEXT_PUBLIC_BACKEND_URL` is required for auth, problems, profile, editor run/submit, chat, and premium APIs.
-- `NEXT_PUBLIC_CLIST_USERNAME` and `NEXT_PUBLIC_CLIST_API_KEY` are used by `/events`.
-- `NEXT_PUBLIC_RAZORPAY_KEY_ID` is used as fallback for Razorpay checkout.
+| Variable | Used By |
+|---|---|
+| `NEXT_PUBLIC_BACKEND_URL` | All API calls (auth, problems, editor, chat, payments) |
+| `NEXT_PUBLIC_CLIST_USERNAME` | `/events` — Clist.by API for contest calendar |
+| `NEXT_PUBLIC_CLIST_API_KEY` | `/events` — Clist.by API key |
+| `NEXT_PUBLIC_RAZORPAY_KEY_ID` | `/premium` — Razorpay checkout SDK |
+
+---
 
 ## Local Development
 
 ```bash
 npm install
-npm run dev
+npm run dev     # http://localhost:3000
+npm run build   # production build
+npm run start   # serve production build
+npm run lint    # ESLint
 ```
 
-Open `http://localhost:3000`.
+---
 
-## Scripts
+## Authentication
 
-```bash
-npm run dev    # start dev server
-npm run build  # production build
-npm run start  # run production build
-npm run lint   # run eslint
+Auth state lives in Redux (`authSlice`). On app boot, `checkAuth` dispatches against `GET /api/auth/check` to rehydrate from the existing JWT cookie.
+
+**`NavbarWrapper`** (in root `layout.tsx`) reads `isAuthenticated` from Redux and conditionally renders the global navbar. The guest landing page (`HomeWithoutLogin`) has its own marketing header and does not use the global navbar.
+
+**Google OAuth flow:**
+1. User clicks "Continue with Google" → frontend links to `GET /api/auth/google`
+2. Passport handles the redirect and callback server-side
+3. On success, backend issues the JWT cookie and redirects to `/`
+4. `checkAuth` on the next render picks up the session
+
+**Protected routes** check Redux auth state client-side. The admin panel (`/admin/*`) additionally checks `user.role === 'admin'` in its layout.
+
+---
+
+## Problem Workspace
+
+The workspace at `/problems/[slug]/*` uses `react-resizable-panels` for a split-pane layout:
+- **Left panel:** Problem statement, editorial, solutions, submissions, or AI chat (tab navigation)
+- **Right panel:** Monaco editor + test case results
+
+### Code Editor (`CodeEditorSection.tsx`)
+- Monaco Editor with syntax highlighting for JS, Python, Java, C++, and C
+- Starter code loaded from the problem's `startCode[]` array per language
+- Language and theme changes are persisted to the backend (`POST /api/theme`)
+
+### Draft Auto-Save
+On every keystroke (debounced), code is saved to `POST /api/problems/:problemId/draft`. On workspace load, the latest draft is fetched and pre-fills the editor. Drafts are per problem + per language.
+
+### Run vs Submit
+- **Run** (`POST /api/run/:problemId`): executes against visible test cases only, fast feedback
+- **Submit** (`POST /api/submit/:problemId`): runs against all test cases (visible + hidden), triggers 10-second cooldown
+- Both flows handled by `useRunCode.ts`
+- Accepted submission triggers confetti via `canvas-confetti`
+
+### Timer
+The workspace navbar includes a countdown/countup timer stored in local component state. Timer controls (start/pause/reset) visible in the `Navbar.tsx` component.
+
+### AI Chat (`/problems/[slug]/chatai`)
+Each problem has a chat tab powered by the backend Groq integration. Conversation history is maintained in component state per session. The chat refuses full solutions and provides structured hints if available on the problem.
+
+---
+
+## Contests
+
+### Contest List (`/contests`)
+Three tabs (Upcoming / Running / Past) fetched from `GET /api/user/contest`. Status is derived from `startTime`/`endTime`.
+
+### Contest Detail (`/contests/[contestId]`)
+- Summary card with schedule, participant count, and prize list
+- Problems list — links to the contest workspace while running, or to `/problems/[slug]/description` after the contest ends
+- Live leaderboard showing rank, score, and penalty
+
+### Contest Problem Workspace
+Mirrors the regular problem workspace but:
+- Submissions go to `POST /api/user/contest/:contestId/submit/:problemId`
+- A timer badge in the navbar shows "Starts in… / Time left… / Contest ended" based on contest schedule
+- Editorial and solutions tabs are locked until `contest.status === 'ended'`
+
+---
+
+## Premium Flow
+
+1. User visits `/premium` → sees monthly/yearly plan cards
+2. Clicks "Buy" → frontend calls `POST /api/payments/create-order` → gets Razorpay order ID
+3. Razorpay checkout SDK opens (key from `NEXT_PUBLIC_RAZORPAY_KEY_ID`)
+4. On payment success → frontend calls `POST /api/payments/verify-payment` with signature
+5. Backend verifies HMAC, updates user to premium, returns updated user
+6. Redux store updates `user.subscriptionType` — premium gates lift immediately
+
+For locked premium problems, the backend returns `{ action: 'upgrade_to_premium' }` and the frontend redirects to `/premium`.
+
+---
+
+## Points & Rewards
+
+Users earn points for accepted submissions. The `/redeem` page shows a catalog of physical rewards. On redemption, an order is created with a delivery address. The `/my-orders` page shows order status with the full history pipeline (`pending → packed → shipped → out_for_delivery → delivered`).
+
+---
+
+## Styling Conventions
+
+Tailwind CSS v4 is used throughout. For new components, use CSS variables directly rather than custom utility classes to avoid Tailwind name conflicts:
+
+```css
+var(--primary)          /* brand color */
+var(--foreground)       /* main text */
+var(--muted-foreground) /* secondary text */
+var(--card)             /* card background */
+var(--border)           /* border color */
+var(--muted)            /* muted background */
+var(--secondary)        /* secondary background */
+var(--destructive)      /* error/danger */
 ```
 
-## Backend Dependency
+Global animation keyframes (`float`, `fade-in-down`, `shake`, etc.) are defined once in `globals.css`.
 
-This frontend expects a compatible TrueCode backend API with cookie-based auth and endpoints such as:
+---
 
-- `/api/auth/*`
-- `/api/user/problem/*`
-- `/api/run/:problemId`
-- `/api/problems/:problemId/draft`
-- `/api/payments/*`
+## Key Routes
 
-If backend APIs are unavailable, several pages will render error/empty states.
+| Route | Description |
+|---|---|
+| `/` | Home (dashboard if logged in, landing page if not) |
+| `/accounts/login` | Login |
+| `/accounts/signup` | Signup |
+| `/accounts/forgot-password` | Password reset |
+| `/problems` | Problem listing with filters |
+| `/problems/[slug]/description` | Problem workspace |
+| `/problems/[slug]/editorial` | Editorial |
+| `/problems/[slug]/solutions` | Reference solutions |
+| `/problems/[slug]/submissions` | Submission history |
+| `/problems/[slug]/chatai` | AI chat assistant |
+| `/contests` | Contest list |
+| `/contests/[contestId]` | Contest detail |
+| `/contests/[contestId]/problem/[problemId]/description` | Contest problem workspace |
+| `/:username` | Public user profile |
+| `/premium` | Premium plans + checkout |
+| `/events` | Coding events calendar |
+| `/redeem` | Rewards catalog |
+| `/my-orders` | Redemption order tracking |
+| `/admin/problems` | Admin: problem management |
+| `/admin/create-problem` | Admin: create problem |
+| `/admin/contests` | Admin: contest management |
+| `/admin/contests/[contestId]/edit` | Admin: edit contest |
+| `/admin/redemptions` | Admin: manage redemption orders |
+| `/admin/create-admins` | Admin: create admin accounts |
