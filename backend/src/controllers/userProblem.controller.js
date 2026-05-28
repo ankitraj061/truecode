@@ -350,7 +350,7 @@ export const getAllProblemsForUser = async (req, res) => {
 export const getProblemForUserBySlug = async (req, res) => {
   try {
     const { problemSlug } = req.params;
-    const userId = req.user._id;
+    const userId = req.user?._id || null;
 
     if (
       !problemSlug ||
@@ -360,15 +360,9 @@ export const getProblemForUserBySlug = async (req, res) => {
       return res.status(400).json({ error: "Invalid problem slug format" });
     }
 
-    // ✅ Get problem with user status - FIXED VERSION
-    const [problemData] = await Problem.aggregate([
-      {
-        $match: {
-          slug: problemSlug,
-          isActive: true,
-        },
-      },
-      {
+    const aggregatePipeline = [
+      { $match: { slug: problemSlug, isActive: true } },
+      ...(userId ? [{
         $lookup: {
           from: "users",
           let: { problemId: "$_id" },
@@ -376,12 +370,8 @@ export const getProblemForUserBySlug = async (req, res) => {
             { $match: { _id: new mongoose.Types.ObjectId(userId) } },
             {
               $project: {
-                isSaved: {
-                  $in: ["$$problemId", "$savedProblems"],
-                },
-                isSolved: {
-                  $in: ["$$problemId", "$problemsSolved.problemId"],
-                },
+                isSaved: { $in: ["$$problemId", "$savedProblems"] },
+                isSolved: { $in: ["$$problemId", "$problemsSolved.problemId"] },
                 subscriptionType: 1,
                 preferredLanguage: "$preferences.preferredLanguage",
               },
@@ -389,7 +379,7 @@ export const getProblemForUserBySlug = async (req, res) => {
           ],
           as: "userStatus",
         },
-      },
+      }] : []),
       {
         $project: {
           title: 1,
@@ -407,7 +397,9 @@ export const getProblemForUserBySlug = async (req, res) => {
           userStatus: { $arrayElemAt: ["$userStatus", 0] },
         },
       },
-    ]);
+    ];
+
+    const [problemData] = await Problem.aggregate(aggregatePipeline);
 
     if (!problemData) {
       return res.status(404).json({ error: "Problem not found" });
@@ -415,7 +407,7 @@ export const getProblemForUserBySlug = async (req, res) => {
 
     const userStatus = problemData.userStatus || {};
 
-    // ✅ Premium access check
+    // Premium access check - unauthenticated users cannot access premium problems
     if (problemData.isPremium && userStatus.subscriptionType !== "premium") {
       return res.status(403).json({
         error: "Please subscribe to unlock this problem",
@@ -433,65 +425,57 @@ export const getProblemForUserBySlug = async (req, res) => {
 
     const problemObjectId = new mongoose.Types.ObjectId(problemData._id);
 
-    // ✅ Alternative check for isSolved - MORE RELIABLE
-    const userSolvedProblem = await User.findOne({
-      _id: userId,
-      "problemsSolved.problemId": problemObjectId,
-    });
-
-    const isSolvedByUser = !!userSolvedProblem;
-
-    // ✅ Get submission stats and discussion stats in parallel
-    const [submissionStats, discussionStats, userSubmission, userDraft] =
-      await Promise.all([
-        // Submission stats
-        Submission.aggregate([
-          { $match: { problemId: problemObjectId } },
-          {
-            $group: {
-              _id: "$problemId",
-              totalSubmissions: { $sum: 1 },
-              totalAccepted: {
-                $sum: {
-                  $cond: [{ $eq: ["$status", "accepted"] }, 1, 0],
-                },
-              },
+    // Global stats (not user-specific)
+    const [submissionStats, discussionStats] = await Promise.all([
+      Submission.aggregate([
+        { $match: { problemId: problemObjectId } },
+        {
+          $group: {
+            _id: "$problemId",
+            totalSubmissions: { $sum: 1 },
+            totalAccepted: {
+              $sum: { $cond: [{ $eq: ["$status", "accepted"] }, 1, 0] },
             },
           },
-        ]),
-
-        // Discussion stats
-        Discussion.aggregate([
-          { $match: { problemId: problemObjectId } },
-          {
-            $group: {
-              _id: "$problemId",
-              totalDiscussions: { $sum: 1 },
-              totalReplies: {
-                $sum: {
-                  $cond: [{ $isArray: "$replies" }, { $size: "$replies" }, 0],
-                },
-              },
+        },
+      ]),
+      Discussion.aggregate([
+        { $match: { problemId: problemObjectId } },
+        {
+          $group: {
+            _id: "$problemId",
+            totalDiscussions: { $sum: 1 },
+            totalReplies: {
+              $sum: { $cond: [{ $isArray: "$replies" }, { $size: "$replies" }, 0] },
             },
           },
-          {
-            $project: {
-              _id: 1,
-              totalDiscussions: 1,
-              totalReplies: 1,
-              totalDiscussionCount: {
-                $add: ["$totalDiscussions", "$totalReplies"],
-              },
-            },
+        },
+        {
+          $project: {
+            _id: 1,
+            totalDiscussions: 1,
+            totalReplies: 1,
+            totalDiscussionCount: { $add: ["$totalDiscussions", "$totalReplies"] },
           },
-        ]),
+        },
+      ]),
+    ]);
 
-        // User submission
+    // User-specific stats
+    let isSolvedByUser = false;
+    let isAttemptedByUser = false;
+    let isSubmittedByUser = false;
+
+    if (userId) {
+      const [userSolvedProblem, userSubmission, userDraft] = await Promise.all([
+        User.findOne({ _id: userId, "problemsSolved.problemId": problemObjectId }),
         Submission.findOne({ userId, problemId: problemObjectId }),
-
-        // User draft
         SolutionDraft.findOne({ userId, problemId: problemObjectId }),
       ]);
+      isSolvedByUser = !!userSolvedProblem;
+      isAttemptedByUser = !!(userSubmission || userDraft);
+      isSubmittedByUser = !!userSubmission;
+    }
 
     const totalSubmissions =
       submissionStats.length > 0 ? submissionStats[0].totalSubmissions : 0;
@@ -502,9 +486,6 @@ export const getProblemForUserBySlug = async (req, res) => {
     const totalDiscussions = discussionData.totalDiscussions || 0;
     const totalReplies = discussionData.totalReplies || 0;
     const totalDiscussionCount = discussionData.totalDiscussionCount || 0;
-
-    const isAttemptedByUser = !!(userSubmission || userDraft);
-    const isSubmittedByUser = !!userSubmission;
 
     const problem = {
       _id: problemData._id,
@@ -520,12 +501,8 @@ export const getProblemForUserBySlug = async (req, res) => {
       tags: problemData.tags,
       isPremium: problemData.isPremium,
       createdAt: problemData.createdAt,
-
-      // Stats
       totalSubmissions,
       totalAcceptedSubmissions,
-
-      // Discussion stats
       totalDiscussions,
       totalReplies,
       totalDiscussionCount,
@@ -534,7 +511,7 @@ export const getProblemForUserBySlug = async (req, res) => {
     const userData = {
       preferredLanguage: userStatus.preferredLanguage || "javascript",
       isSavedProblem: userStatus.isSaved || false,
-      isSolvedByUser: isSolvedByUser, // ✅ Use the direct check result
+      isSolvedByUser,
       isAttemptedByUser,
       isSubmittedByUser,
       subscriptionType: userStatus.subscriptionType || "free",

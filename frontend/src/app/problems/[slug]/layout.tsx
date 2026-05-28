@@ -61,18 +61,16 @@ export default function ProblemLayout({ children }: { children: React.ReactNode 
 
   // Fixed: Use 'problem' instead of 'currentProblem'
   const { loading, fetchedSlug, error, problem } = useSelector((state: RootState) => state.problem);
-  const { isAuthenticated } = useSelector((state: RootState) => state.auth);
+  const { isInitialized } = useSelector((state: RootState) => state.auth);
 
   useEffect(() => {
     if (!slug) return;
+    if (!isInitialized) return;
 
-    // ✅ fetch only if user is logged in and not already fetched
-    if (isAuthenticated && slug !== fetchedSlug) {
-      if (typeof slug === "string") {
-        dispatch(getProblem(slug));
-      }
+    if (slug !== fetchedSlug && typeof slug === "string") {
+      dispatch(getProblem(slug));
     }
-  }, [dispatch, slug, isAuthenticated, fetchedSlug]);
+  }, [dispatch, slug, isInitialized, fetchedSlug]);
 
   // Handle premium error and other errors
   useEffect(() => {

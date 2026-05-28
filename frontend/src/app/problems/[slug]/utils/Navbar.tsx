@@ -46,6 +46,13 @@ export default function Navbar({ onTimerUpdate, onTimerReset }: TimerProps = {})
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submissionResult, setSubmissionResult] = useState<SubmissionResponse | null>(null);
 
+  // Toast notification state
+  const [toast, setToast] = useState<{ message: string; type: 'info' | 'success' } | null>(null);
+  const toastTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Share / copy state
+  const [copied, setCopied] = useState(false);
+
 
   // Problem navigation states
   const [problems, setProblems] = useState<Problem[]>([]);
@@ -197,6 +204,29 @@ export default function Navbar({ onTimerUpdate, onTimerReset }: TimerProps = {})
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
 
+  const showToast = (message: string, type: 'info' | 'success' = 'info') => {
+    if (toastTimeoutRef.current) clearTimeout(toastTimeoutRef.current);
+    setToast({ message, type });
+    toastTimeoutRef.current = setTimeout(() => setToast(null), 3000);
+  };
+
+  const handleShare = async () => {
+    const url = window.location.href;
+    try {
+      await navigator.clipboard.writeText(url);
+    } catch {
+      const input = document.createElement('input');
+      input.value = url;
+      document.body.appendChild(input);
+      input.select();
+      document.execCommand('copy');
+      document.body.removeChild(input);
+    }
+    setCopied(true);
+    showToast('Link copied to clipboard!', 'success');
+    setTimeout(() => setCopied(false), 2000);
+  };
+
   const getTestCasesFromTestSection = (): Array<{input: string; expectedOutput: string}> => {
     const testCasesData = window.testCasesData;
     if (!testCasesData || !Array.isArray(testCasesData)) {
@@ -212,6 +242,10 @@ export default function Navbar({ onTimerUpdate, onTimerReset }: TimerProps = {})
   };
 
   const handleRunCode = async () => {
+    if (!isAuthenticated) {
+      showToast('Please login first to run code', 'info');
+      return;
+    }
     // Prevent running if already running or submitting
     if (isLoading) return;
 
@@ -299,6 +333,10 @@ export default function Navbar({ onTimerUpdate, onTimerReset }: TimerProps = {})
   };
 
   const handleSubmitCode = async () => {
+    if (!isAuthenticated) {
+      showToast('Please login first to submit code', 'info');
+      return;
+    }
     // Prevent submitting if already running or submitting
     if (isLoading) return;
 
@@ -408,9 +446,31 @@ export default function Navbar({ onTimerUpdate, onTimerReset }: TimerProps = {})
 
   return (
     <>
-      <nav 
+      {/* Toast notification */}
+      {toast && (
+        <div
+          className="fixed top-4 left-1/2 z-50 -translate-x-1/2 px-4 py-2 rounded-lg text-sm font-medium shadow-lg animate-fade-in flex items-center gap-2"
+          style={{
+            backgroundColor: toast.type === 'success' ? 'var(--success-500)' : 'var(--primary)',
+            color: 'var(--text-inverse)',
+          }}
+        >
+          {toast.type === 'success' ? (
+            <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+            </svg>
+          ) : (
+            <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          )}
+          {toast.message}
+        </div>
+      )}
+
+      <nav
         className="w-full shadow-sm border-b px-6 py-3 flex items-center justify-between"
-        style={{ 
+        style={{
           backgroundColor: 'var(--bg-primary)',
           borderColor: 'var(--border-primary)'
         }}
@@ -499,8 +559,8 @@ export default function Navbar({ onTimerUpdate, onTimerReset }: TimerProps = {})
         </div>
 
         {/* Center: Actions */}
-        <div className="flex space-x-3">
-          <button 
+        <div className="flex items-center space-x-3">
+          <button
             onClick={handleRunCode}
             disabled={isLoading}
             className={`btn-secondary text-sm font-medium flex items-center space-x-2 ${
@@ -508,30 +568,48 @@ export default function Navbar({ onTimerUpdate, onTimerReset }: TimerProps = {})
             }`}
           >
             {isRunning && (
-              <div 
+              <div
                 className="animate-spin rounded-full h-4 w-4 border-b-2"
                 style={{ borderColor: 'var(--text-primary)' }}
               ></div>
             )}
             <span>{isRunning ? 'Running...' : 'Run'}</span>
           </button>
-          
-          <button 
+
+          <button
             onClick={handleSubmitCode}
             disabled={isLoading}
             className={`text-sm font-medium flex items-center space-x-2 ${
-              isLoading 
+              isLoading
                 ? 'btn-secondary opacity-50 cursor-not-allowed'
                 : 'btn-primary interactive'
             }`}
           >
             {isSubmitting && (
-              <div 
+              <div
                 className="animate-spin rounded-full h-4 w-4 border-b-2"
                 style={{ borderColor: 'var(--text-inverse)' }}
               ></div>
             )}
             <span>{isSubmitting ? 'Submitting...' : 'Submit'}</span>
+          </button>
+
+          {/* Share button */}
+          <button
+            onClick={handleShare}
+            className="btn-secondary text-sm font-medium flex items-center space-x-2 interactive"
+            title="Copy problem link"
+          >
+            {copied ? (
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+              </svg>
+            ) : (
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
+              </svg>
+            )}
+            <span>{copied ? 'Copied!' : 'Share'}</span>
           </button>
         </div>
 

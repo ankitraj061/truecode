@@ -59,10 +59,10 @@ app.use(cookieParser());
 
 app.use('/api/auth',userAuth);
 app.use('/api/problem',problemCreatorRouter);
-app.use('/api',submitRouter);
+app.use('/api/user/problem',userProblemRouter);
 app.use('/api/user/discussion',userDiscussionRouter);
 app.use('/api/admin/discussion',adminDiscussionRouter);
-app.use('/api/user/problem',userProblemRouter);
+app.use('/api',submitRouter);
 app.use('/api',themeRouter);
 app.use('/api/payments', paymentRouter);
 app.use('/api',SubmissionRrouter);
