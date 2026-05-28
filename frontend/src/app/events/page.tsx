@@ -6,7 +6,6 @@ import Link from 'next/link';
 import { ChevronLeft, ChevronRight, Calendar, Clock, ExternalLink, Loader2, Trophy, Users, Sparkles } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Footer from '../components/Footer';
-import Loader from '../components/TruckLoader';
 import { contestAPI, type ContestListItem } from '@/app/utils/contestAPI';
 
 type Contest = {
@@ -965,22 +964,55 @@ export default function EventTrackerPage() {
 
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-6 py-8">
-       <AnimatePresence mode="wait">
-    {loading && (
-      <motion.div 
-        className="flex flex-col items-center justify-center py-20"
-        initial={{ opacity: 0, scale: 0.9 }}
-        animate={{ opacity: 1, scale: 1 }}
-        exit={{ opacity: 0, scale: 0.9 }}
-        transition={{ duration: 0.3 }}
-      >
-        <Loader
-          message="Loading Contests"
-          submessage="Fetching upcoming coding competitions..."
-        />
-      </motion.div>
-    )}
-  </AnimatePresence>
+        {loading && (
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            {/* Calendar skeleton */}
+            <div className="lg:col-span-2 rounded-xl p-6 space-y-4" style={{ backgroundColor: 'var(--bg-elevated)', border: '1px solid var(--border-primary)' }}>
+              {/* Month title */}
+              <div className="flex items-center justify-center gap-3 mb-6">
+                <div className="skeleton h-5 w-5 rounded" />
+                <div className="skeleton h-7 w-44 rounded" />
+                <div className="skeleton h-5 w-5 rounded" />
+              </div>
+              {/* Weekday headers */}
+              <div className="grid grid-cols-7 gap-2 mb-4">
+                {Array.from({ length: 7 }).map((_, i) => (
+                  <div key={i} className="skeleton h-10 rounded-lg" />
+                ))}
+              </div>
+              {/* Day cells — 5 rows × 7 cols */}
+              <div className="grid grid-cols-7 gap-2">
+                {Array.from({ length: 35 }).map((_, i) => (
+                  <div key={i} className="skeleton h-28 rounded-lg" />
+                ))}
+              </div>
+            </div>
+
+            {/* Contest slider skeleton */}
+            <div className="lg:col-span-1 rounded-xl p-6 space-y-5" style={{ backgroundColor: 'var(--bg-elevated)', border: '1px solid var(--border-primary)' }}>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <div className="skeleton h-6 w-6 rounded" />
+                  <div className="skeleton h-6 w-36 rounded" />
+                </div>
+                <div className="skeleton h-6 w-12 rounded-full" />
+              </div>
+              <div className="rounded-xl p-6 space-y-4" style={{ backgroundColor: 'var(--bg-secondary)', border: '1px solid var(--border-primary)' }}>
+                <div className="skeleton h-5 w-3/4 mx-auto rounded" />
+                {Array.from({ length: 3 }).map((_, i) => (
+                  <div key={i} className="skeleton h-11 w-full rounded-lg" />
+                ))}
+                <div className="skeleton h-10 w-32 mx-auto rounded-lg mt-2" />
+              </div>
+              {/* Dot indicators */}
+              <div className="flex justify-center gap-2 mt-4">
+                {Array.from({ length: 5 }).map((_, i) => (
+                  <div key={i} className={`skeleton rounded-full h-2 ${i === 0 ? 'w-8' : 'w-2'}`} />
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
 
         <AnimatePresence>
           {error && (

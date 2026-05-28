@@ -6,7 +6,7 @@ const app = express();
 import main from './config/db.js'
 import cookieParser from 'cookie-parser';
 import userAuth from './routes/userAuth.route.js';
-import {redisClient} from './config/redis.js';
+import {redisClient, connectRedis} from './config/redis.js';
 import problemCreatorRouter from './routes/problemCreator.route.js';
 import submitRouter from './routes/submit.route.js';
 import userDiscussionRouter from './routes/userDiscussion.route.js';
@@ -79,10 +79,31 @@ app.use('/api/redeem', userRedemptionRouter);
 app.use('/api/admin/redemptions', adminRedemptionRouter);
 app.use('/health', (_req, res) => res.send('OK'));
 
+// Global error handler — must be after all routes
+app.use((err, req, res, _next) => {
+    const msg = err.message || 'Internal server error';
+
+    if (msg.includes('Too many AI requests'))
+        return res.status(429).json({ success: false, error: msg });
+    if (msg.includes('Problem not found'))
+        return res.status(404).json({ success: false, error: msg });
+    if (msg.includes('not currently available'))
+        return res.status(403).json({ success: false, error: msg });
+    if (msg.includes('AI service authentication failed'))
+        return res.status(503).json({ success: false, error: 'AI service unavailable' });
+    if (msg.includes('AI service temporarily unavailable') || msg.includes('Failed to process AI request'))
+        return res.status(503).json({ success: false, error: 'AI service temporarily unavailable. Please try again.' });
+    if (msg.includes('Invalid request to AI service'))
+        return res.status(400).json({ success: false, error: msg });
+
+    console.error('Unhandled error:', err);
+    res.status(500).json({ success: false, error: 'Internal server error' });
+});
+
 const InitializeConnection = async()=>{
     try{
         await main();
-        redisClient.connect().catch(err => console.warn('Redis unavailable, continuing without cache:', err.message));
+        connectRedis().catch(err => console.warn('Redis unavailable, continuing without cache:', err.message));
         app.listen(process.env.PORT , () => {
             console.log(`Server running on port ${process.env.PORT}`);
         });

@@ -92,33 +92,51 @@ export default function HeatmapCard({ username }: HeatmapCardProps) {
 
   if (loading) {
     return (
-      <div className="rounded-lg p-6 bg-elevated shadow-lg space-y-5">
-        {/* Header row */}
+      <div className="rounded-lg p-6 shadow-lg space-y-6" style={{ backgroundColor: 'var(--bg-elevated)' }}>
+        {/* Header */}
         <div className="flex items-center justify-between">
-          <div className="skeleton h-5 w-40 rounded" />
+          <div className="space-y-1.5">
+            <div className="skeleton h-6 w-44 rounded" />
+            <div className="skeleton h-3.5 w-36 rounded" />
+          </div>
           <div className="flex items-center gap-2">
-            <div className="skeleton h-7 w-7 rounded" />
-            <div className="skeleton h-5 w-12 rounded" />
-            <div className="skeleton h-7 w-7 rounded" />
+            <div className="skeleton h-8 w-8 rounded-lg" />
+            <div className="skeleton h-6 w-14 rounded" />
+            <div className="skeleton h-8 w-8 rounded-lg" />
           </div>
         </div>
-        {/* Heatmap grid — 12 month columns */}
-        <div className="grid grid-cols-12 gap-1.5">
-          {Array.from({ length: 12 }).map((_, col) => (
-            <div key={col} className="space-y-1">
-              <div className="skeleton h-3 w-full rounded" />
-              {Array.from({ length: 5 }).map((_, row) => (
-                <div key={row} className="skeleton h-3 w-full rounded-sm" />
-              ))}
-            </div>
-          ))}
+
+        {/* Heatmap — mirrors the real horizontal-scroll month blocks */}
+        <div className="overflow-x-auto pb-2">
+          <div className="flex gap-4 min-w-max">
+            {Array.from({ length: 12 }).map((_, m) => (
+              <div key={m} className="flex flex-col gap-1" style={{ minWidth: 52 }}>
+                {/* Month label */}
+                <div className="skeleton h-3 w-8 rounded mb-1" />
+                {/* 5 week-rows × 4 day-cells */}
+                {Array.from({ length: 5 }).map((_, w) => (
+                  <div key={w} className="flex gap-1">
+                    {Array.from({ length: 4 }).map((_, d) => (
+                      <div key={d} className="skeleton h-3 w-3 rounded-sm" />
+                    ))}
+                  </div>
+                ))}
+              </div>
+            ))}
+          </div>
         </div>
+
         {/* Legend */}
-        <div className="flex items-center justify-end gap-2 pt-1">
-          <div className="skeleton h-3 w-12 rounded" />
-          {[1,2,3,4,5].map(i => (
-            <div key={i} className="skeleton w-3 h-3 rounded-sm" />
-          ))}
+        <div
+          className="flex items-center justify-between pt-4 border-t"
+          style={{ borderColor: 'var(--border-primary)' }}
+        >
+          <div className="skeleton h-3 w-8 rounded" />
+          <div className="flex gap-1">
+            {Array.from({ length: 5 }).map((_, i) => (
+              <div key={i} className="skeleton h-3 w-3 rounded-sm" />
+            ))}
+          </div>
           <div className="skeleton h-3 w-8 rounded" />
         </div>
       </div>

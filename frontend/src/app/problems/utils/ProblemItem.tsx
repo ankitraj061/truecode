@@ -5,12 +5,21 @@ import { Problem } from './types';
 import { problemsAPI } from './globalAPI';
 import PremiumModal from '../../components/PremiumModal';
 import { RootState } from './types';
+import {
+  CheckCircle2, Circle, Clock, Bookmark, BookmarkCheck, Loader2, Lock,
+} from 'lucide-react';
 
 interface ProblemItemProps {
   problem: Problem;
   index: number;
   onSaveToggle: (problemId: string, isSaved: boolean) => void;
 }
+
+const difficultyConfig: Record<string, { label: string; className: string }> = {
+  easy:   { label: 'Easy',   className: 'text-emerald-600 bg-emerald-500/10 dark:text-emerald-400' },
+  medium: { label: 'Medium', className: 'text-amber-600 bg-amber-500/10 dark:text-amber-400' },
+  hard:   { label: 'Hard',   className: 'text-rose-600 bg-rose-500/10 dark:text-rose-400' },
+};
 
 const ProblemItem: React.FC<ProblemItemProps> = ({ problem, index, onSaveToggle }) => {
   const router = useRouter();
@@ -19,15 +28,11 @@ const ProblemItem: React.FC<ProblemItemProps> = ({ problem, index, onSaveToggle 
   const [isSaving, setIsSaving] = useState(false);
 
   const hasPremiumAccess = user?.subscriptionType === 'premium';
-
-  const difficultyStyle: Record<string, string> = {
-    easy:   'text-success bg-success-light',
-    medium: 'text-warning bg-warning-light',
-    hard:   'text-error   bg-error-light',
-  };
+  const isLocked = problem.isPremiumProblem && !hasPremiumAccess;
+  const diff = difficultyConfig[problem.difficulty] ?? { label: problem.difficulty, className: 'text-[var(--muted-foreground)] bg-[var(--muted)]' };
 
   const handleProblemClick = () => {
-    if (problem.isPremiumProblem && !hasPremiumAccess) {
+    if (isLocked) {
       setShowPremiumModal(true);
       return;
     }
@@ -47,97 +52,83 @@ const ProblemItem: React.FC<ProblemItemProps> = ({ problem, index, onSaveToggle 
     }
   };
 
-  const isLocked = problem.isPremiumProblem && !hasPremiumAccess;
-
   return (
     <>
       <div
         onClick={handleProblemClick}
-        className={`
-          group flex items-center gap-4 px-4 py-3
-          border-b border-primary last:border-b-0
-          hover:bg-secondary transition-colors duration-150 cursor-pointer
-          ${isLocked ? 'opacity-70' : ''}
-        `}
+        className={`group flex items-center gap-4 px-4 py-3 border-b border-[var(--border)] last:border-b-0 hover:bg-[var(--muted)]/60 transition-colors duration-150 cursor-pointer ${isLocked ? 'opacity-75' : ''}`}
       >
         {/* Row number */}
-        <span className="w-8 text-right text-xs text-muted font-mono shrink-0">
+        <span className="w-7 text-right text-xs text-[var(--muted-foreground)] font-mono shrink-0 tabular-nums">
           {index + 1}
         </span>
 
-        {/* Status indicator */}
-        <div className="shrink-0 w-4 flex items-center justify-center">
+        {/* Status icon */}
+        <div className="shrink-0 w-5 flex items-center justify-center">
           {problem.isSolvedByUser ? (
-            <svg className="w-4 h-4 text-success" fill="currentColor" viewBox="0 0 24 24">
-              <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
-            </svg>
+            <CheckCircle2 className="w-4 h-4 text-emerald-500" />
           ) : problem.isAttemptedByUser ? (
-            <div className="w-3 h-3 rounded-full border-2 border-warning" />
+            <Clock className="w-4 h-4 text-amber-500" />
           ) : (
-            <div className="w-3 h-3 rounded-full border-2 border-primary opacity-40" />
+            <Circle className="w-4 h-4 text-[var(--border)] opacity-60" />
           )}
         </div>
 
-        {/* Title + premium badge */}
+        {/* Title + badges */}
         <div className="flex-1 min-w-0 flex items-center gap-2">
-          <span className={`text-sm font-medium truncate transition-colors duration-150 ${
-            isLocked
-              ? 'text-muted group-hover:text-warning'
-              : 'text-primary group-hover:text-brand'
-          }`}>
+          <span
+            className={`text-sm font-medium truncate transition-colors duration-150 ${
+              isLocked
+                ? 'text-[var(--muted-foreground)] group-hover:text-amber-500'
+                : 'text-[var(--foreground)] group-hover:text-[var(--primary)]'
+            }`}
+          >
             {problem.title}
           </span>
 
           {problem.isPremiumProblem && (
-            <span className={`shrink-0 text-[10px] font-semibold px-1.5 py-0.5 rounded ${
-              hasPremiumAccess
-                ? 'bg-brand/10 text-brand'
-                : 'bg-warning/10 text-warning'
-            }`}>
-              {hasPremiumAccess ? 'PRO' : '🔒 PRO'}
+            <span
+              className={`shrink-0 inline-flex items-center gap-0.5 text-[10px] font-semibold px-1.5 py-0.5 rounded ${
+                hasPremiumAccess
+                  ? 'bg-[var(--primary)]/10 text-[var(--primary)]'
+                  : 'bg-amber-500/10 text-amber-600 dark:text-amber-400'
+              }`}
+            >
+              {!hasPremiumAccess && <Lock className="w-2.5 h-2.5" />}
+              PRO
             </span>
-          )}
-
-          {problem.isSavedProblem && (
-            <svg className="shrink-0 w-3 h-3 text-brand opacity-60" fill="currentColor" viewBox="0 0 24 24">
-              <path d="M17 3H7c-1.1 0-2 .9-2 2v16l7-3 7 3V5c0-1.1-.9-2-2-2z"/>
-            </svg>
           )}
         </div>
 
         {/* Acceptance rate */}
-        <span className="shrink-0 w-16 text-right text-xs text-muted font-mono">
+        <span className="shrink-0 w-16 text-right text-xs text-[var(--muted-foreground)] font-mono tabular-nums">
           {problem.acceptanceRate.toFixed(1)}%
         </span>
 
-        {/* Difficulty */}
-        <span className={`shrink-0 w-20 text-center text-xs font-semibold px-2.5 py-1 rounded-full ${
-          difficultyStyle[problem.difficulty] ?? 'text-muted bg-secondary'
-        }`}>
-          {problem.difficulty.charAt(0).toUpperCase() + problem.difficulty.slice(1)}
+        {/* Difficulty badge */}
+        <span
+          className={`shrink-0 w-[4.5rem] text-center text-[11px] font-semibold px-2.5 py-1 rounded-full ${diff.className}`}
+        >
+          {diff.label}
         </span>
 
         {/* Save button */}
         <button
           onClick={handleSaveToggle}
           disabled={isSaving}
-          className={`shrink-0 w-7 h-7 flex items-center justify-center rounded transition-all duration-150 ${
+          className={`shrink-0 w-7 h-7 flex items-center justify-center rounded-lg transition-all duration-150 ${
             problem.isSavedProblem
-              ? 'text-brand opacity-80 hover:opacity-100'
-              : 'text-muted opacity-0 group-hover:opacity-60 hover:!opacity-100 hover:text-brand'
+              ? 'text-[var(--primary)] opacity-90 hover:opacity-100 hover:bg-[var(--primary)]/10'
+              : 'text-[var(--muted-foreground)] opacity-0 group-hover:opacity-60 hover:!opacity-100 hover:text-[var(--primary)] hover:bg-[var(--primary)]/10'
           } ${isSaving ? 'cursor-not-allowed' : ''}`}
           title={problem.isSavedProblem ? 'Unsave' : 'Save'}
         >
           {isSaving ? (
-            <div className="w-3 h-3 border-2 border-current border-t-transparent rounded-full animate-spin" />
+            <Loader2 className="w-4 h-4 animate-spin" />
           ) : problem.isSavedProblem ? (
-            <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
-              <path d="M17 3H7c-1.1 0-2 .9-2 2v16l7-3 7 3V5c0-1.1-.9-2-2-2z"/>
-            </svg>
+            <BookmarkCheck className="w-4 h-4" />
           ) : (
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 3H7c-1.1 0-2 .9-2 2v16l7-3 7 3V5c0-1.1-.9-2-2-2z"/>
-            </svg>
+            <Bookmark className="w-4 h-4" />
           )}
         </button>
       </div>

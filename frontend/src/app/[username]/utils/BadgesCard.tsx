@@ -2,8 +2,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { FiAward } from 'react-icons/fi';
-import { HiSparkles } from 'react-icons/hi';
+import { Award, Sparkles } from 'lucide-react';
 import { axiosClient } from '@/app/utils/axiosClient';
 import { AxiosError } from 'axios';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -124,7 +123,7 @@ export default function BadgesCard({ username }: BadgesCardProps) {
             Badges
           </h2>
           <div className="flex items-center gap-2">
-            <FiAward 
+            <Award 
               size={24} 
               style={{ color: 'var(--accent-500)' }}
             />
@@ -148,7 +147,7 @@ export default function BadgesCard({ username }: BadgesCardProps) {
             animate={{ rotate: [0, 10, -10, 0] }}
             transition={{ duration: 2, repeat: Infinity }}
           >
-            <FiAward 
+            <Award 
               className="mx-auto mb-4"
               size={64}
               style={{ color: 'var(--text-tertiary)' }}
@@ -193,7 +192,7 @@ export default function BadgesCard({ username }: BadgesCardProps) {
           Badges
         </h2>
         <div className="flex items-center gap-2">
-          <FiAward 
+          <Award 
             size={24} 
             style={{ color: 'var(--accent-500)' }}
           />
@@ -301,7 +300,7 @@ function BadgeImage({ badge, index }: BadgeImageProps) {
           whileTap={{ scale: 0.95 }}
           transition={{ duration: 0.2 }}
         >
-          <FiAward className="w-1/2 h-1/2" />
+          <Award className="w-1/2 h-1/2" />
         </motion.div>
       )}
 
@@ -315,7 +314,7 @@ function BadgeImage({ badge, index }: BadgeImageProps) {
             exit={{ scale: 0, rotate: 360 }}
             transition={{ duration: 0.3 }}
           >
-            <HiSparkles 
+            <Sparkles 
               size={24} 
               style={{ color: 'var(--accent-500)' }}
             />

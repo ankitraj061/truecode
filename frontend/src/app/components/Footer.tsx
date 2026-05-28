@@ -2,159 +2,173 @@
 import Link from 'next/link';
 import { useState } from 'react';
 import FeedbackModal from './Feedback';
+import { Code2, Mail, Github, Twitter, ExternalLink } from 'lucide-react';
 
 const Footer = () => {
   const currentYear = new Date().getFullYear();
   const [isFeedbackOpen, setIsFeedbackOpen] = useState(false);
 
+  const columns = [
+    {
+      title: 'Problems',
+      links: [
+        { label: 'All Problems', href: '/problems' },
+        { label: 'Easy', href: '/problems?difficulty=easy' },
+        { label: 'Medium', href: '/problems?difficulty=medium' },
+        { label: 'Hard', href: '/problems?difficulty=hard' },
+      ],
+    },
+    {
+      title: 'Compete',
+      links: [
+        { label: 'Contests', href: '/contests' },
+        { label: 'Redeem Rewards', href: '/redeem' },
+        { label: 'Leaderboard', href: '/contests' },
+      ],
+    },
+    {
+      title: 'Events',
+      links: [
+        { label: 'Event Tracker', href: '/events' },
+        { label: 'Calendar', href: '/events' },
+      ],
+      description: 'Track events from LeetCode, Codeforces, CodeChef & AtCoder',
+    },
+  ];
+
   return (
     <>
-      <footer className="bg-elevated text-secondary border-t border-primary">
-        {/* Main Footer Content */}
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-            
-            {/* Column 1: Problems */}
-            <div>
-              <h3 className="text-primary font-semibold text-lg mb-4">Problems</h3>
-              <ul className="space-y-2">
-                <li>
-                  <Link href="/problems" className="hover:text-primary transition-colors">
-                    All Problems
-                  </Link>
-                </li>
-                <li>
-                  <Link href="/problems?difficulty=easy" className="hover:text-primary transition-colors">
-                    Easy
-                  </Link>
-                </li>
-                <li>
-                  <Link href="/problems?difficulty=medium" className="hover:text-primary transition-colors">
-                    Medium
-                  </Link>
-                </li>
-                <li>
-                  <Link href="/problems?difficulty=hard" className="hover:text-primary transition-colors">
-                    Hard
-                  </Link>
-                </li>
-              </ul>
+      <footer className="bg-[var(--card)] text-[var(--muted-foreground)] border-t border-[var(--border)]">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-14">
+          {/* Top row: brand + columns */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-10">
+            {/* Brand column */}
+            <div className="lg:col-span-2">
+              <Link href="/" className="group inline-flex items-center gap-2 mb-4">
+                <div className="w-8 h-8 bg-[var(--primary)] rounded-lg flex items-center justify-center transition-all duration-300 group-hover:scale-110">
+                  <Code2 className="w-4 h-4 text-white" />
+                </div>
+                <span className="text-lg font-bold bg-gradient-to-r from-[var(--primary)] to-emerald-400 bg-clip-text text-transparent">
+                  TrueCode
+                </span>
+              </Link>
+              <p className="text-sm leading-relaxed mb-6 max-w-xs">
+                A comprehensive coding platform — practice DSA problems, participate in contests,
+                track competitive programming events, and earn real rewards.
+              </p>
+              {/* Social links */}
+              <div className="flex items-center gap-3">
+                <a
+                  href="https://github.com"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="p-2 rounded-lg bg-[var(--muted)] hover:bg-[var(--secondary)] hover:text-[var(--foreground)] transition-colors duration-150"
+                  aria-label="GitHub"
+                >
+                  <Github className="w-4 h-4" />
+                </a>
+                <a
+                  href="https://twitter.com"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="p-2 rounded-lg bg-[var(--muted)] hover:bg-[var(--secondary)] hover:text-[var(--foreground)] transition-colors duration-150"
+                  aria-label="Twitter"
+                >
+                  <Twitter className="w-4 h-4" />
+                </a>
+                <a
+                  href="mailto:ankitwithyou.fam@gmail.com"
+                  className="p-2 rounded-lg bg-[var(--muted)] hover:bg-[var(--secondary)] hover:text-[var(--foreground)] transition-colors duration-150"
+                  aria-label="Email"
+                >
+                  <Mail className="w-4 h-4" />
+                </a>
+              </div>
             </div>
 
-            {/* Column 2: Contests & Redeem */}
-            <div>
-              <h3 className="text-primary font-semibold text-lg mb-4">Compete</h3>
-              <ul className="space-y-2">
-                <li>
-                  <Link href="/contests" className="hover:text-primary transition-colors">
-                    Contests
-                  </Link>
-                </li>
-                <li>
-                  <Link href="/redeem" className="hover:text-primary transition-colors">
-                    Redeem
-                  </Link>
-                </li>
-              </ul>
-            </div>
+            {/* Nav columns */}
+            {columns.map((col) => (
+              <div key={col.title}>
+                <h3 className="text-sm font-semibold text-[var(--foreground)] mb-4">{col.title}</h3>
+                <ul className="space-y-2.5">
+                  {col.links.map((link) => (
+                    <li key={link.label}>
+                      <Link
+                        href={link.href}
+                        className="text-sm hover:text-[var(--foreground)] hover:translate-x-0.5 transition-all duration-150 inline-flex items-center gap-1"
+                      >
+                        {link.label}
+                      </Link>
+                    </li>
+                  ))}
+                  {col.description && (
+                    <li className="text-xs text-[var(--muted-foreground)] pt-1 leading-relaxed">
+                      {col.description}
+                    </li>
+                  )}
+                </ul>
+              </div>
+            ))}
 
-            {/* Column 3: Track Events */}
+            {/* About column */}
             <div>
-              <h3 className="text-primary font-semibold text-lg mb-4">Events</h3>
-              <ul className="space-y-2">
+              <h3 className="text-sm font-semibold text-[var(--foreground)] mb-4">Support</h3>
+              <ul className="space-y-2.5">
                 <li>
-                  <Link href="/events" className="hover:text-primary transition-colors">
-                    Event Tracker
-                  </Link>
-                </li>
-                <li>
-                  <Link href="/events" className="hover:text-primary transition-colors">
-                    Calendar
-                  </Link>
-                </li>
-                <li>
-                  <p className="text-sm text-muted">
-                    Track events from LeetCode, Codeforces, CodeChef & AtCoder
-                  </p>
-                </li>
-              </ul>
-            </div>
-
-            {/* Column 4: About */}
-            <div>
-              <h3 className="text-primary font-semibold text-lg mb-4">About</h3>
-              <ul className="space-y-2">
-                <li>
-                  <Link href="/" className="hover:text-primary transition-colors">
+                  <Link
+                    href="/"
+                    className="text-sm hover:text-[var(--foreground)] transition-colors duration-150"
+                  >
                     About TrueCode
                   </Link>
                 </li>
                 <li>
                   <button
                     onClick={() => setIsFeedbackOpen(true)}
-                    className="hover:text-primary transition-colors text-left"
+                    className="text-sm hover:text-[var(--foreground)] transition-colors duration-150 text-left"
                   >
-                    Feedback
+                    Give Feedback
                   </button>
                 </li>
                 <li>
-                  <a 
-                    href="mailto:ankitwithyou.fam@gmail.com" 
-                    className="hover:text-primary transition-colors flex items-center gap-2"
+                  <a
+                    href="mailto:ankitwithyou.fam@gmail.com"
+                    className="text-sm hover:text-[var(--foreground)] transition-colors duration-150 inline-flex items-center gap-1.5"
                   >
-                    <svg 
-                      className="w-4 h-4" 
-                      fill="none" 
-                      stroke="currentColor" 
-                      viewBox="0 0 24 24"
-                    >
-                      <path 
-                        strokeLinecap="round" 
-                        strokeLinejoin="round" 
-                        strokeWidth={2} 
-                        d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" 
-                      />
-                    </svg>
+                    <Mail className="w-3.5 h-3.5" />
                     Contact Us
                   </a>
                 </li>
               </ul>
             </div>
           </div>
-
-          {/* Description Section */}
-          <div className="mt-8 pt-8 border-t border-primary">
-            <p className="text-muted text-sm max-w-3xl">
-              TrueCode is a comprehensive coding platform where you can practice DSA problems, 
-              participate in contests, see your global rank, and track competitive programming 
-              events from platforms like LeetCode, Codeforces, CodeChef, and AtCoder.
-            </p>
-          </div>
         </div>
 
-        {/* Bottom Bar - Copyright */}
-        <div className="bg-secondary border-t border-primary">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        {/* Bottom bar */}
+        <div className="border-t border-[var(--border)] bg-[var(--muted)]/40">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-5">
             <div className="flex flex-col md:flex-row justify-between items-center gap-4">
-              <p className="text-muted text-sm text-center md:text-left">
+              <p className="text-xs text-[var(--muted-foreground)]">
                 © {currentYear} TrueCode. All rights reserved.
               </p>
-              <div className="flex gap-6 text-sm">
-                <a 
+              <div className="flex items-center gap-6 text-xs">
+                <a
                   href="https://docs.google.com/document/d/1IvrfysEior3JhqRS2sUCNhTvI4NdKfSUgmrP6G_q6jw/edit?usp=sharing"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="hover:text-primary transition-colors"
+                  className="hover:text-[var(--foreground)] transition-colors inline-flex items-center gap-1"
                 >
                   Privacy Policy
+                  <ExternalLink className="w-3 h-3" />
                 </a>
-                <a 
+                <a
                   href="https://docs.google.com/document/d/1pMfE1IoO0qoIr04xWExK22wY4qI1ue6NU0q3RH460DA/edit?usp=sharing"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="hover:text-primary transition-colors"
+                  className="hover:text-[var(--foreground)] transition-colors inline-flex items-center gap-1"
                 >
                   Terms of Service
+                  <ExternalLink className="w-3 h-3" />
                 </a>
               </div>
             </div>
@@ -162,11 +176,7 @@ const Footer = () => {
         </div>
       </footer>
 
-      {/* Feedback Modal */}
-      <FeedbackModal 
-        isOpen={isFeedbackOpen} 
-        onClose={() => setIsFeedbackOpen(false)} 
-      />
+      <FeedbackModal isOpen={isFeedbackOpen} onClose={() => setIsFeedbackOpen(false)} />
     </>
   );
 };

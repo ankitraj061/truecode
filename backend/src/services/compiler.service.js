@@ -56,9 +56,15 @@ export function compileCode({ code, language }) {
       } catch (cleanupError) {
       }
 
+      // If the compiler binary isn't installed, skip local check and let Judge0 handle it
+      const combinedOutput = (stderr || "") + (stdout || "");
+      if (err && err.code === 127 || combinedOutput.includes("not found") || combinedOutput.includes("No such file or directory")) {
+        return resolve({ success: true, message: "Local compiler not available, skipping pre-check" });
+      }
+
       if (err || stderr) {
-        resolve({ 
-          success: false, 
+        resolve({
+          success: false,
           error: stderr || stdout,
           status: "COMPILATION_ERROR"
         });

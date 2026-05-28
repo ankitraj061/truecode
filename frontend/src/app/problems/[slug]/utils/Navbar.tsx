@@ -417,22 +417,16 @@ export default function Navbar({ onTimerUpdate, onTimerReset }: TimerProps = {})
       >
         {/* Left: Brand + Problem List Button */}
         <div className="flex items-center space-x-4">
-          <Link href="/" className="flex items-center space-x-2 interactive">
-            <div 
-              className="w-8 h-8 rounded-lg flex items-center justify-center"
-              style={{ backgroundColor: 'var(--accent-500)' }}
+          <Link href="/" className="group flex items-center space-x-2 interactive">
+            <div
+              className="w-8 h-8 rounded-lg flex items-center justify-center transition-all duration-300 group-hover:scale-110 group-hover:rotate-6"
+              style={{ backgroundColor: 'var(--primary)' }}
             >
-              <span 
-                className="font-bold text-sm"
-                style={{ color: 'var(--text-inverse)' }}
-              >
+              <span className="font-bold text-sm" style={{ color: 'var(--text-inverse)' }}>
                 TC
               </span>
             </div>
-            <span 
-              className="text-xl font-bold"
-              style={{ color: 'var(--text-primary)' }}
-            >
+            <span className="text-xl font-bold bg-gradient-to-r from-[var(--primary)] to-emerald-400 bg-clip-text text-transparent">
               TrueCode
             </span>
           </Link>
@@ -630,8 +624,8 @@ export default function Navbar({ onTimerUpdate, onTimerReset }: TimerProps = {})
                   ? "bg-brand border-2 animate-pulse"
                   : ""
               }`}
-              style={{ 
-                backgroundColor: user.subscriptionType === "premium" ? 'var(--accent-500)' : 'var(--text-secondary)',
+              style={{
+                backgroundColor: user.subscriptionType === "premium" ? 'var(--accent-500)' : 'var(--primary)',
                 borderColor: user.subscriptionType === "premium" ? 'var(--accent-400)' : 'transparent',
                 color: 'var(--text-inverse)'
               }}

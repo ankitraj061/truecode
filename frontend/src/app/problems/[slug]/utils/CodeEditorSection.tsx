@@ -637,10 +637,15 @@ int* twoSum(int* nums, int numsSize, int target, int* returnSize){
 
   if (!problem) {
     return (
-      <div className="h-full flex items-center justify-center bg-secondary animate-fade-in">
-        <div className="flex flex-col items-center space-y-4">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-brand"></div>
-          <div className="text-secondary">Loading problem...</div>
+      <div className="h-full flex flex-col" style={{ backgroundColor: 'var(--bg-primary)' }}>
+        <div className="flex-shrink-0 flex items-center gap-3 px-3 py-2 border-b" style={{ backgroundColor: 'var(--bg-secondary)', borderColor: 'var(--border-primary)' }}>
+          <div className="skeleton h-6 w-24 rounded" />
+          <div className="skeleton h-6 w-16 rounded" />
+        </div>
+        <div className="flex-1 p-4 space-y-2" style={{ backgroundColor: 'var(--bg-primary)' }}>
+          {[60, 85, 45, 72, 90, 55, 40, 68, 80, 50, 63, 75].map((w, i) => (
+            <div key={i} className="skeleton h-4 rounded" style={{ width: `${w}%`, marginLeft: i > 0 && i < 9 ? '1.5rem' : undefined }} />
+          ))}
         </div>
       </div>
     );
@@ -938,15 +943,14 @@ int* twoSum(int* nums, int numsSize, int target, int* returnSize){
             }
           }}
           loading={
-            <div className="flex items-center justify-center h-full bg-elevated animate-fade-in">
-              <div className="flex flex-col items-center space-y-4">
-                <div className="relative">
-                  <div className="animate-spin rounded-full h-12 w-12 border-4 border-tertiary"></div>
-                  <div className="animate-spin rounded-full h-12 w-12 border-4 border-brand border-t-transparent absolute top-0 left-0"></div>
-                </div>
-                <div className="text-secondary font-medium">Loading Code Editor...</div>
-                <div className="text-xs text-muted">Preparing your coding environment</div>
-              </div>
+            <div className="h-full p-4 space-y-2" style={{ backgroundColor: 'var(--bg-primary)' }}>
+              {[60, 85, 45, 72, 90, 55, 40, 68, 80, 50, 63, 75, 82, 38, 65].map((w, i) => (
+                <div
+                  key={i}
+                  className="skeleton h-4 rounded"
+                  style={{ width: `${w}%`, marginLeft: i > 0 && i < 11 ? '1.5rem' : undefined }}
+                />
+              ))}
             </div>
           }
         />

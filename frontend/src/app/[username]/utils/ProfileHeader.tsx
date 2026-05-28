@@ -6,8 +6,7 @@ import { useSelector } from 'react-redux';
 import { RootState } from '@/app/store/store';
 import { User } from '../page';
 import EditProfileModal from './EditProfileModal';
-import { FiEdit2, FiMapPin, FiMail, FiUser, FiUserPlus, FiUserCheck, FiLoader } from 'react-icons/fi';
-import { MdCake } from 'react-icons/md';
+import { Pencil, MapPin, Mail, User as UserIcon, UserPlus, UserCheck, Loader2, Cake } from 'lucide-react';
 import { axiosClient } from '@/app/utils/axiosClient';
 import { AxiosError } from 'axios';
 import { motion } from 'framer-motion';
@@ -309,7 +308,7 @@ export default function ProfileHeader({ username }: ProfileHeaderProps) {
                 className="flex items-center gap-2 min-w-0"
                 style={{ color: 'var(--text-secondary)' }}
               >
-                <FiMail className="shrink-0" style={{ color: 'var(--primary-500)' }} />
+                <Mail className="shrink-0" style={{ color: 'var(--primary-500)' }} />
                 <span className="truncate">{profileData.emailId}</span>
               </div>
             )}
@@ -318,7 +317,7 @@ export default function ProfileHeader({ username }: ProfileHeaderProps) {
                 className="flex items-center gap-2"
                 style={{ color: 'var(--text-secondary)' }}
               >
-                <FiMapPin className="shrink-0" style={{ color: 'var(--success-500)' }} />
+                <MapPin className="shrink-0" style={{ color: 'var(--success-500)' }} />
                 <span>{profileData.location}</span>
               </div>
             )}
@@ -327,7 +326,7 @@ export default function ProfileHeader({ username }: ProfileHeaderProps) {
                 className="flex items-center gap-2"
                 style={{ color: 'var(--text-secondary)' }}
               >
-                <FiUser className="shrink-0" style={{ color: 'var(--primary-400)' }} />
+                <UserIcon className="shrink-0" style={{ color: 'var(--primary-400)' }} />
                 <span className="capitalize">{profileData.gender}</span>
               </div>
             )}
@@ -336,7 +335,7 @@ export default function ProfileHeader({ username }: ProfileHeaderProps) {
                 className="flex items-center gap-2"
                 style={{ color: 'var(--text-secondary)' }}
               >
-                <MdCake className="shrink-0" style={{ color: 'var(--accent-500)' }} />
+                <Cake className="shrink-0" style={{ color: 'var(--accent-500)' }} />
                 <span>{profileData.age} years old</span>
               </div>
             )}
@@ -395,7 +394,7 @@ export default function ProfileHeader({ username }: ProfileHeaderProps) {
               whileTap={{ scale: 0.97 }}
               transition={{ duration: 0.2 }}
             >
-              <FiEdit2 size={16} />
+              <Pencil size={16} />
               <span>Edit Profile</span>
             </motion.button>
           ) : user ? (
@@ -414,15 +413,15 @@ export default function ProfileHeader({ username }: ProfileHeaderProps) {
                 transition={{ duration: 0.2 }}
               >
                 {followLoading ? (
-                  <FiLoader className="animate-spin" size={16} />
+                  <Loader2 className="animate-spin" size={16} />
                 ) : isFollowing ? (
                   <>
-                    <FiUserCheck size={16} />
+                    <UserCheck size={16} />
                     <span>Following</span>
                   </>
                 ) : (
                   <>
-                    <FiUserPlus size={16} />
+                    <UserPlus size={16} />
                     <span>Follow</span>
                   </>
                 )}

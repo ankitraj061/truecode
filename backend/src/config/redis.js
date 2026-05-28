@@ -1,37 +1,45 @@
 // redis.js - FIXED & CLEAN
 import { createClient } from "redis";
+import { Redis } from "@upstash/redis";
 import dotenv from "dotenv";
 dotenv.config();
 
-const client = createClient({
-  username: "default",
-  password: process.env.REDIS_PASSWORD,
-  socket: {
-    host: process.env.REDIS_HOST, // ✅ from .env
-    port: Number(process.env.REDIS_PORT),
-    tls: {}, // ✅ REQUIRED for Redis Cloud
-    connectTimeout: 15000,
-    keepAlive: 5000,
-    reconnectStrategy: (retries) => {
-      if (retries > 3) {
-        return false;
-      }
-      const delay = Math.min(retries * 500, 2000);
-      return delay;
-    }
-  }
-});
+const useUpstash = Boolean(
+  process.env.UPSTASH_REDIS_REST_URL &&
+  process.env.UPSTASH_REDIS_REST_TOKEN
+);
 
-// ---- Event listeners ----
-client.on("error", () => {});
+const client = useUpstash
+  ? new Redis({
+      url: process.env.UPSTASH_REDIS_REST_URL,
+      token: process.env.UPSTASH_REDIS_REST_TOKEN,
+    })
+  : createClient({
+      username: "default",
+      password: process.env.REDIS_PASSWORD,
+      socket: {
+        host: process.env.REDIS_HOST,
+        port: Number(process.env.REDIS_PORT),
+        tls: {},
+        connectTimeout: 15000,
+        keepAlive: 5000,
+        reconnectStrategy: (retries) => {
+          if (retries > 3) {
+            return false;
+          }
+          const delay = Math.min(retries * 500, 2000);
+          return delay;
+        },
+      },
+    });
 
-client.on("connect", () => {});
+if (!useUpstash) {
+  client.on("error", () => {});
+  client.on("connect", () => {});
+  client.on("ready", () => {});
+  client.on("end", () => {});
+}
 
-client.on("ready", () => {});
-
-client.on("end", () => {});
-
-// ---- Connection control ----
 let connectionAttempted = false;
 
 export const connectRedis = async () => {
@@ -39,18 +47,21 @@ export const connectRedis = async () => {
   connectionAttempted = true;
 
   try {
-    await client.connect();
+    if (useUpstash) {
+      await client.ping();
+    } else {
+      await client.connect();
+    }
   } catch (err) {
+    throw err;
   }
 };
 
-// Delay connection
 setTimeout(connectRedis, 100);
 
-// Graceful shutdown
 const shutdown = async () => {
   try {
-    if (client.isOpen) await client.quit();
+    if (!useUpstash && client.isOpen) await client.quit();
   } finally {
     process.exit(0);
   }

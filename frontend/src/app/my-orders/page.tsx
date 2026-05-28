@@ -2,8 +2,13 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { motion, AnimatePresence } from 'framer-motion';
 import { axiosClient } from '@/app/utils/axiosClient';
 import Footer from '@/app/components/Footer';
+import {
+  Package, Star, MapPin, ChevronDown, ArrowLeft,
+  Check, X, Clock, Truck, Box, ShoppingBag, Home,
+} from 'lucide-react';
 
 interface OrderStatusHistory {
   status: string;
@@ -28,13 +33,22 @@ interface MyOrder {
   createdAt: string;
 }
 
-const STATUS_STEPS: { key: string; label: string; icon: string }[] = [
-  { key: 'pending',          label: 'Order Placed',     icon: '📋' },
-  { key: 'packed',           label: 'Packed',           icon: '📦' },
-  { key: 'shipped',          label: 'Shipped',          icon: '🚚' },
-  { key: 'out_for_delivery', label: 'Out for Delivery', icon: '🛵' },
-  { key: 'delivered',        label: 'Delivered',        icon: '✅' },
+const STATUS_STEPS: { key: string; label: string; Icon: React.ElementType }[] = [
+  { key: 'pending',          label: 'Placed',       Icon: Clock },
+  { key: 'packed',           label: 'Packed',        Icon: Box },
+  { key: 'shipped',          label: 'Shipped',       Icon: Truck },
+  { key: 'out_for_delivery', label: 'On the way',    Icon: ShoppingBag },
+  { key: 'delivered',        label: 'Delivered',     Icon: Home },
 ];
+
+const STATUS_META: Record<MyOrder['status'], { label: string; color: string; bg: string; border: string }> = {
+  pending:          { label: 'Pending',          color: '#f59e0b', bg: 'rgba(245,158,11,0.12)',  border: 'rgba(245,158,11,0.3)' },
+  packed:           { label: 'Packed',           color: '#3b82f6', bg: 'rgba(59,130,246,0.12)', border: 'rgba(59,130,246,0.3)' },
+  shipped:          { label: 'Shipped',          color: '#a855f7', bg: 'rgba(168,85,247,0.12)', border: 'rgba(168,85,247,0.3)' },
+  out_for_delivery: { label: 'Out for Delivery', color: '#f97316', bg: 'rgba(249,115,22,0.12)', border: 'rgba(249,115,22,0.3)' },
+  delivered:        { label: 'Delivered',        color: '#10b981', bg: 'rgba(16,185,129,0.12)', border: 'rgba(16,185,129,0.3)' },
+  cancelled:        { label: 'Cancelled',        color: '#ef4444', bg: 'rgba(239,68,68,0.12)',  border: 'rgba(239,68,68,0.3)' },
+};
 
 function getStatusIndex(status: string) {
   if (status === 'cancelled') return -1;
@@ -42,253 +56,259 @@ function getStatusIndex(status: string) {
 }
 
 function formatDate(iso: string) {
-  return new Date(iso).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' });
+  return new Date(iso).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
 }
 
-function getStatusBadge(status: MyOrder['status']) {
-  const map: Record<MyOrder['status'], { label: string; style: React.CSSProperties }> = {
-    pending:          { label: 'Pending',          style: { color: 'var(--color-warning)',   backgroundColor: 'color-mix(in srgb, var(--color-warning) 15%, transparent)' } },
-    packed:           { label: 'Packed',           style: { color: 'var(--color-brand)',     backgroundColor: 'color-mix(in srgb, var(--color-brand) 15%, transparent)' } },
-    shipped:          { label: 'Shipped',          style: { color: '#a855f7',                backgroundColor: 'rgba(168,85,247,0.15)' } },
-    out_for_delivery: { label: 'Out for Delivery', style: { color: '#f97316',                backgroundColor: 'rgba(249,115,22,0.15)' } },
-    delivered:        { label: 'Delivered',        style: { color: 'var(--color-success)',   backgroundColor: 'color-mix(in srgb, var(--color-success) 15%, transparent)' } },
-    cancelled:        { label: 'Cancelled',        style: { color: 'var(--color-error)',     backgroundColor: 'color-mix(in srgb, var(--color-error) 15%, transparent)' } },
-  };
-  const { label, style } = map[status];
+function formatDateTime(iso: string) {
+  return new Date(iso).toLocaleString('en-IN', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+}
+
+function StatusBadge({ status }: { status: MyOrder['status'] }) {
+  const m = STATUS_META[status];
   return (
     <span
-      style={style}
-      className="text-xs font-semibold px-2.5 py-1 rounded-full whitespace-nowrap"
+      className="inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full"
+      style={{ color: m.color, background: m.bg, border: `1px solid ${m.border}` }}
     >
-      {label}
+      <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: m.color }} />
+      {m.label}
     </span>
   );
 }
 
-function SkeletonCard() {
-  return (
-    <div className="bg-elevated border border-primary rounded-2xl p-6 shadow-sm animate-pulse">
-      <div className="flex flex-wrap items-start justify-between gap-3 mb-4">
-        <div className="h-5 bg-secondary rounded w-48" />
-        <div className="flex items-center gap-2">
-          <div className="h-5 bg-secondary rounded w-20" />
-          <div className="h-5 bg-secondary rounded w-16" />
-          <div className="h-5 bg-secondary rounded w-16" />
-        </div>
-      </div>
-      <div className="flex items-center justify-between mt-6 mb-2">
-        {STATUS_STEPS.map((_, i) => (
-          <div key={i} className="flex flex-col items-center flex-1">
-            <div className="w-8 h-8 rounded-full bg-secondary" />
-            <div className="h-3 bg-secondary rounded w-12 mt-2" />
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
 function OrderTimeline({ status }: { status: MyOrder['status'] }) {
-  const currentIndex = getStatusIndex(status);
+  const currentIdx = getStatusIndex(status);
 
   return (
-    <div className="mt-5">
-      <div className="flex items-start">
-        {STATUS_STEPS.map((step, i) => {
-          const filled = i <= currentIndex;
-          const isLast = i === STATUS_STEPS.length - 1;
+    <div className="flex items-start mt-1">
+      {STATUS_STEPS.map((step, i) => {
+        const reached = i <= currentIdx;
+        const isCurrent = i === currentIdx;
+        const isLast = i === STATUS_STEPS.length - 1;
+        const StepIcon = step.Icon;
 
-          return (
-            <div key={step.key} className="flex flex-col items-center flex-1">
-              <div className="flex items-center w-full">
-                {/* Circle */}
-                <div className="flex flex-col items-center">
-                  <div
-                    style={filled ? { backgroundColor: 'var(--color-brand)' } : { backgroundColor: 'var(--bg-secondary)', border: '1.5px solid var(--border-primary)' }}
-                    className="w-8 h-8 rounded-full flex items-center justify-center text-sm flex-shrink-0"
-                  >
-                    {filled ? (
-                      <span className="text-white text-xs">{step.icon}</span>
-                    ) : (
-                      <span className="text-xs" style={{ color: 'var(--text-tertiary)' }}>{step.icon}</span>
-                    )}
-                  </div>
-                </div>
-
-                {/* Connecting line */}
-                {!isLast && (
-                  <div className="flex-1 h-0.5 mx-1" style={{ backgroundColor: i < currentIndex ? 'var(--color-brand)' : 'var(--bg-secondary)' }} />
+        return (
+          <div key={step.key} className="flex items-center flex-1 last:flex-none">
+            <div className="flex flex-col items-center gap-1.5 flex-shrink-0">
+              <div
+                className={`relative w-9 h-9 rounded-full flex items-center justify-center transition-all duration-300 ${
+                  reached
+                    ? 'bg-[var(--primary)] shadow-md'
+                    : 'bg-[var(--muted)] border border-[var(--border)]'
+                } ${isCurrent ? 'ring-2 ring-[var(--primary)]/30 ring-offset-2 ring-offset-[var(--card)]' : ''}`}
+              >
+                {reached ? (
+                  i < currentIdx
+                    ? <Check className="w-4 h-4 text-white" />
+                    : <StepIcon className="w-4 h-4 text-white" />
+                ) : (
+                  <StepIcon className="w-4 h-4 text-[var(--muted-foreground)]" />
+                )}
+                {isCurrent && (
+                  <span className="absolute inset-0 rounded-full bg-[var(--primary)]/20 animate-ping" />
                 )}
               </div>
-
-              {/* Label */}
               <span
-                className="text-center mt-2 leading-tight"
+                className="text-center leading-tight whitespace-pre-line"
                 style={{
-                  fontSize: '0.65rem',
-                  color: filled ? 'var(--color-brand)' : 'var(--text-tertiary)',
-                  fontWeight: filled ? 600 : 400,
-                  maxWidth: '4rem',
+                  fontSize: '0.625rem',
+                  fontWeight: reached ? 600 : 400,
+                  color: reached ? 'var(--primary)' : 'var(--muted-foreground)',
+                  maxWidth: '3.5rem',
                 }}
               >
                 {step.label}
               </span>
             </div>
-          );
-        })}
-      </div>
+            {!isLast && (
+              <div
+                className="flex-1 h-[2px] mx-1 mb-5 rounded-full transition-all duration-500"
+                style={{ background: i < currentIdx ? 'var(--primary)' : 'var(--border)' }}
+              />
+            )}
+          </div>
+        );
+      })}
     </div>
   );
 }
 
-function OrderCard({ order }: { order: MyOrder }) {
-  const [addressOpen, setAddressOpen] = useState(false);
-  const [historyOpen, setHistoryOpen] = useState(false);
-  const isCancelled = order.status === 'cancelled';
+function Accordion({
+  label,
+  icon: Icon,
+  children,
+}: {
+  label: string;
+  icon: React.ElementType;
+  children: React.ReactNode;
+}) {
+  const [open, setOpen] = useState(false);
+  return (
+    <div className="border-t border-[var(--border)] pt-3 mt-3">
+      <button
+        onClick={() => setOpen(v => !v)}
+        className="flex items-center justify-between w-full py-1 text-sm font-medium text-[var(--muted-foreground)] hover:text-[var(--foreground)] transition-colors"
+      >
+        <span className="flex items-center gap-2">
+          <Icon className="w-3.5 h-3.5" />
+          {label}
+        </span>
+        <ChevronDown
+          className="w-4 h-4 transition-transform duration-200"
+          style={{ transform: open ? 'rotate(180deg)' : 'rotate(0deg)' }}
+        />
+      </button>
+      <AnimatePresence initial={false}>
+        {open && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            className="overflow-hidden"
+          >
+            <div className="pt-3">{children}</div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
 
+function OrderCard({ order, index }: { order: MyOrder; index: number }) {
+  const isCancelled = order.status === 'cancelled';
+  const meta = STATUS_META[order.status];
   const sortedHistory = [...(order.statusHistory || [])].sort(
     (a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
   );
 
   return (
-    <div className="bg-elevated border border-primary rounded-2xl p-6 shadow-sm">
-      {/* Top row */}
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div className="flex flex-col gap-1">
-          <span className="font-semibold" style={{ color: 'var(--text-primary)' }}>
-            {order.productName}
-          </span>
-          <span className="text-sm" style={{ color: 'var(--text-tertiary)' }}>
-            {formatDate(order.createdAt)}
-          </span>
-        </div>
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.35, delay: index * 0.07 }}
+      className="rounded-2xl border border-[var(--border)] bg-[var(--card)] overflow-hidden shadow-sm hover:shadow-md transition-shadow duration-300"
+    >
+      {/* Accent stripe */}
+      <div className="h-1 w-full" style={{ background: isCancelled ? '#ef4444' : `linear-gradient(90deg, ${meta.color}, ${meta.color}88)` }} />
 
-        <div className="flex flex-wrap items-center gap-2">
-          {/* Points badge */}
-          <span
-            className="text-xs font-semibold px-2.5 py-1 rounded-full"
-            style={{
-              color: 'var(--color-brand)',
-              backgroundColor: 'color-mix(in srgb, var(--color-brand) 15%, transparent)',
-            }}
-          >
-            {order.pointsSpent} pts
-          </span>
-
-          {getStatusBadge(order.status)}
-        </div>
-      </div>
-
-      {/* Timeline or Cancelled banner */}
-      {isCancelled ? (
-        <div
-          className="mt-5 rounded-xl px-4 py-3 flex items-center gap-2 font-semibold text-sm"
-          style={{
-            color: 'var(--color-error)',
-            backgroundColor: 'color-mix(in srgb, var(--color-error) 12%, transparent)',
-            border: '1px solid color-mix(in srgb, var(--color-error) 30%, transparent)',
-          }}
-        >
-          <span>✕</span>
-          <span>Order Cancelled</span>
-        </div>
-      ) : (
-        <OrderTimeline status={order.status} />
-      )}
-
-      {/* Collapsible: Delivery Address */}
-      <div className="mt-5 border-t border-primary pt-4">
-        <button
-          onClick={() => setAddressOpen(v => !v)}
-          className="flex items-center justify-between w-full text-sm font-medium cursor-pointer"
-          style={{ color: 'var(--text-secondary)' }}
-        >
-          <span>Delivery Address</span>
-          <svg
-            className="w-4 h-4 transition-transform duration-200"
-            style={{ transform: addressOpen ? 'rotate(180deg)' : 'rotate(0deg)' }}
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-          </svg>
-        </button>
-
-        {addressOpen && (
-          <div
-            className="mt-3 rounded-xl p-4 text-sm grid grid-cols-1 sm:grid-cols-2 gap-y-1.5 gap-x-4"
-            style={{ backgroundColor: 'var(--bg-secondary)', color: 'var(--text-secondary)' }}
-          >
-            <div>
-              <span style={{ color: 'var(--text-tertiary)' }} className="text-xs uppercase tracking-wide">Name</span>
-              <p style={{ color: 'var(--text-primary)' }} className="font-medium">{order.address.fullName}</p>
-            </div>
-            <div>
-              <span style={{ color: 'var(--text-tertiary)' }} className="text-xs uppercase tracking-wide">Phone</span>
-              <p style={{ color: 'var(--text-primary)' }} className="font-medium">{order.address.phone}</p>
-            </div>
-            <div className="sm:col-span-2">
-              <span style={{ color: 'var(--text-tertiary)' }} className="text-xs uppercase tracking-wide">Street</span>
-              <p style={{ color: 'var(--text-primary)' }} className="font-medium">{order.address.street}</p>
-            </div>
-            <div>
-              <span style={{ color: 'var(--text-tertiary)' }} className="text-xs uppercase tracking-wide">City / State</span>
-              <p style={{ color: 'var(--text-primary)' }} className="font-medium">{order.address.city}, {order.address.state}</p>
-            </div>
-            <div>
-              <span style={{ color: 'var(--text-tertiary)' }} className="text-xs uppercase tracking-wide">Pincode</span>
-              <p style={{ color: 'var(--text-primary)' }} className="font-medium">{order.address.pincode}</p>
-            </div>
+      <div className="p-5">
+        {/* Header row */}
+        <div className="flex flex-wrap items-start justify-between gap-3 mb-4">
+          <div>
+            <p className="font-bold text-[var(--foreground)] text-base">{order.productName}</p>
+            <p className="text-xs text-[var(--muted-foreground)] mt-0.5">
+              Ordered {formatDate(order.createdAt)}
+            </p>
           </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <span
+              className="inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-full"
+              style={{ color: 'var(--primary)', background: 'color-mix(in srgb, var(--primary) 12%, transparent)' }}
+            >
+              <Star className="w-3 h-3 fill-current" />
+              {order.pointsSpent.toLocaleString()} pts
+            </span>
+            <StatusBadge status={order.status} />
+          </div>
+        </div>
+
+        {/* Timeline or cancelled */}
+        {isCancelled ? (
+          <div
+            className="flex items-center gap-2 px-4 py-3 rounded-xl text-sm font-semibold"
+            style={{ color: '#ef4444', background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)' }}
+          >
+            <X className="w-4 h-4 flex-shrink-0" />
+            Order Cancelled
+          </div>
+        ) : (
+          <OrderTimeline status={order.status} />
+        )}
+
+        {/* Delivery Address accordion */}
+        <Accordion label="Delivery Address" icon={MapPin}>
+          <div
+            className="rounded-xl p-4 grid grid-cols-1 sm:grid-cols-2 gap-3"
+            style={{ background: 'var(--muted)' }}
+          >
+            {[
+              { label: 'Name',       value: order.address.fullName },
+              { label: 'Phone',      value: order.address.phone },
+              { label: 'Street',     value: order.address.street, span: true },
+              { label: 'City/State', value: `${order.address.city}, ${order.address.state}` },
+              { label: 'Pincode',    value: order.address.pincode },
+            ].map(({ label, value, span }) => (
+              <div key={label} className={span ? 'sm:col-span-2' : ''}>
+                <p className="text-[10px] font-semibold uppercase tracking-wider text-[var(--muted-foreground)] mb-0.5">{label}</p>
+                <p className="text-sm font-medium text-[var(--foreground)]">{value}</p>
+              </div>
+            ))}
+          </div>
+        </Accordion>
+
+        {/* Status History accordion */}
+        {sortedHistory.length > 0 && (
+          <Accordion label="Status History" icon={Clock}>
+            <div className="space-y-2">
+              {sortedHistory.map((entry, i) => (
+                <div
+                  key={i}
+                  className="flex items-start gap-3 px-4 py-3 rounded-xl text-sm"
+                  style={{ background: 'var(--muted)' }}
+                >
+                  <div
+                    className="w-2 h-2 rounded-full mt-1.5 flex-shrink-0"
+                    style={{ background: i === 0 ? meta.color : 'var(--border)' }}
+                  />
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between gap-2 flex-wrap">
+                      <span
+                        className="font-semibold capitalize"
+                        style={{ color: i === 0 ? meta.color : 'var(--foreground)' }}
+                      >
+                        {entry.status.replace(/_/g, ' ')}
+                      </span>
+                      <span className="text-xs text-[var(--muted-foreground)]">{formatDateTime(entry.updatedAt)}</span>
+                    </div>
+                    {entry.note && (
+                      <p className="text-xs text-[var(--muted-foreground)] mt-0.5">{entry.note}</p>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </Accordion>
         )}
       </div>
+    </motion.div>
+  );
+}
 
-      {/* Collapsible: Status History */}
-      {sortedHistory.length > 0 && (
-        <div className="mt-3 border-t border-primary pt-4">
-          <button
-            onClick={() => setHistoryOpen(v => !v)}
-            className="flex items-center justify-between w-full text-sm font-medium cursor-pointer"
-            style={{ color: 'var(--text-secondary)' }}
-          >
-            <span>Status History</span>
-            <svg
-              className="w-4 h-4 transition-transform duration-200"
-              style={{ transform: historyOpen ? 'rotate(180deg)' : 'rotate(0deg)' }}
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-            </svg>
-          </button>
-
-          {historyOpen && (
-            <ul className="mt-3 space-y-2">
-              {sortedHistory.map((entry, i) => (
-                <li
-                  key={i}
-                  className="rounded-xl px-4 py-3 text-sm"
-                  style={{ backgroundColor: 'var(--bg-secondary)' }}
-                >
-                  <div className="flex items-center justify-between gap-2 flex-wrap">
-                    <span className="font-medium capitalize" style={{ color: 'var(--text-primary)' }}>
-                      {entry.status.replace(/_/g, ' ')}
-                    </span>
-                    <span className="text-xs" style={{ color: 'var(--text-tertiary)' }}>
-                      {formatDate(entry.updatedAt)}
-                    </span>
-                  </div>
-                  {entry.note && (
-                    <p className="mt-0.5" style={{ color: 'var(--text-secondary)' }}>{entry.note}</p>
-                  )}
-                </li>
-              ))}
-            </ul>
-          )}
+function SkeletonCard() {
+  return (
+    <div className="rounded-2xl border border-[var(--border)] bg-[var(--card)] overflow-hidden animate-pulse">
+      <div className="h-1 w-full bg-[var(--muted)]" />
+      <div className="p-5 space-y-4">
+        <div className="flex justify-between gap-3">
+          <div className="space-y-2">
+            <div className="h-4 w-40 rounded bg-[var(--muted)]" />
+            <div className="h-3 w-24 rounded bg-[var(--muted)]" />
+          </div>
+          <div className="flex gap-2">
+            <div className="h-6 w-16 rounded-full bg-[var(--muted)]" />
+            <div className="h-6 w-20 rounded-full bg-[var(--muted)]" />
+          </div>
         </div>
-      )}
+        <div className="flex gap-2 items-center">
+          {[...Array(5)].map((_, i) => (
+            <div key={i} className="flex items-center flex-1 last:flex-none">
+              <div className="w-9 h-9 rounded-full bg-[var(--muted)] flex-shrink-0" />
+              {i < 4 && <div className="flex-1 h-0.5 mx-1 bg-[var(--muted)]" />}
+            </div>
+          ))}
+        </div>
+      </div>
     </div>
   );
 }
@@ -299,87 +319,86 @@ export default function MyOrdersPage() {
 
   useEffect(() => {
     const toOrderArray = (data: unknown): MyOrder[] => {
-      if (Array.isArray((data as { redemptions?: unknown })?.redemptions)) {
+      if (Array.isArray((data as { redemptions?: unknown })?.redemptions))
         return (data as { redemptions: MyOrder[] }).redemptions;
-      }
-      if (Array.isArray((data as { orders?: unknown })?.orders)) {
+      if (Array.isArray((data as { orders?: unknown })?.orders))
         return (data as { orders: MyOrder[] }).orders;
-      }
-      if (Array.isArray(data)) {
-        return data as MyOrder[];
-      }
+      if (Array.isArray(data)) return data as MyOrder[];
       return [];
     };
 
     axiosClient
       .get('/api/redeem/my')
-      .then((res) => setOrders(toOrderArray(res.data)))
+      .then(res => setOrders(toOrderArray(res.data)))
       .catch(() => setOrders([]))
       .finally(() => setLoading(false));
   }, []);
 
   return (
-    <div className="min-h-screen bg-primary">
+    <div className="min-h-screen bg-[var(--background)]">
       {/* Header */}
-      <div className="border-b border-primary bg-elevated">
-        <div className="max-w-3xl mx-auto px-4 sm:px-6 py-6">
-          <div className="flex items-center gap-3 mb-1">
+      <div className="border-b border-[var(--border)] bg-[var(--card)]">
+        <motion.div
+          className="max-w-3xl mx-auto px-4 sm:px-6 py-8"
+          initial={{ opacity: 0, y: -12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.35 }}
+        >
+          <div className="flex items-center gap-4">
             <Link
               href="/redeem"
-              className="flex items-center justify-center w-9 h-9 rounded-full transition-colors"
-              style={{ backgroundColor: 'var(--bg-secondary)', color: 'var(--text-secondary)' }}
+              className="flex items-center justify-center w-9 h-9 rounded-xl border border-[var(--border)] bg-[var(--background)] text-[var(--muted-foreground)] hover:text-[var(--foreground)] hover:border-[var(--foreground)]/20 transition-all"
               aria-label="Back to Redeem"
             >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-              </svg>
+              <ArrowLeft className="w-4 h-4" />
             </Link>
-            <div>
-              <h1 className="text-xl font-bold" style={{ color: 'var(--text-primary)' }}>
-                My Orders
-              </h1>
-              <p className="text-sm" style={{ color: 'var(--text-tertiary)' }}>
-                Track your redemption orders
-              </p>
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[var(--primary)]/10">
+                <Package className="h-5 w-5 text-[var(--primary)]" />
+              </div>
+              <div>
+                <h1 className="text-xl font-bold text-[var(--foreground)]">My Orders</h1>
+                <p className="text-sm text-[var(--muted-foreground)]">Track your redemption orders</p>
+              </div>
             </div>
           </div>
-        </div>
+        </motion.div>
       </div>
 
-      {/* Main content */}
+      {/* Content */}
       <div className="max-w-3xl mx-auto px-4 sm:px-6 py-8">
         {loading ? (
-          <div className="space-y-5">
+          <div className="space-y-4">
             <SkeletonCard />
             <SkeletonCard />
             <SkeletonCard />
           </div>
         ) : orders.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-24 text-center">
-            <div
-              className="w-20 h-20 rounded-full flex items-center justify-center mb-5 text-4xl"
-              style={{ backgroundColor: 'var(--bg-secondary)' }}
-            >
-              🛍️
+          <motion.div
+            className="flex flex-col items-center justify-center py-28 text-center"
+            initial={{ opacity: 0, scale: 0.96 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.4 }}
+          >
+            <div className="w-24 h-24 rounded-2xl bg-[var(--primary)]/10 flex items-center justify-center mb-6">
+              <Package className="w-12 h-12 text-[var(--primary)]" />
             </div>
-            <h2 className="text-xl font-bold mb-2" style={{ color: 'var(--text-primary)' }}>
-              No orders yet
-            </h2>
-            <p className="mb-6 max-w-xs" style={{ color: 'var(--text-tertiary)' }}>
-              You haven&apos;t redeemed any rewards. Start browsing and redeem your points!
+            <h2 className="text-xl font-bold text-[var(--foreground)] mb-2">No orders yet</h2>
+            <p className="text-[var(--muted-foreground)] max-w-xs mb-7 text-sm">
+              You haven&apos;t redeemed any rewards. Earn points, then browse the store!
             </p>
             <Link
               href="/redeem"
-              className="px-6 py-2.5 rounded-xl font-semibold text-sm transition-opacity hover:opacity-90"
-              style={{ backgroundColor: 'var(--color-brand)', color: '#fff' }}
+              className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl bg-[var(--primary)] text-white font-semibold text-sm hover:opacity-90 transition-opacity"
             >
+              <Star className="w-4 h-4" />
               Browse Rewards
             </Link>
-          </div>
+          </motion.div>
         ) : (
-          <div className="space-y-5">
-            {orders.map(order => (
-              <OrderCard key={order._id} order={order} />
+          <div className="space-y-4">
+            {orders.map((order, i) => (
+              <OrderCard key={order._id} order={order} index={i} />
             ))}
           </div>
         )}

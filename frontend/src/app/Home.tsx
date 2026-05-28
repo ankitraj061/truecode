@@ -9,6 +9,7 @@ import { FlickeringGrid } from "@/components/ui/flickering-grid";
 import ShowcaseModal from './components/ShowcaseModal';
 import { AchievementBadgesStrip } from './components/AchievementBadgesStrip';
 import UserStatsCard from './components/UserStatsCard';
+import { Bot, Trophy, Target, Gift, BookOpen, ArrowRight } from 'lucide-react';
 export default function Home() {
   const { isAuthenticated, user } = useSelector((state: RootState) => state.auth);
   const [mounted, setMounted] = useState(false);
@@ -28,14 +29,14 @@ export default function Home() {
             className="absolute inset-0 [mask-image:radial-gradient(600px_circle_at_center,white,transparent)]"
             squareSize={4}
             gridGap={6}
-            color="#60A5FA"
-            maxOpacity={0.5}
+            color="#4ade80"
+            maxOpacity={0.4}
             flickerChance={0.1}
           />
         </div>
 
         {/* Animated Background Gradient Overlay */}
-        <div className="absolute inset-0 bg-gradient-to-br from-brand/10 via-transparent to-purple-500/10 animate-gradient-shift z-[1]"></div>
+        <div className="absolute inset-0 bg-gradient-to-br from-[var(--primary)]/8 via-transparent to-emerald-500/8 animate-gradient-shift z-[1]"></div>
         
         <div className="relative max-w-7xl mx-auto px-6 py-20 lg:py-28 z-10">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
@@ -51,9 +52,9 @@ export default function Home() {
               
               <h1 className="text-5xl lg:text-7xl font-bold text-primary leading-tight tracking-tight">
                 {isAuthenticated ? (
-                  <>Master Coding with <span className="text-transparent bg-clip-text bg-purple-600">AI Power</span></>
+                  <>Master Coding with <span className="text-transparent bg-clip-text bg-gradient-to-r from-[var(--primary)] to-emerald-400">AI Power</span></>
                 ) : (
-                  <>Code. Compete. <span className="text-transparent bg-clip-text bg-gradient-to-r from-brand to-purple-500">Conquer.</span></>
+                  <>Code. Compete. <span className="text-transparent bg-clip-text bg-gradient-to-r from-[var(--primary)] to-emerald-400">Conquer.</span></>
                 )}
               </h1>
               
@@ -67,31 +68,29 @@ export default function Home() {
 
               {/* Feature Pills */}
               <div className="flex flex-wrap gap-3">
-                <div className="flex items-center space-x-2 bg-secondary px-4 py-2 rounded-lg border border-primary">
-                  <span className="text-brand">🤖</span>
-                  <span className="text-sm font-medium text-primary">AI ChatAI</span>
+                <div className="flex items-center gap-2 bg-[var(--secondary)] px-4 py-2 rounded-xl border border-[var(--border)] hover:border-[var(--primary)]/40 transition-colors">
+                  <Bot className="w-4 h-4 text-[var(--primary)]" />
+                  <span className="text-sm font-medium text-[var(--foreground)]">AI ChatAI</span>
                 </div>
-                <div className="flex items-center space-x-2 bg-secondary px-4 py-2 rounded-lg border border-primary">
-                  <span className="text-brand">🏆</span>
-                  <span className="text-sm font-medium text-primary">Weekly Contests</span>
+                <div className="flex items-center gap-2 bg-[var(--secondary)] px-4 py-2 rounded-xl border border-[var(--border)] hover:border-[var(--primary)]/40 transition-colors">
+                  <Trophy className="w-4 h-4 text-yellow-500" />
+                  <span className="text-sm font-medium text-[var(--foreground)]">Weekly Contests</span>
                 </div>
-                <div className="flex items-center space-x-2 bg-secondary px-4 py-2 rounded-lg border border-primary">
-                  <span className="text-brand">🎁</span>
-                  <span className="text-sm font-medium text-primary">Redeem Merch</span>
+                <div className="flex items-center gap-2 bg-[var(--secondary)] px-4 py-2 rounded-xl border border-[var(--border)] hover:border-[var(--primary)]/40 transition-colors">
+                  <Gift className="w-4 h-4 text-[var(--primary)]" />
+                  <span className="text-sm font-medium text-[var(--foreground)]">Redeem Merch</span>
                 </div>
               </div>
 
               {/* CTAs */}
               <div className="flex flex-col sm:flex-row gap-4 pt-4">
-                <Link href="/problems" 
-                  className="group relative inline-flex items-center justify-center px-8 py-4 text-lg font-semibold text-white bg-brand rounded-lg overflow-hidden transition-all hover:scale-105 hover:shadow-lg hover:shadow-brand/50">
-                  <span className="relative z-10">
+                <Link href="/problems"
+                  className="group relative inline-flex items-center justify-center gap-2 px-8 py-4 text-lg font-semibold text-white bg-[var(--primary)] rounded-xl overflow-hidden transition-all hover:scale-105 hover:shadow-xl hover:shadow-[var(--primary)]/30">
+                  <span className="relative z-10 flex items-center gap-2">
                     {isAuthenticated ? 'Start Solving' : 'Get Started Free'}
+                    <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform duration-200" />
                   </span>
-                  <span className="absolute inset-0 bg-gradient-to-r from-brand to-purple-600 opacity-0 group-hover:opacity-100 transition-opacity"></span>
-                  <svg className="w-5 h-5 ml-2 relative z-10 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
-                  </svg>
+                  <span className="absolute inset-0 bg-gradient-to-r from-[var(--primary)] to-emerald-500 opacity-0 group-hover:opacity-100 transition-opacity" />
                 </Link>
 
                 <button
@@ -145,32 +144,32 @@ export default function Home() {
             <p className="text-xl text-secondary max-w-2xl mx-auto">Everything you need to ace coding interviews and land your dream job</p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {/* Feature 1 */}
-            <div className="group card p-8 hover:border-brand/50 transition-all hover:scale-105">
-              <div className="w-14 h-14 bg-brand/10 rounded-xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
-                <span className="text-3xl">🤖</span>
+            <div className="group card p-8 hover:border-[var(--primary)]/40 hover:-translate-y-1 transition-all duration-300">
+              <div className="w-14 h-14 bg-[var(--primary)]/10 rounded-xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300">
+                <Bot className="w-7 h-7 text-[var(--primary)]" />
               </div>
-              <h3 className="text-xl font-bold text-primary mb-3">AI-Powered ChatAI</h3>
-              <p className="text-secondary mb-4">Get intelligent hints and approach guidance without spoiling the solution.</p>
+              <h3 className="text-xl font-bold text-[var(--foreground)] mb-3">AI-Powered ChatAI</h3>
+              <p className="text-[var(--muted-foreground)]">Get intelligent hints and approach guidance without spoiling the solution.</p>
             </div>
 
             {/* Feature 2 */}
-            <div className="group card p-8 hover:border-brand/50 transition-all hover:scale-105">
-              <div className="w-14 h-14 bg-purple-500/10 rounded-xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
-                <span className="text-3xl">🏆</span>
+            <div className="group card p-8 hover:border-[var(--primary)]/40 hover:-translate-y-1 transition-all duration-300">
+              <div className="w-14 h-14 bg-yellow-500/10 rounded-xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300">
+                <Trophy className="w-7 h-7 text-yellow-500" />
               </div>
-              <h3 className="text-xl font-bold text-primary mb-3">Contests & Rewards</h3>
-              <p className="text-secondary mb-4">Compete weekly, earn points, and redeem exclusive TrueCode merchandise.</p>
+              <h3 className="text-xl font-bold text-[var(--foreground)] mb-3">Contests & Rewards</h3>
+              <p className="text-[var(--muted-foreground)]">Compete weekly, earn points, and redeem exclusive TrueCode merchandise.</p>
             </div>
 
             {/* Feature 3 */}
-            <div className="group card p-8 hover:border-brand/50 transition-all hover:scale-105">
-              <div className="w-14 h-14 bg-success/10 rounded-xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
-                <span className="text-3xl">🎯</span>
+            <div className="group card p-8 hover:border-[var(--primary)]/40 hover:-translate-y-1 transition-all duration-300">
+              <div className="w-14 h-14 bg-[var(--primary)]/10 rounded-xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300">
+                <Target className="w-7 h-7 text-[var(--primary)]" />
               </div>
-              <h3 className="text-xl font-bold text-primary mb-3">Company-Wise Filter</h3>
-              <p className="text-secondary mb-4">Practice problems from Google, Amazon, Microsoft & 100+ companies.</p>
+              <h3 className="text-xl font-bold text-[var(--foreground)] mb-3">Company-Wise Filter</h3>
+              <p className="text-[var(--muted-foreground)]">Practice problems from Google, Amazon, Microsoft & 100+ companies.</p>
             </div>
           </div>
         </section>

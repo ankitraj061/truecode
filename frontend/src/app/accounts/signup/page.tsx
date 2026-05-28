@@ -320,68 +320,6 @@ export default function SignupPageContent() {
         <div className="absolute -bottom-4 -left-4 w-16 h-16 border border-brand/20 rounded-full animate-ping-slower opacity-20"></div>
       </div>
 
-      <style jsx>{`
-        @keyframes float {
-          0%, 100% { transform: translateY(0px) translateX(0px); }
-          33% { transform: translateY(-20px) translateX(10px); }
-          66% { transform: translateY(10px) translateX(-10px); }
-        }
-        
-        @keyframes float-slow {
-          0%, 100% { transform: translateY(0px) translateX(0px) rotate(0deg); }
-          50% { transform: translateY(-30px) translateX(20px) rotate(5deg); }
-        }
-        
-        @keyframes float-slower {
-          0%, 100% { transform: translateY(0px) translateX(0px) scale(1); }
-          50% { transform: translateY(20px) translateX(-30px) scale(1.1); }
-        }
-        
-        @keyframes fade-in-down {
-          0% { opacity: 0; transform: translateY(-20px); }
-          100% { opacity: 1; transform: translateY(0); }
-        }
-        
-        @keyframes fade-in-up {
-          0% { opacity: 0; transform: translateY(20px); }
-          100% { opacity: 1; transform: translateY(0); }
-        }
-        
-        @keyframes slide-in-top {
-          0% { opacity: 0; transform: translateY(-10px); }
-          100% { opacity: 1; transform: translateY(0); }
-        }
-        
-        @keyframes shake {
-          0%, 100% { transform: translateX(0); }
-          10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
-          20%, 40%, 60%, 80% { transform: translateX(5px); }
-        }
-        
-        @keyframes ping-slow {
-          75%, 100% {
-            transform: scale(2);
-            opacity: 0;
-          }
-        }
-        
-        @keyframes ping-slower {
-          75%, 100% {
-            transform: scale(2.5);
-            opacity: 0;
-          }
-        }
-        
-        .animate-float { animation: float 6s ease-in-out infinite; }
-        .animate-float-slow { animation: float-slow 8s ease-in-out infinite; }
-        .animate-float-slower { animation: float-slower 10s ease-in-out infinite; }
-        .animate-fade-in-down { animation: fade-in-down 0.6s ease-out; }
-        .animate-fade-in-up { animation: fade-in-up 0.6s ease-out 0.2s backwards; }
-        .animate-slide-in-top { animation: slide-in-top 0.4s ease-out; }
-        .animate-shake { animation: shake 0.5s ease-in-out; }
-        .animate-ping-slow { animation: ping-slow 3s cubic-bezier(0, 0, 0.2, 1) infinite; }
-        .animate-ping-slower { animation: ping-slower 4s cubic-bezier(0, 0, 0.2, 1) infinite; }
-      `}</style>
     </div>
   );
 }

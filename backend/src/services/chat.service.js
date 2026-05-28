@@ -1,7 +1,6 @@
 import groqClient from '../utils/groqClient.js';
 import { promptGenerator } from '../utils/promtGenerator.js';
 import Problem from '../models/problem.js';
-import e from 'express';
 
 
 class ChatService {

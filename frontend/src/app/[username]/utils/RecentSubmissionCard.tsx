@@ -3,7 +3,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { FiClock, FiCode, FiCheckCircle, FiXCircle, FiAlertCircle } from 'react-icons/fi';
+import { Clock, Code2, CheckCircle2, XCircle, AlertCircle } from 'lucide-react';
 import { axiosClient } from '@/app/utils/axiosClient';
 import { AxiosError } from 'axios';
 import { motion } from 'framer-motion';
@@ -67,7 +67,7 @@ export default function RecentSubmissionsCard({ username }: RecentSubmissionsCar
     
     if (statusLower === 'accepted') {
       return {
-        icon: <FiCheckCircle size={16} />,
+        icon: <CheckCircle2 size={16} />,
         bgColor: 'var(--success-100)',
         textColor: 'var(--success-600)',
         borderColor: 'var(--success-500)',
@@ -75,7 +75,7 @@ export default function RecentSubmissionsCard({ username }: RecentSubmissionsCar
       };
     } else if (statusLower === 'wrong answer') {
       return {
-        icon: <FiXCircle size={16} />,
+        icon: <XCircle size={16} />,
         bgColor: 'var(--error-100)',
         textColor: 'var(--error-600)',
         borderColor: 'var(--error-500)',
@@ -83,7 +83,7 @@ export default function RecentSubmissionsCard({ username }: RecentSubmissionsCar
       };
     } else if (statusLower === 'time limit exceeded') {
       return {
-        icon: <FiClock size={16} />,
+        icon: <Clock size={16} />,
         bgColor: 'var(--warning-100)',
         textColor: 'var(--warning-600)',
         borderColor: 'var(--warning-500)',
@@ -91,7 +91,7 @@ export default function RecentSubmissionsCard({ username }: RecentSubmissionsCar
       };
     } else if (statusLower === 'runtime error') {
       return {
-        icon: <FiAlertCircle size={16} />,
+        icon: <AlertCircle size={16} />,
         bgColor: 'var(--accent-100)',
         textColor: 'var(--accent-600)',
         borderColor: 'var(--accent-500)',
@@ -99,7 +99,7 @@ export default function RecentSubmissionsCard({ username }: RecentSubmissionsCar
       };
     } else {
       return {
-        icon: <FiAlertCircle size={16} />,
+        icon: <AlertCircle size={16} />,
         bgColor: 'var(--gray-200)',
         textColor: 'var(--gray-600)',
         borderColor: 'var(--gray-400)',
@@ -231,7 +231,7 @@ export default function RecentSubmissionsCard({ username }: RecentSubmissionsCar
             animate={{ rotate: [0, 5, -5, 0] }}
             transition={{ duration: 3, repeat: Infinity }}
           >
-            <FiCode size={32} style={{ color: 'var(--text-tertiary)' }} />
+            <Code2 size={32} style={{ color: 'var(--text-tertiary)' }} />
           </motion.div>
           <p style={{ color: 'var(--text-secondary)' }}>
             No submissions yet

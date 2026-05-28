@@ -3,6 +3,7 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import Link from 'next/link';
 import { useSelector } from 'react-redux';
+import { motion } from 'framer-motion';
 import {
   Trophy,
   Clock,
@@ -23,7 +24,6 @@ import {
 import type { RootState } from '@/app/store/store';
 import { contestAPI, type ContestListItem, type LeaderboardEntry } from '@/app/utils/contestAPI';
 import Footer from '@/app/components/Footer';
-import Loader from '@/app/components/TruckLoader';
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
@@ -165,7 +165,7 @@ function UpcomingContestCard({ c }: { c: ContestListItem }) {
             {c.description}
           </p>
           <div className="mt-2 flex flex-wrap gap-4 text-xs" style={{ color: 'var(--text-tertiary)' }}>
-            <span className="flex items-center gap-1 font-medium" style={{ color: 'var(--brand)' }}>
+            <span className="flex items-center gap-1 font-medium" style={{ color: 'var(--primary)' }}>
               <CalendarDays className="h-3.5 w-3.5" />
               {formatCountdown(c.startTime)}
             </span>
@@ -186,7 +186,7 @@ function UpcomingContestCard({ c }: { c: ContestListItem }) {
           <Link
             href={`/contests/${c._id}`}
             className="rounded-xl px-3 py-1.5 text-sm font-medium transition-opacity hover:opacity-80"
-            style={{ background: 'var(--brand)', color: '#fff' }}
+            style={{ background: 'var(--primary)', color: '#fff' }}
           >
             {c.registered ? 'View' : 'Register'}
           </Link>
@@ -306,7 +306,7 @@ function PodiumCard({
 function SectionHeader({ icon, title, count }: { icon: React.ReactNode; title: string; count?: number }) {
   return (
     <div className="flex items-center gap-2 mb-4">
-      <span style={{ color: 'var(--brand)' }}>{icon}</span>
+      <span style={{ color: 'var(--primary)' }}>{icon}</span>
       <h2 className="text-lg font-bold" style={{ color: 'var(--text-primary)' }}>{title}</h2>
       {count !== undefined && (
         <span
@@ -352,6 +352,161 @@ function ErrorBanner({ message }: { message: string }) {
     >
       <AlertCircle className="h-4 w-4 shrink-0" />
       {message}
+    </div>
+  );
+}
+
+// ─── Skeleton Components ─────────────────────────────────────────────────────
+
+function Sk({ className }: { className?: string }) {
+  return <div className={`skeleton rounded ${className ?? ''}`} />;
+}
+
+function RunningContestSkeleton() {
+  return (
+    <div className="rounded-2xl p-5" style={{ background: 'var(--bg-elevated)', border: '1px solid var(--border-primary)' }}>
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <div className="flex-1 space-y-2">
+          <div className="flex gap-2">
+            <Sk className="h-5 w-16" />
+            <Sk className="h-5 w-32" />
+          </div>
+          <Sk className="h-6 w-3/4" />
+          <Sk className="h-4 w-full" />
+          <Sk className="h-4 w-2/3" />
+          <div className="flex gap-4 mt-3">
+            <Sk className="h-4 w-24" />
+            <Sk className="h-4 w-20" />
+          </div>
+        </div>
+        <Sk className="h-9 w-24 rounded-xl" />
+      </div>
+    </div>
+  );
+}
+
+function UpcomingContestSkeleton() {
+  return (
+    <div className="rounded-2xl p-4" style={{ background: 'var(--bg-elevated)', border: '1px solid var(--border-primary)' }}>
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div className="flex-1 space-y-2">
+          <Sk className="h-4 w-20" />
+          <Sk className="h-5 w-3/4" />
+          <Sk className="h-4 w-full" />
+          <div className="flex gap-3 mt-2">
+            <Sk className="h-3 w-28" />
+            <Sk className="h-3 w-24" />
+            <Sk className="h-3 w-16" />
+          </div>
+        </div>
+        <Sk className="h-8 w-20 rounded-xl" />
+      </div>
+    </div>
+  );
+}
+
+function MyContestSkeleton() {
+  return (
+    <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl px-4 py-3"
+      style={{ background: 'var(--bg-elevated)', border: '1px solid var(--border-primary)' }}>
+      <div className="flex-1 space-y-1.5">
+        <Sk className="h-4 w-2/3" />
+        <div className="flex gap-3">
+          <Sk className="h-3 w-24" />
+          <Sk className="h-3 w-16" />
+        </div>
+      </div>
+      <Sk className="h-7 w-16 rounded-lg" />
+    </div>
+  );
+}
+
+function LeaderboardSkeleton() {
+  return (
+    <>
+      <div className="flex items-end justify-center gap-3 mb-4">
+        {([130, 160, 130] as const).map((minW, i) => (
+          <div key={i} className="flex flex-col items-center" style={{ minWidth: minW }}>
+            <Sk className={`w-full rounded-2xl ${i === 1 ? 'h-44' : 'h-36'}`} />
+            <Sk className={`w-full rounded-b-lg ${i === 1 ? 'h-12' : i === 0 ? 'h-8' : 'h-5'}`} />
+          </div>
+        ))}
+      </div>
+      <div className="space-y-1.5 mt-2">
+        {Array.from({ length: 5 }).map((_, i) => (
+          <div key={i} className="flex items-center gap-3 rounded-xl px-3 py-2.5"
+            style={{ background: 'var(--bg-elevated)', border: '1px solid var(--border-primary)' }}>
+            <Sk className="h-4 w-6" />
+            <Sk className="h-7 w-7 rounded-full" />
+            <Sk className="h-4 w-28" />
+            <div className="flex gap-3 ml-auto">
+              <Sk className="h-3 w-16" />
+              <Sk className="h-3 w-14" />
+            </div>
+          </div>
+        ))}
+      </div>
+    </>
+  );
+}
+
+function PastContestSkeleton() {
+  return (
+    <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-3 rounded-xl"
+      style={{ background: 'var(--bg-elevated)', border: '1px solid var(--border-primary)' }}>
+      <div className="flex-1 space-y-1.5">
+        <Sk className="h-4 w-1/2" />
+        <div className="flex gap-3">
+          <Sk className="h-3 w-24" />
+          <Sk className="h-3 w-16" />
+          <Sk className="h-3 w-20" />
+        </div>
+      </div>
+      <Sk className="h-7 w-24 rounded-lg" />
+    </div>
+  );
+}
+
+function ContestsPageSkeleton() {
+  return (
+    <div className="min-h-screen flex flex-col" style={{ background: 'var(--bg-primary)' }}>
+      <div style={{ background: 'var(--bg-elevated)', borderBottom: '1px solid var(--border-primary)' }}>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-10">
+          <div className="flex items-center gap-4">
+            <Sk className="h-12 w-12 rounded-xl" />
+            <div className="space-y-2">
+              <Sk className="h-8 w-48" />
+              <Sk className="h-4 w-80" />
+            </div>
+          </div>
+        </div>
+      </div>
+      <div className="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 py-8 space-y-10">
+        <section>
+          <Sk className="h-6 w-28 mb-4" />
+          <div className="grid gap-4 md:grid-cols-2">
+            <RunningContestSkeleton /><RunningContestSkeleton />
+          </div>
+        </section>
+        <section>
+          <Sk className="h-6 w-28 mb-4" />
+          <div className="grid gap-3 md:grid-cols-2">
+            {Array.from({ length: 4 }).map((_, i) => <UpcomingContestSkeleton key={i} />)}
+          </div>
+        </section>
+        <div className="grid gap-8 lg:grid-cols-2">
+          <section>
+            <Sk className="h-6 w-28 mb-4" />
+            <div className="space-y-2">
+              {Array.from({ length: 3 }).map((_, i) => <MyContestSkeleton key={i} />)}
+            </div>
+          </section>
+          <section>
+            <Sk className="h-6 w-28 mb-4" />
+            <LeaderboardSkeleton />
+          </section>
+        </div>
+      </div>
     </div>
   );
 }
@@ -462,7 +617,7 @@ export default function ContestsPage() {
 
   // ── Auth guards ───────────────────────────────────────────────────────────
   if (!isInitialized) {
-    return <Loader fullPage message="Loading..." submessage="Checking authentication..." />;
+    return <ContestsPageSkeleton />;
   }
 
   if (!isAuthenticated) {
@@ -471,7 +626,7 @@ export default function ContestsPage() {
         <div className="max-w-3xl mx-auto px-6 py-24 text-center">
           <div
             className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl"
-            style={{ background: 'rgba(var(--brand-rgb, 99,102,241),0.1)', color: 'var(--brand)' }}
+            style={{ background: 'rgba(var(--primary),0.1)', color: 'var(--primary)' }}
           >
             <Trophy className="h-8 w-8" aria-hidden />
           </div>
@@ -485,7 +640,7 @@ export default function ContestsPage() {
           <Link
             href="/accounts/login"
             className="inline-flex items-center justify-center gap-2 rounded-xl px-5 py-2.5 text-sm font-semibold hover:opacity-90 transition-opacity"
-            style={{ background: 'var(--brand)', color: '#fff' }}
+            style={{ background: 'var(--primary)', color: '#fff' }}
           >
             <Sparkles className="h-4 w-4" aria-hidden />
             Log in to join contests
@@ -500,46 +655,54 @@ export default function ContestsPage() {
   const rest = leaderboard.slice(3);
 
   return (
-    <div className="min-h-screen flex flex-col" style={{ background: 'var(--bg-primary)' }}>
-      <div className="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 py-8 space-y-10">
+    <div className="min-h-screen flex flex-col bg-[var(--background)]">
+      {/* ── Page Hero ─────────────────────────────────────────────────────── */}
+      <div className="bg-[var(--card)] border-b border-[var(--border)]">
+        <motion.div
+          className="max-w-7xl mx-auto px-4 sm:px-6 py-10"
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4, ease: 'easeOut' }}
+        >
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            <div className="flex items-center gap-4">
+              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-[var(--primary)]/10">
+                <Trophy className="h-6 w-6 text-[var(--primary)]" />
+              </div>
+              <div>
+                <h1 className="text-3xl font-bold text-[var(--foreground)]">Contests</h1>
+                <p className="text-sm text-[var(--muted-foreground)] mt-0.5">
+                  Compete in timed rounds, climb the leaderboard, and unlock problems after each contest.
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2 text-sm text-[var(--muted-foreground)] bg-[var(--muted)]/60 px-3 py-1.5 rounded-full border border-[var(--border)]">
+              <Users className="h-4 w-4" />
+              <span className="hidden sm:inline">Join live rounds · Grow your TrueCode rating</span>
+            </div>
+          </div>
+        </motion.div>
+      </div>
 
-        {/* ── Page Header ───────────────────────────────────────────────────── */}
-        <div className="flex flex-wrap items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <div
-              className="flex h-11 w-11 items-center justify-center rounded-xl"
-              style={{ background: 'rgba(var(--brand-rgb,99,102,241),0.1)', color: 'var(--brand)' }}
-            >
-              <Trophy className="h-5 w-5" aria-hidden />
-            </div>
-            <div>
-              <h1 className="text-2xl font-bold" style={{ color: 'var(--text-primary)' }}>
-                Contests
-              </h1>
-              <p className="text-sm mt-0.5" style={{ color: 'var(--text-secondary)' }}>
-                Compete in timed contests, climb the leaderboard, and unlock problems after each round.
-              </p>
-            </div>
-          </div>
-          <div className="flex items-center gap-2 text-xs" style={{ color: 'var(--text-tertiary)' }}>
-            <Users className="h-4 w-4" />
-            Join live rounds and grow your TrueCode rating
-          </div>
-        </div>
+      <div className="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 py-8 space-y-10">
 
         {activeError && <ErrorBanner message={activeError} />}
 
         {/* ── Running Contests ──────────────────────────────────────────────── */}
         {(activeLoading || runningContests.length > 0) && (
-          <section>
+          <motion.section
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4, delay: 0.05 }}
+          >
             <SectionHeader
               icon={<Radio className="h-5 w-5" />}
               title="Live Now"
               count={activeLoading ? undefined : runningContests.length}
             />
             {activeLoading ? (
-              <div className="flex justify-center py-8">
-                <Loader message="Loading contests" submessage="Fetching live contests..." />
+              <div className="grid gap-4 md:grid-cols-2">
+                <RunningContestSkeleton /><RunningContestSkeleton />
               </div>
             ) : (
               <div className="grid gap-4 md:grid-cols-2">
@@ -548,19 +711,24 @@ export default function ContestsPage() {
                 ))}
               </div>
             )}
-          </section>
+          </motion.section>
         )}
 
         {/* ── Upcoming Contests ─────────────────────────────────────────────── */}
-        <section>
+        <motion.section
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: '-40px' }}
+          transition={{ duration: 0.4 }}
+        >
           <SectionHeader
             icon={<CalendarDays className="h-5 w-5" />}
             title="Upcoming"
             count={activeLoading ? undefined : upcomingContests.length}
           />
           {activeLoading ? (
-            <div className="flex justify-center py-8">
-              <Loader message="Loading contests" submessage="Fetching upcoming contests..." />
+            <div className="grid gap-3 md:grid-cols-2">
+              {Array.from({ length: 4 }).map((_, i) => <UpcomingContestSkeleton key={i} />)}
             </div>
           ) : upcomingContests.length === 0 ? (
             <EmptyState
@@ -571,7 +739,7 @@ export default function ContestsPage() {
                 <Link
                   href="/problems"
                   className="inline-flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-semibold hover:opacity-90"
-                  style={{ background: 'var(--brand)', color: '#fff' }}
+                  style={{ background: 'var(--primary)', color: '#fff' }}
                 >
                   <Target className="h-4 w-4" />
                   Practice problems
@@ -585,10 +753,16 @@ export default function ContestsPage() {
               ))}
             </div>
           )}
-        </section>
+        </motion.section>
 
         {/* ── Two-column: My Contests + Leaderboard ────────────────────────── */}
-        <div className="grid gap-8 lg:grid-cols-2">
+        <motion.div
+          className="grid gap-8 lg:grid-cols-2"
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: '-40px' }}
+          transition={{ duration: 0.4 }}
+        >
 
           {/* My Contests */}
           <section>
@@ -599,8 +773,8 @@ export default function ContestsPage() {
             />
             {myError && <ErrorBanner message={myError} />}
             {myLoading ? (
-              <div className="flex justify-center py-8">
-                <Loader message="Loading" submessage="Fetching your contests..." />
+              <div className="space-y-2">
+                {Array.from({ length: 3 }).map((_, i) => <MyContestSkeleton key={i} />)}
               </div>
             ) : myContests.length === 0 ? (
               <EmptyState
@@ -633,7 +807,7 @@ export default function ContestsPage() {
                               c.status === 'running'
                                 ? 'var(--success, #22c55e)'
                                 : c.status === 'upcoming'
-                                  ? 'var(--brand)'
+                                  ? 'var(--primary)'
                                   : 'var(--text-tertiary)',
                           }}
                         >
@@ -671,9 +845,7 @@ export default function ContestsPage() {
             )}
             {lbError && <ErrorBanner message={lbError} />}
             {lbLoading ? (
-              <div className="flex justify-center py-8">
-                <Loader message="Loading" submessage="Fetching leaderboard..." />
-              </div>
+              <LeaderboardSkeleton />
             ) : leaderboard.length === 0 ? (
               <EmptyState
                 icon={<Trophy className="h-6 w-6" />}
@@ -758,10 +930,15 @@ export default function ContestsPage() {
               </>
             )}
           </section>
-        </div>
+        </motion.div>
 
         {/* ── Past Contests (collapsible) ───────────────────────────────────── */}
-        <section>
+        <motion.section
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: '-40px' }}
+          transition={{ duration: 0.4 }}
+        >
           <button
             type="button"
             onClick={handlePastToggle}
@@ -772,7 +949,7 @@ export default function ContestsPage() {
             }}
           >
             <div className="flex items-center gap-2">
-              <History className="h-5 w-5" style={{ color: 'var(--brand)' }} />
+              <History className="h-5 w-5" style={{ color: 'var(--primary)' }} />
               <span className="font-semibold" style={{ color: 'var(--text-primary)' }}>
                 Past Contests
               </span>
@@ -794,8 +971,8 @@ export default function ContestsPage() {
             <div className="mt-3">
               {pastError && <ErrorBanner message={pastError} />}
               {pastLoading ? (
-                <div className="flex justify-center py-8">
-                  <Loader message="Loading" submessage="Fetching past contests..." />
+                <div className="space-y-2">
+                  {Array.from({ length: 3 }).map((_, i) => <PastContestSkeleton key={i} />)}
                 </div>
               ) : pastContests.length === 0 ? (
                 <EmptyState
@@ -806,7 +983,7 @@ export default function ContestsPage() {
                     <Link
                       href="/problems"
                       className="inline-flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-semibold hover:opacity-90"
-                      style={{ background: 'var(--brand)', color: '#fff' }}
+                      style={{ background: 'var(--primary)', color: '#fff' }}
                     >
                       <Target className="h-4 w-4" />
                       Practice problems
@@ -829,7 +1006,7 @@ export default function ContestsPage() {
               )}
             </div>
           )}
-        </section>
+        </motion.section>
       </div>
 
       <Footer />
