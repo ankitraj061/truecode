@@ -6,8 +6,8 @@ export default function TermsPage() {
         <p className="text-sm text-[var(--text-muted)] mb-10">Effective Date: 16 November 2025</p>
 
         <p className="text-[var(--text-secondary)] mb-8 leading-relaxed">
-          These Terms and Conditions ("Terms") govern your use of the TrueCode platform ("Site"). By
-          using TrueCode, you agree to these Terms.
+          These Terms and Conditions (&quot;Terms&quot;) govern your use of the TrueCode platform
+(&quot;Site&quot;). By using TrueCode, you agree to these Terms.
         </p>
 
         <section className="mb-8">
@@ -65,8 +65,8 @@ export default function TermsPage() {
         <section className="mb-8">
           <h2 className="text-xl font-semibold text-[var(--text-primary)] mb-3">6. Limitation of Liability</h2>
           <p className="text-[var(--text-secondary)] leading-relaxed">
-            TrueCode is provided on an "as-is" basis. We are not liable for consequential damages
-            resulting from use of the Site.
+            TrueCode is provided on an &quot;as-is&quot; basis. We are not liable for consequential damages
+resulting from use of the Site.
           </p>
         </section>
 

@@ -5,10 +5,11 @@ export default function PrivacyPage() {
         <h1 className="text-3xl font-bold text-[var(--text-primary)] mb-2">Privacy Policy</h1>
         <p className="text-sm text-[var(--text-muted)] mb-10">Effective Date: 16 November 2025</p>
 
-        <p className="text-[var(--text-secondary)] mb-8 leading-relaxed">
-          This Privacy Policy explains how TrueCode ("we", "us", or "our") collects, uses, and protects
-          personal information you provide to us via our website, platform, and related services ("Site").
-        </p>
+       <p className="text-[var(--text-secondary)] mb-8 leading-relaxed">
+  This Privacy Policy explains how TrueCode (&ldquo;we&rdquo;, &ldquo;us&rdquo;, or &ldquo;our&rdquo;)
+  collects, uses, and protects personal information you provide to us via our website, platform,
+  and related services (&ldquo;Site&rdquo;).
+</p>
 
         <section className="mb-8">
           <h2 className="text-xl font-semibold text-[var(--text-primary)] mb-3">What Information We Collect</h2>

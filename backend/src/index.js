@@ -100,13 +100,16 @@ app.use((err, req, res, _next) => {
     res.status(500).json({ success: false, error: 'Internal server error' });
 });
 
+const PORT = process.env.PORT || 8000;
+
+
 const InitializeConnection = async()=>{
     try{
         await main();
         connectRedis().catch(err => console.warn('Redis unavailable, continuing without cache:', err.message));
-        app.listen(process.env.PORT , () => {
-            console.log(`Server running on port ${process.env.PORT}`);
-        });
+        app.listen(PORT, () => {
+    console.log(`Server running on port ${PORT}`);
+});
     }
     catch(err){
         console.error('Failed to start server:', err);
