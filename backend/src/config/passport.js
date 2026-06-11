@@ -6,11 +6,22 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 
-passport.use(new GoogleStrategy({
-    clientID: process.env.GOOGLE_CLIENT_ID,
-    clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-    callbackURL: `${process.env.BACKEND_URL}/api/auth/google/callback`
-}, async (accessToken, refreshToken, profile, done) => {
+console.log("GOOGLE_CLIENT_ID =", process.env.GOOGLE_CLIENT_ID);
+console.log("GOOGLE_CLIENT_SECRET exists =", !!process.env.GOOGLE_CLIENT_SECRET);
+console.log("BACKEND_URL =", process.env.BACKEND_URL);
+
+
+const config = {
+  clientID: process.env.GOOGLE_CLIENT_ID,
+  clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+  callbackURL: `${process.env.BACKEND_URL}/api/auth/google/callback`
+};
+
+console.log("Google Strategy Config:", config);
+
+passport.use(new GoogleStrategy(
+  config,
+  async (accessToken, refreshToken, profile, done) => {
     try {
         // Check if user already exists with this Google ID
         let existingUser = await User.findOne({ googleId: profile.id });
