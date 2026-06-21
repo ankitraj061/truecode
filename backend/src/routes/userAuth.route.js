@@ -4,9 +4,10 @@ const authRouter = express.Router();
 import { userMiddleware } from "../middlewares/userMiddleware.js";
 import { adminMiddleware } from "../middlewares/adminMiddleware.js";
 import  { checkAuth } from "../middlewares/checkAuthMiddleware.js";
+import { rateLimit } from "../middlewares/ipRateLimitMiddleware.js";
 
-authRouter.post('/register',register);
-authRouter.post('/login',login);
+authRouter.post('/register', rateLimit, register);
+authRouter.post('/login', rateLimit, login);
 authRouter.get('/check',checkAuth,checkAuthFunction);
 authRouter.post('/logout',checkAuth,logout);
 authRouter.post('/admin/register', adminMiddleware,adminRegister);

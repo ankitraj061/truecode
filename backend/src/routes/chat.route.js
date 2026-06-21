@@ -3,11 +3,12 @@ const router = express.Router();
 import chatController from '../controllers/chat.controller.js';
 import { validateChatRequest } from '../middlewares/chatValidator.js';
 import { userMiddleware } from '../middlewares/userMiddleware.js';
+import { rateLimit } from '../middlewares/ipRateLimitMiddleware.js';
 
 // Send chat message (public or authenticated)
 router.post(
   '/problem/:problemId',
-//   chatRateLimiter,
+  rateLimit,
   validateChatRequest,
   chatController.sendMessage
 );

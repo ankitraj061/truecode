@@ -20,8 +20,11 @@ export const discussionRateLimitMiddleware = async (req, res, next) => {
         }
         
         // Increment counter - always pass string to Redis
+        // NOTE: redisClient is the @upstash/redis SDK — lowercase `setex`,
+        // not node-redis's camelCase `setEx` (which silently doesn't exist
+        // here and previously made this limiter a no-op).
         const newCount = String(countAsNumber + 1);
-        await redisClient.setEx(redisKey, 3600, newCount); // 1 hour expiry
+        await redisClient.setex(redisKey, 3600, newCount); // 1 hour expiry
         
         next();
     } catch (error) {

@@ -105,8 +105,8 @@ export default function ContestNavbar() {
             error: {
               success: false,
               error: e.response?.data?.error || 'Compilation Error',
-              compilationError: e.response?.data?.compilationError || e.response?.data?.message,
-              message: e.response?.data?.message || 'Run failed',
+              compilationError: e.response?.data?.compilationError,
+              message: e.response?.data?.error || e.response?.data?.message || 'Run failed',
             },
           },
         })

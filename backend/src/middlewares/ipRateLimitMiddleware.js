@@ -51,7 +51,7 @@ export const ipRateLimitMiddleware = async (req, res, next) => {
 
 
 // simple sliding window rate limiter - 60 requests per hour
-const rateLimit = async (req, res, next) => {
+export const rateLimit = async (req, res, next) => {
   const key = `rate:${req.ip}`;
   const now = Date.now();
   const windowMs = 3600 * 1000;
@@ -59,9 +59,13 @@ const rateLimit = async (req, res, next) => {
   const maxRequests = 60;
 
   try {
-    await redisClient.zRemRangeByScore(key, 0, windowStart);
+    // NOTE: this app's redisClient is the @upstash/redis REST SDK, whose
+    // commands are lowercase (zadd/zcard/zremrangebyscore), not the
+    // camelCase node-redis v4 API. Using the wrong casing here silently
+    // throws and the limiter never enforces anything.
+    await redisClient.zremrangebyscore(key, 0, windowStart);
 
-    const count = await redisClient.zCard(key);
+    const count = await redisClient.zcard(key);
 
     if (count >= maxRequests) {
       return res.status(429).json({
@@ -70,21 +74,21 @@ const rateLimit = async (req, res, next) => {
       });
     }
 
-    await redisClient.zAdd(key, [
-      { score: now, value: Math.random().toString() }
-    ]);
+    await redisClient.zadd(key, { score: now, member: Math.random().toString() });
 
     await redisClient.expire(key, 3600);
 
     next();
   } catch (err) {
-    res.status(500).json({ error: "Internal Server Error" });
+    // Don't block the request if rate limiting fails (e.g. Redis blip) —
+    // matches the fail-open behavior of every other limiter in this app.
+    next();
   }
 };
 
 
 // Simple cooldown mechanism - 1 request every 10 seconds
-const rateLimitfor10sec = async (req, res, next) => {
+export const rateLimitfor10sec = async (req, res, next) => {
   const key = `lastreq:${req.ip}`;
   const cooldown = 10; // seconds
   const now = Math.floor(Date.now() / 1000);
@@ -100,11 +104,13 @@ const rateLimitfor10sec = async (req, res, next) => {
       });
     }
 
-    // store timestamp + auto-expire
-    await redisClient.set(key, now, { EX: cooldown });
+    // store timestamp + auto-expire (lowercase `ex` — see note above)
+    await redisClient.set(key, now, { ex: cooldown });
 
     next();
   } catch (err) {
-    res.status(500).json({ error: "Internal Server Error" });
+    // Don't block the request if rate limiting fails (e.g. Redis blip) —
+    // matches the fail-open behavior of every other limiter in this app.
+    next();
   }
 };

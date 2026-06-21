@@ -4,7 +4,7 @@ import type { Problem, UserStatus, ProblemState } from "./types";
 import { AxiosError } from "axios";
 
 interface ApiError {
-  message: string;
+  error: string;
   statusCode: number;
   requiresSubscription?: boolean;
 }
@@ -33,7 +33,7 @@ export const getProblem = createAsyncThunk<
     } catch (err) {
       const error = err as AxiosError<ApiError>;
       const message =
-        error.response?.data?.message || "Something went wrong";
+        error.response?.data?.error || "Something went wrong";
       
       // Check for premium error in the response data
       if (error.response?.data?.requiresSubscription) {
