@@ -11,7 +11,7 @@ export const registerUser = createAsyncThunk(
             return response.data.user;
         } catch (err) {
   const error = err as AxiosError<ApiError>;
-  return rejectWithValue(error.response?.data?.message ?? "Something went wrong");
+  return rejectWithValue(error.response?.data?.error ?? "Something went wrong");
 }
 
     }
@@ -25,7 +25,7 @@ export const loginUser = createAsyncThunk(
             return response.data.user;
         } catch (err) {
   const error = err as AxiosError<ApiError>;
-  return rejectWithValue(error.response?.data?.message ?? "Something went wrong");
+  return rejectWithValue(error.response?.data?.error ?? "Something went wrong");
 }
 
     }
@@ -39,7 +39,7 @@ export const checkAuth = createAsyncThunk(
             return response.data.user;
        } catch (err) {
   const error = err as AxiosError<ApiError>;
-  return rejectWithValue(error.response?.data?.message ?? "Something went wrong");
+  return rejectWithValue(error.response?.data?.error ?? "Something went wrong");
 }
 
     }
@@ -53,7 +53,7 @@ export const logoutUser = createAsyncThunk(
             return null;
         } catch (err) {
   const error = err as AxiosError<ApiError>;
-  return rejectWithValue(error.response?.data?.message ?? "Something went wrong");
+  return rejectWithValue(error.response?.data?.error ?? "Something went wrong");
 }
 
     }

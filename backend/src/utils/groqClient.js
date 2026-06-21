@@ -3,16 +3,29 @@ import groqConfig from "../config/groq.config.js";
 
 class GroqClient {
   constructor() {
-    this.client = new Groq({
-      apiKey: groqConfig.apiKey,
-      timeout: groqConfig.timeout,
-      maxRetries: groqConfig.maxRetries,
-    });
+    this.client = null;
+  }
+
+  getClient() {
+    if (!this.client) {
+      if (!groqConfig.apiKey?.trim()) {
+        throw new Error('Groq API key is not configured');
+      }
+
+      this.client = new Groq({
+        apiKey: groqConfig.apiKey,
+        timeout: groqConfig.timeout,
+        maxRetries: groqConfig.maxRetries,
+      });
+    }
+
+    return this.client;
   }
 
   async createChatCompletion(messages, options = {}) {
     try {
-      const completion = await this.client.chat.completions.create({
+      const client = this.getClient();
+      const completion = await client.chat.completions.create({
         messages,
         model: options.model || groqConfig.model,
         temperature: options.temperature || groqConfig.temperature,

@@ -2,6 +2,7 @@
 import type { Metadata } from "next/types";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import { Toaster } from "sonner";
 import { Providers } from "./providers/Providers";
 import NavbarWrapper from "./components/NavbarWrapper"; // 👈 client wrapper
 
@@ -27,6 +28,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <Providers>
           <NavbarWrapper /> {/* Handles conditional hide */}
           {children}
+          <Toaster richColors position="top-center" />
         </Providers>
       </body>
     </html>

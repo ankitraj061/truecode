@@ -1,7 +1,6 @@
+import 'dotenv/config.js';
 import express from 'express';
 import cors from 'cors';
-import dotenv from 'dotenv';
-dotenv.config();
 const app = express();
 import main from './config/db.js'
 import cookieParser from 'cookie-parser';
@@ -78,6 +77,7 @@ app.use('/api/user', userPointsRouter);
 app.use('/api/redeem', userRedemptionRouter);
 app.use('/api/admin/redemptions', adminRedemptionRouter);
 app.use('/health', (_req, res) => res.send('OK'));
+app.use('/', (_req, res) => res.send('Welcome to the API'));
 
 // Global error handler — must be after all routes
 app.use((err, req, res, _next) => {

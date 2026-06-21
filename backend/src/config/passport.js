@@ -1,31 +1,67 @@
-import passport from 'passport';
-import { Strategy as GoogleStrategy } from 'passport-google-oauth20';
-import User from '../models/user.js';
-import { generateUsername } from '../utils/validator.js';
 import dotenv from 'dotenv';
+
 dotenv.config();
 
+let passportInstance;
+let UserModel;
+let generateUsernameFn;
 
-console.log("GOOGLE_CLIENT_ID =", process.env.GOOGLE_CLIENT_ID);
-console.log("GOOGLE_CLIENT_SECRET exists =", !!process.env.GOOGLE_CLIENT_SECRET);
-console.log("BACKEND_URL =", process.env.BACKEND_URL);
+const loadDependencies = async () => {
+    if (!passportInstance) {
+        const passportModule = await import('passport');
+        passportInstance = passportModule.default;
+    }
 
+    if (!UserModel) {
+        const userModule = await import('../models/user.js');
+        UserModel = userModule.default;
+    }
 
-const config = {
-  clientID: process.env.GOOGLE_CLIENT_ID,
-  clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-  callbackURL: `${process.env.BACKEND_URL}/api/auth/google/callback`
+    if (!generateUsernameFn) {
+        const validatorModule = await import('../utils/validator.js');
+        generateUsernameFn = validatorModule.generateUsername;
+    }
+
+    return {
+        passport: passportInstance,
+        User: UserModel,
+        generateUsername: generateUsernameFn
+    };
 };
 
-console.log("Google Strategy Config:", config);
+const strategyRegistrationKey = Symbol.for('truecode.google.strategy.registered');
 
-passport.use(new GoogleStrategy(
-  config,
-  async (accessToken, refreshToken, profile, done) => {
+const getGoogleStrategyConfig = () => {
+  const clientID = process.env.GOOGLE_CLIENT_ID?.trim();
+  const clientSecret = process.env.GOOGLE_CLIENT_SECRET?.trim();
+  const backendUrl = process.env.BACKEND_URL?.trim() || process.env.BACKEND_URL || 'http://localhost:8000';
+
+  console.log('GOOGLE_CLIENT_ID =', clientID);
+  console.log('GOOGLE_CLIENT_SECRET exists =', Boolean(clientSecret));
+  console.log('BACKEND_URL =', backendUrl);
+
+  const config = {
+    clientID,
+    clientSecret,
+    callbackURL: `${backendUrl}/api/auth/google/callback`
+  };
+
+  console.log('Google Strategy Config:', config);
+
+  if (!clientID || !clientSecret) {
+    throw new Error('Google OAuth configuration is incomplete. Check GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET.');
+  }
+
+  return config;
+};
+
+const verifyGoogleUser = async (accessToken, refreshToken, profile, done) => {
     try {
+        const { User, generateUsername } = await loadDependencies();
+
         // Check if user already exists with this Google ID
         let existingUser = await User.findOne({ googleId: profile.id });
-        
+
         if (existingUser) {
             // Update login tracking
             existingUser.lastLoginAt = new Date();
@@ -36,7 +72,7 @@ passport.use(new GoogleStrategy(
 
         // Check if user exists with same email (link accounts)
         let existingEmailUser = await User.findOne({ emailId: profile.emails[0].value });
-        
+
         if (existingEmailUser) {
             // Link Google account to existing user
             existingEmailUser.googleId = profile.id;
@@ -51,7 +87,7 @@ passport.use(new GoogleStrategy(
 
         // Create new user with Google account
         const username = await generateUsername(profile.name.givenName);
-        
+
         const newUser = await User.create({
             googleId: profile.id,
             firstName: profile.name.givenName,
@@ -68,23 +104,57 @@ passport.use(new GoogleStrategy(
         });
 
         return done(null, newUser);
-        
     } catch (error) {
         return done(error, null);
     }
-}));
+};
 
-passport.serializeUser((user, done) => {
-    done(null, user._id);
-});
+const registerGoogleStrategy = async () => {
+    if (globalThis[strategyRegistrationKey]) {
+        return true;
+    }
 
-passport.deserializeUser(async (id, done) => {
     try {
-        const user = await User.findById(id);
-        done(null, user);
+        const { passport, User } = await loadDependencies();
+        const { Strategy: GoogleStrategy } = await import('passport-google-oauth20');
+        const config = getGoogleStrategyConfig();
+        passport.use('google', new GoogleStrategy(config, verifyGoogleUser));
+        passport.serializeUser((user, done) => {
+            done(null, user._id);
+        });
+
+        passport.deserializeUser(async (id, done) => {
+            try {
+                const user = await User.findById(id);
+                done(null, user);
+            } catch (error) {
+                done(error, null);
+            }
+        });
+
+        globalThis[strategyRegistrationKey] = true;
+        return true;
     } catch (error) {
-        done(error, null);
+        console.error('Failed to initialize Google OAuth strategy:', error.message);
+        return false;
+    }
+};
+
+const passportProxy = new Proxy({}, {
+    get(_target, prop) {
+        if (!passportInstance) {
+            throw new Error('Passport has not been initialized yet.');
+        }
+
+        const value = passportInstance[prop];
+        return typeof value === 'function' ? value.bind(passportInstance) : value;
+    },
+    set(_target, prop, value) {
+        passportInstance = passportInstance || {};
+        passportInstance[prop] = value;
+        return true;
     }
 });
 
-export default passport;
+export { registerGoogleStrategy };
+export default passportProxy;

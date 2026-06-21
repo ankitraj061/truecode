@@ -5,36 +5,65 @@ import jwt from "jsonwebtoken";
 import { redisClient } from "../config/redis.js";
 import Submission from "../models/submission.js";
 import { generateUsername } from "../utils/validator.js";
-import passport from "../config/passport.js";
 import dotenv from "dotenv";
 dotenv.config();
+
+let passportInstance;
+let registerGoogleStrategyFn;
+
+const loadPassportModule = async () => {
+    if (!passportInstance || !registerGoogleStrategyFn) {
+        const passportModule = await import("../config/passport.js");
+        passportInstance = passportModule.default;
+        registerGoogleStrategyFn = passportModule.registerGoogleStrategy;
+    }
+
+    return {
+        passport: passportInstance,
+        registerGoogleStrategy: registerGoogleStrategyFn
+    };
+};
 
 const AUTH_COOKIE_OPTIONS = {
     maxAge: 7 * 24 * 60 * 60 * 1000,
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
-    sameSite: 'lax'
+    sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax'
 };
 
 
 
 
-export const googleAuth = (req, res, next) => {
-    passport.authenticate('google', { 
-        scope: ['profile', 'email'] 
+export const googleAuth = async (req, res, next) => {
+    const { passport, registerGoogleStrategy } = await loadPassportModule();
+    const initialized = await registerGoogleStrategy();
+
+    if (!initialized) {
+        return res.status(503).json({ success: false, error: 'Google OAuth is currently unavailable.' });
+    }
+
+    passport.authenticate('google', {
+        scope: ['profile', 'email']
     })(req, res, next);
 };
 
 export const googleCallback = async (req, res, next) => {
-    passport.authenticate('google', { 
-        failureRedirect: `${process.env.FRONTEND_URL}/` 
+    const { passport, registerGoogleStrategy } = await loadPassportModule();
+    const initialized = await registerGoogleStrategy();
+
+    if (!initialized) {
+        return res.redirect(`${process.env.FRONTEND_URL || 'http://localhost:3000'}/login?error=oauth_unavailable`);
+    }
+
+    passport.authenticate('google', {
+        failureRedirect: `${process.env.FRONTEND_URL || 'http://localhost:3000'}/`
     }, async (err, user) => {
         if (err) {
-            return res.redirect(`${process.env.FRONTEND_URL}/`);
+            return res.redirect(`${process.env.FRONTEND_URL || 'http://localhost:3000'}/`);
         }
         
         if (!user) {
-            return res.redirect(`${process.env.FRONTEND_URL}/`);
+            return res.redirect(`${process.env.FRONTEND_URL || 'http://localhost:3000'}/`);
         }
 
         try {
@@ -67,10 +96,10 @@ export const googleCallback = async (req, res, next) => {
             res.cookie('token', token, AUTH_COOKIE_OPTIONS);
 
             // Redirect to frontend dashboard
-            res.redirect(`${process.env.FRONTEND_URL}/`);
+            res.redirect(`${process.env.FRONTEND_URL || 'http://localhost:3000'}/`);
             
         } catch (error) {
-            res.redirect(`${process.env.FRONTEND_URL}/login?error=server_error`);
+            res.redirect(`${process.env.FRONTEND_URL || 'http://localhost:3000'}/login?error=server_error`);
         }
     })(req, res, next);
 };

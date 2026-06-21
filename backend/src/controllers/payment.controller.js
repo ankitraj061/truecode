@@ -5,10 +5,20 @@ import User from '../models/user.js';
 import dotenv from 'dotenv';
 dotenv.config();
 
-const razorpay = new Razorpay({
-  key_id: process.env.RAZORPAY_KEY_ID,
-  key_secret: process.env.RAZORPAY_KEY_SECRET
-});
+const isRazorpayConfigured = () => Boolean(
+  process.env.RAZORPAY_KEY_ID?.trim() && process.env.RAZORPAY_KEY_SECRET?.trim()
+);
+
+const getRazorpayClient = () => {
+  if (!isRazorpayConfigured()) {
+    throw new Error('Razorpay is not configured');
+  }
+
+  return new Razorpay({
+    key_id: process.env.RAZORPAY_KEY_ID,
+    key_secret: process.env.RAZORPAY_KEY_SECRET
+  });
+};
 
 // Configure your plan amounts (in paise) and durations (days)
 const PLANS = {
@@ -24,14 +34,16 @@ export const createOrder = async (req, res) => {
     if (!userId) return res.status(401).json({ message: 'Unauthorized' });
     if (!PLANS[plan]) return res.status(400).json({ message: 'Invalid plan' });
 
+    if (!isRazorpayConfigured()) {
+      return res.status(503).json({ success: false, message: 'Payment gateway is not configured' });
+    }
+
     const { amount } = PLANS[plan];
-const generateShortReceipt = (userId) => {
-  const timestamp = Date.now().toString().slice(-6); // Last 6 digits
-  const userIdShort = userId.toString().slice(-8); // Convert ObjectId to string first
-  return `${userIdShort}_${timestamp}`; // Format: abcdef12_123456 (15 chars)
-};
-
-
+    const generateShortReceipt = (userId) => {
+      const timestamp = Date.now().toString().slice(-6); // Last 6 digits
+      const userIdShort = userId.toString().slice(-8); // Convert ObjectId to string first
+      return `${userIdShort}_${timestamp}`; // Format: abcdef12_123456 (15 chars)
+    };
 
     const options = {
       amount, // in paise
@@ -40,6 +52,7 @@ const generateShortReceipt = (userId) => {
       payment_capture: 1
     };
 
+    const razorpay = getRazorpayClient();
     const order = await razorpay.orders.create(options);
 
     // Save payment record
@@ -72,6 +85,10 @@ export const verifyPayment = async (req, res) => {
       razorpay_signature,
       plan
     } = req.body;
+
+    if (!process.env.RAZORPAY_KEY_SECRET?.trim()) {
+      return res.status(503).json({ success: false, message: 'Payment verification is not configured' });
+    }
 
     // verify signature using key_secret
     const expectedSignature = crypto
@@ -116,8 +133,12 @@ export const verifyPayment = async (req, res) => {
 // Webhook handler — use express.raw for body (see below)
 export const webhookHandler = async (req, res) => {
   try {
-    const webhookSecret = process.env.RAZORPAY_WEBHOOK_SECRET;
+    const webhookSecret = process.env.RAZORPAY_WEBHOOK_SECRET?.trim();
     const signature = req.headers['x-razorpay-signature'];
+
+    if (!webhookSecret) {
+      return res.status(503).send('Webhook is not configured');
+    }
 
     // req.body here is the **raw** body (Buffer) because route will use express.raw
     const body = req.body; // Buffer

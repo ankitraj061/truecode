@@ -4,9 +4,11 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useDispatch, useSelector } from 'react-redux';
+import { toast } from 'sonner';
 import { loginUser } from '@/app/slices/authSlice';
 import { RootState, AppDispatch } from '@/app/store/store';
 import { BorderBeam } from '@/components/ui/border-beam';
+import Footer from '@/app/components/Footer';
 const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000';
 
 export default function LoginPageContent() {
@@ -19,7 +21,6 @@ export default function LoginPageContent() {
     emailId: '',
     password: ''
   });
-  const [formError, setFormError] = useState('');
   const [rememberMe, setRememberMe] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -47,7 +48,6 @@ export default function LoginPageContent() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setFormError('');
     setIsSubmitting(true);
 
     try {
@@ -66,22 +66,23 @@ export default function LoginPageContent() {
           router.push('/');
         }
       } else if (loginUser.rejected.match(result)) {
-        setFormError(
+        const message =
           typeof result.payload === 'string'
             ? result.payload
             : (result.payload && typeof (result.payload as { error?: string }).error === 'string'
                 ? (result.payload as { error?: string }).error || 'Login failed'
-                : 'Login failed')
-        );
+                : 'Login failed');
+        toast.error(message);
         setIsSubmitting(false);
       }
     } catch (err) {
-      setFormError('An unexpected error occurred');
+      toast.error('An unexpected error occurred');
       setIsSubmitting(false);
     }
   };
 
   return (
+    <>
     <div className="min-h-screen bg-primary flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 relative overflow-hidden">
       {/* Animated Background Elements */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
@@ -93,17 +94,6 @@ export default function LoginPageContent() {
       <div className="max-w-md w-full relative z-10">
         {/* Header with enhanced animation */}
         <div className="text-center mb-8 animate-fade-in-down">
-          <div className="flex justify-center mb-4">
-            <Link
-              href="/"
-              className="inline-flex items-center gap-1.5 text-xs text-secondary hover:text-brand transition-colors duration-200 group"
-            >
-              <svg className="w-3.5 h-3.5 group-hover:-translate-x-0.5 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-              </svg>
-              Back to home
-            </Link>
-          </div>
           <div className="mx-auto w-12 h-12 bg-brand rounded-xl flex items-center justify-center mb-4 shadow-lg hover:scale-110 transition-transform duration-300 hover:rotate-3 cursor-pointer">
             <span className="text-white text-xl font-bold">TC</span>
           </div>
@@ -154,18 +144,6 @@ export default function LoginPageContent() {
               <div className="absolute inset-0 border-t border-brand/20 animate-pulse"></div>
             </div>
           </div>
-
-          {/* Error Message with animation */}
-          {formError && (
-            <div className="mb-4 p-3 bg-error-light border border-error rounded-lg animate-shake">
-              <p className="text-error text-sm flex items-center gap-2">
-                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-                </svg>
-                {formError}
-              </p>
-            </div>
-          )}
 
           {/* Login Form with enhanced inputs */}
           <form onSubmit={handleSubmit} className="space-y-5">
@@ -296,5 +274,7 @@ export default function LoginPageContent() {
       </div>
 
     </div>
+    <Footer />
+    </>
   );
 }

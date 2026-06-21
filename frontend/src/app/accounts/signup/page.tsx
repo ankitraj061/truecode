@@ -4,16 +4,31 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useDispatch, useSelector } from 'react-redux';
+import { toast } from 'sonner';
 import { registerUser, checkAuth } from '@/app/slices/authSlice';
 import { RootState, AppDispatch } from '@/app/store/store';
 import { BorderBeam } from '@/components/ui/border-beam';
+import Footer from '@/app/components/Footer';
 const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000';
 
-interface SignupFormData { 
-  firstName: string; 
-  lastName: string; 
-  emailId: string; 
-  password: string; 
+interface SignupFormData {
+  firstName: string;
+  lastName: string;
+  emailId: string;
+  password: string;
+}
+
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+// Mirrors the backend's validator.isStrongPassword default rule
+// (min 8 chars, 1 lowercase, 1 uppercase, 1 number, 1 symbol).
+function getPasswordStrengthError(password: string): string | null {
+  if (password.length < 8) return 'Password must be at least 8 characters';
+  if (!/[a-z]/.test(password)) return 'Password must include a lowercase letter';
+  if (!/[A-Z]/.test(password)) return 'Password must include an uppercase letter';
+  if (!/[0-9]/.test(password)) return 'Password must include a number';
+  if (!/[^A-Za-z0-9]/.test(password)) return 'Password must include a symbol (e.g. !@#$%)';
+  return null;
 }
 
 // Define the error payload interface
@@ -29,7 +44,6 @@ export default function SignupPageContent() {
     password: '',
     confirmPassword: ''
   });
-  const [formError, setFormError] = useState('');
 
   useEffect(() => {
     if (isInitialized && isAuthenticated) {
@@ -51,34 +65,62 @@ export default function SignupPageContent() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setFormError('');
 
-    if (formData.password !== formData.confirmPassword) {
-      setFormError('Passwords do not match');
+    const firstName = formData.firstName.trim();
+    const lastName = formData.lastName.trim();
+    const emailId = formData.emailId.trim();
+    const { password, confirmPassword } = formData;
+
+    if (!firstName) {
+      toast.error('First name is required');
       return;
     }
-
-    if (formData.password.length < 6) {
-      setFormError('Password must be at least 6 characters');
+    if (!lastName) {
+      toast.error('Last name is required');
+      return;
+    }
+    if (!emailId) {
+      toast.error('Email is required');
+      return;
+    }
+    if (!EMAIL_REGEX.test(emailId)) {
+      toast.error('Enter a valid email address');
+      return;
+    }
+    if (!password) {
+      toast.error('Password is required');
+      return;
+    }
+    const passwordError = getPasswordStrengthError(password);
+    if (passwordError) {
+      toast.error(passwordError);
+      return;
+    }
+    if (!confirmPassword) {
+      toast.error('Please confirm your password');
+      return;
+    }
+    if (password !== confirmPassword) {
+      toast.error('Passwords do not match');
       return;
     }
 
     try {
       const userData: SignupFormData = {
-        firstName: formData.firstName,
-        lastName: formData.lastName,
-        emailId: formData.emailId,
-        password: formData.password,
+        firstName,
+        lastName,
+        emailId,
+        password,
       };
 
       const result = await dispatch(registerUser(userData));
-      
+
       if (registerUser.rejected.match(result)) {
         const payload = result.payload;
-        setFormError(typeof payload === 'string' ? payload : 'Registration failed');
+        toast.error(typeof payload === 'string' ? payload : 'Registration failed');
       }
     } catch (err) {
-      setFormError('An unexpected error occurred');
+      toast.error('An unexpected error occurred');
     }
   };
 
@@ -95,6 +137,7 @@ export default function SignupPageContent() {
   }
 
   return (
+    <>
     <div className="min-h-screen bg-primary flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 relative overflow-hidden">
       {/* Animated Background Elements */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
@@ -145,24 +188,14 @@ export default function SignupPageContent() {
             </div>
           </div>
 
-          {/* Error Messages with animation */}
-          {(error || formError) && (
-            <div className="mb-4 p-3 bg-error-light border border-error rounded-lg animate-shake">
-              <p className="text-error text-sm flex items-center gap-2">
-                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-                </svg>
-                {formError || error}
-              </p>
-            </div>
-          )}
+        
 
           {/* Signup Form with enhanced inputs */}
           <form onSubmit={handleSubmit} className="space-y-5">
             <div className="grid grid-cols-2 gap-4">
               <div className="group">
                 <label htmlFor="firstName" className="block text-sm font-medium text-primary mb-1 group-focus-within:text-brand transition-colors duration-200">
-                  First Name
+                  First Name <span className="text-error">*</span>
                 </label>
                 <div className="relative">
                   <input
@@ -181,13 +214,14 @@ export default function SignupPageContent() {
               </div>
               <div className="group">
                 <label htmlFor="lastName" className="block text-sm font-medium text-primary mb-1 group-focus-within:text-brand transition-colors duration-200">
-                  Last Name
+                  Last Name <span className="text-error">*</span>
                 </label>
                 <div className="relative">
                   <input
                     id="lastName"
                     name="lastName"
                     type="text"
+                    required
                     value={formData.lastName}
                     onChange={handleInputChange}
                     className="input transition-all duration-300 focus:scale-[1.01] focus:shadow-lg focus:shadow-brand/10 peer"
@@ -201,7 +235,7 @@ export default function SignupPageContent() {
 
             <div className="group">
               <label htmlFor="emailId" className="block text-sm font-medium text-primary mb-1 group-focus-within:text-brand transition-colors duration-200">
-                Email Address
+                Email Address <span className="text-error">*</span>
               </label>
               <div className="relative">
                 <input
@@ -221,7 +255,7 @@ export default function SignupPageContent() {
 
             <div className="group">
               <label htmlFor="password" className="block text-sm font-medium text-primary mb-1 group-focus-within:text-brand transition-colors duration-200">
-                Password
+                Password <span className="text-error">*</span>
               </label>
               <div className="relative">
                 <input
@@ -233,16 +267,19 @@ export default function SignupPageContent() {
                   onChange={handleInputChange}
                   className="input transition-all duration-300 focus:scale-[1.01] focus:shadow-lg focus:shadow-brand/10 peer"
                   placeholder="••••••••"
-                  minLength={6}
+                  minLength={8}
                   disabled={loading}
                 />
                 <div className="absolute bottom-0 left-0 h-[2px] w-0 bg-gradient-to-r from-brand to-brand-hover peer-focus:w-full transition-all duration-500"></div>
               </div>
+              <p className="mt-1 text-xs text-tertiary">
+                8+ characters with uppercase, lowercase, number &amp; symbol.
+              </p>
             </div>
 
             <div className="group">
               <label htmlFor="confirmPassword" className="block text-sm font-medium text-primary mb-1 group-focus-within:text-brand transition-colors duration-200">
-                Confirm Password
+                Confirm Password <span className="text-error">*</span>
               </label>
               <div className="relative">
                 <input
@@ -321,5 +358,7 @@ export default function SignupPageContent() {
       </div>
 
     </div>
+    <Footer />
+    </>
   );
 }
