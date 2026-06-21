@@ -171,7 +171,7 @@ export default function RedeemProducts(): ReactNode {
         } catch { /* silent */ }
         setModalStep('success');
       } else {
-        setRedeemError(res.data.message || 'Failed to place order. Please try again.');
+        setRedeemError(res.data.error || 'Failed to place order. Please try again.');
       }
     } catch (err: unknown) {
       setRedeemError(err instanceof Error ? err.message : 'Failed to place order. Please try again.');

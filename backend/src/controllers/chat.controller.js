@@ -1,4 +1,5 @@
 import chatService from '../services/chat.service.js';
+import { sendError } from '../contracts/apiResponse.js';
 
 class ChatController {
   // Handle chat message
@@ -49,10 +50,7 @@ class ChatController {
       const userId = req.user?.id;
 
       if (!userId) {
-        return res.status(401).json({
-          success: false,
-          error: 'Authentication required'
-        });
+        return sendError(res, 401, 'Authentication required');
       }
 
       const ChatHistory = require('../models/ChatHistory');
@@ -76,10 +74,7 @@ class ChatController {
       const userId = req.user?.id;
 
       if (!userId) {
-        return res.status(401).json({
-          success: false,
-          error: 'Authentication required'
-        });
+        return sendError(res, 401, 'Authentication required');
       }
 
       const ChatHistory = require('../models/ChatHistory');

@@ -1,6 +1,7 @@
 import groqClient from '../utils/groqClient.js';
 import { promptGenerator } from '../utils/promtGenerator.js';
 import Problem from '../models/problem.js';
+import { NotFoundError, ForbiddenError } from '../contracts/apiResponse.js';
 
 
 class ChatService {
@@ -12,13 +13,13 @@ class ChatService {
 
 
     if (!problem) {
-      throw new Error('Problem not found');
+      throw new NotFoundError('Problem not found');
     }
 
 
     // Check if problem is active
     if (!problem.isActive) {
-      throw new Error('This problem is not currently available');
+      throw new ForbiddenError('This problem is not currently available');
     }
 
 

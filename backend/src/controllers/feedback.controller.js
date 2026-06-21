@@ -1,4 +1,5 @@
 import Feedback from '../models/feedback.js';
+import { sendSuccess, sendError } from '../contracts/apiResponse.js';
 
 
 // @desc    Submit feedback
@@ -11,19 +12,13 @@ const submitFeedback = async (req, res) => {
 
     // Validate required fields
     if (!type || !message) {
-      return res.status(400).json({
-        success: false,
-        message: 'Type and message are required'
-      });
+      return sendError(res, 400, 'Type and message are required');
     }
 
     // Validate feedback type
     const validTypes = ['bug', 'suggestion', 'question', 'other'];
     if (!validTypes.includes(type)) {
-      return res.status(400).json({
-        success: false,
-        message: 'Invalid feedback type'
-      });
+      return sendError(res, 400, 'Invalid feedback type');
     }
 
     // Create feedback
@@ -34,17 +29,10 @@ const submitFeedback = async (req, res) => {
       problemSlug: problemSlug || undefined
     });
 
-    res.status(201).json({
-      success: true,
-      message: 'Feedback submitted successfully',
-      data: feedback
-    });
+    sendSuccess(res, feedback, 'Feedback submitted successfully', 201);
 
   } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: 'Server error while submitting feedback'
-    });
+    sendError(res, 500, 'Server error while submitting feedback');
   }
 };
 
@@ -54,21 +42,15 @@ const submitFeedback = async (req, res) => {
 const getUserFeedback = async (req, res) => {
   try {
     const userId = req.user._id;
-    
+
     const feedback = await Feedback.find({ userId })
       .sort({ createdAt: -1 })
       .select('type message problemSlug createdAt');
 
-    res.json({
-      success: true,
-      data: feedback
-    });
+    sendSuccess(res, feedback);
 
   } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: 'Server error while fetching feedback'
-    });
+    sendError(res, 500, 'Server error while fetching feedback');
   }
 };
 

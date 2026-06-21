@@ -3,6 +3,7 @@ import crypto from 'crypto';
 import Payment from '../models/payment.js';
 import User from '../models/user.js';
 import dotenv from 'dotenv';
+import { sendError } from '../contracts/apiResponse.js';
 dotenv.config();
 
 const isRazorpayConfigured = () => Boolean(
@@ -31,11 +32,11 @@ export const createOrder = async (req, res) => {
     // Prefer extracting user id from auth middleware (req.user or req.userId)
     const userId = (req.user && req.user._id) || req.body.userId;
     const { plan } = req.body;
-    if (!userId) return res.status(401).json({ message: 'Unauthorized' });
-    if (!PLANS[plan]) return res.status(400).json({ message: 'Invalid plan' });
+    if (!userId) return sendError(res, 401, 'Unauthorized');
+    if (!PLANS[plan]) return sendError(res, 400, 'Invalid plan');
 
     if (!isRazorpayConfigured()) {
-      return res.status(503).json({ success: false, message: 'Payment gateway is not configured' });
+      return sendError(res, 503, 'Payment gateway is not configured');
     }
 
     const { amount } = PLANS[plan];
@@ -72,7 +73,7 @@ export const createOrder = async (req, res) => {
       key: process.env.RAZORPAY_KEY_ID
     });
   } catch (err) {
-    return res.status(500).json({ success: false, message: 'Order creation failed' });
+    return sendError(res, 500, 'Order creation failed');
   }
 };
 
@@ -87,7 +88,7 @@ export const verifyPayment = async (req, res) => {
     } = req.body;
 
     if (!process.env.RAZORPAY_KEY_SECRET?.trim()) {
-      return res.status(503).json({ success: false, message: 'Payment verification is not configured' });
+      return sendError(res, 503, 'Payment verification is not configured');
     }
 
     // verify signature using key_secret
@@ -97,7 +98,7 @@ export const verifyPayment = async (req, res) => {
       .digest('hex');
 
     if (expectedSignature !== razorpay_signature) {
-      return res.status(400).json({ success: false, message: 'Invalid signature' });
+      return sendError(res, 400, 'Invalid signature');
     }
 
     // update payment record
@@ -126,7 +127,7 @@ export const verifyPayment = async (req, res) => {
 
     return res.json({ success: true, message: 'Payment verified and subscription updated', expiry: newExpiry });
   } catch (err) {
-    return res.status(500).json({ success: false, message: 'Verification failed' });
+    return sendError(res, 500, 'Verification failed');
   }
 };
 

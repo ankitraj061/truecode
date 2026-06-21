@@ -3,6 +3,7 @@ import Problem from "../models/problem.js";
 import Submission from "../models/submission.js";
 import User from "../models/user.js";
 import mongoose from "mongoose";
+import { sendError } from "../contracts/apiResponse.js";
 
 function computeStatus(startTime, endTime) {
     const now = new Date();
@@ -56,7 +57,7 @@ export const listContests = async (req, res) => {
 
         return res.status(200).json({ contests: contestsWithMeta, total });
     } catch (error) {
-        return res.status(500).json({ error: error.message });
+        return sendError(res, 500, error.message);
     }
 };
 
@@ -73,7 +74,7 @@ export const getContest = async (req, res) => {
         const contest = await Contest.findById(contestId)
             .select("title description startTime endTime duration status type participants problems problemScores problemsActivated")
             .lean();
-        if (!contest) return res.status(404).json({ error: "Contest not found" });
+        if (!contest) return sendError(res, 404, "Contest not found");
 
         const status = computeStatus(contest.startTime, contest.endTime);
         const registered = userId && contest.participants?.some((p) => p.userId?.toString() === userId.toString());
@@ -151,7 +152,7 @@ export const getContest = async (req, res) => {
             },
         });
     } catch (error) {
-        return res.status(500).json({ error: error.message });
+        return sendError(res, 500, error.message);
     }
 };
 
@@ -164,11 +165,11 @@ export const registerContest = async (req, res) => {
         const userId = req.user._id;
 
         const contest = await Contest.findById(contestId);
-        if (!contest) return res.status(404).json({ error: "Contest not found" });
+        if (!contest) return sendError(res, 404, "Contest not found");
 
         const status = computeStatus(contest.startTime, contest.endTime);
         if (status !== "upcoming")
-            return res.status(400).json({ error: "Registration is only open for upcoming contests" });
+            return sendError(res, 400, "Registration is only open for upcoming contests");
 
         const already = contest.participants?.some((p) => p.userId?.toString() === userId.toString());
         if (already) return res.status(200).json({ message: "Already registered", registered: true });
@@ -183,7 +184,7 @@ export const registerContest = async (req, res) => {
         await contest.save();
         return res.status(200).json({ message: "Registered successfully", registered: true });
     } catch (error) {
-        return res.status(500).json({ error: error.message });
+        return sendError(res, 500, error.message);
     }
 };
 
@@ -201,7 +202,7 @@ export const getLeaderboard = async (req, res) => {
         const limitNum = Math.max(1, Math.min(100, parseInt(limit, 10)));
 
         const contest = await Contest.findById(contestId).lean();
-        if (!contest) return res.status(404).json({ error: "Contest not found" });
+        if (!contest) return sendError(res, 404, "Contest not found");
 
         const problemIds = (contest.problems || []).map((p) => p.toString());
         const scoreMap = {};
@@ -279,7 +280,7 @@ export const getLeaderboard = async (req, res) => {
 
         return res.status(200).json({ leaderboard: leaderboardWithNames, total });
     } catch (error) {
-        return res.status(500).json({ error: error.message });
+        return sendError(res, 500, error.message);
     }
 };
 
@@ -293,16 +294,16 @@ export const getContestProblem = async (req, res) => {
         const userId = req.user._id;
 
         const contest = await Contest.findById(contestId).lean();
-        if (!contest) return res.status(404).json({ error: "Contest not found" });
+        if (!contest) return sendError(res, 404, "Contest not found");
         const problemIds = (contest.problems || []).map((p) => p.toString());
         if (!problemIds.includes(problemId))
-            return res.status(404).json({ error: "Problem not in this contest" });
+            return sendError(res, 404, "Problem not in this contest");
 
         const status = computeStatus(contest.startTime, contest.endTime);
         const ended = status === "ended";
 
         const problem = await Problem.findById(problemId).lean();
-        if (!problem) return res.status(404).json({ error: "Problem not found" });
+        if (!problem) return sendError(res, 404, "Problem not found");
 
         const problemPayload = {
             _id: problem._id,
@@ -339,7 +340,7 @@ export const getContestProblem = async (req, res) => {
             showEditorial: ended,
         });
     } catch (error) {
-        return res.status(500).json({ error: error.message });
+        return sendError(res, 500, error.message);
     }
 };
 
@@ -384,6 +385,6 @@ export const myContests = async (req, res) => {
 
         return res.status(200).json({ contests: list, total: list.length });
     } catch (error) {
-        return res.status(500).json({ error: error.message });
+        return sendError(res, 500, error.message);
     }
 };

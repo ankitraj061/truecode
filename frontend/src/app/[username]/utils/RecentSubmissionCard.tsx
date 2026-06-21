@@ -42,12 +42,12 @@ export default function RecentSubmissionsCard({ username }: RecentSubmissionsCar
         if (response.data.success) {
           setSubmissions(response.data.data || []);
         } else {
-          setError(response.data.message || 'Failed to load submissions');
+          setError(response.data.error || 'Failed to load submissions');
         }
       } catch (error) {
-        const axiosError = error as AxiosError<{ message: string }>;
+        const axiosError = error as AxiosError<{ error: string }>;
         setError(
-          axiosError.response?.data?.message ||
+          axiosError.response?.data?.error ||
           axiosError.message ||
           "An error occurred"
         );

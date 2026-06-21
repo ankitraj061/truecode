@@ -114,10 +114,10 @@ export default function EditProfileModal({ profileData, onClose, onUpdate }: Edi
         }
       } catch (error) {
 
-        const err = error as AxiosError<{ message?: string }>;
+        const err = error as AxiosError<{ error?: string }>;
 
         // Optional: log server message
-        if (err.response?.data?.message) {
+        if (err.response?.data?.error) {
         }
 
         setUsernameStatus("idle");
@@ -228,13 +228,13 @@ export default function EditProfileModal({ profileData, onClose, onUpdate }: Edi
         onUpdate(response.data.data);
         onClose();
       } else {
-        setSubmitError(response.data.message || 'Failed to update profile');
+        setSubmitError(response.data.error || 'Failed to update profile');
       }
     } catch (error) {
-      const err = error as AxiosError<{ message?: string }>;
+      const err = error as AxiosError<{ error?: string }>;
 
       setSubmitError(
-        err.response?.data?.message || 'An error occurred while updating profile'
+        err.response?.data?.error || 'An error occurred while updating profile'
       );
 
     } finally {

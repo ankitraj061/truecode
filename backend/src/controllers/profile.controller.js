@@ -2,6 +2,7 @@ import User from '../models/user.js';
 import Problem from '../models/problem.js';
 import Submission from '../models/submission.js';
 import mongoose from 'mongoose';
+import { sendSuccess, sendError } from '../contracts/apiResponse.js';
 
 // 1. GET Profile Data by Username
 export const getProfile = async (req, res) => {
@@ -14,7 +15,7 @@ export const getProfile = async (req, res) => {
             .lean();
 
         if (!user) {
-            return res.status(404).json({ success: false, message: 'User not found' });
+            return sendError(res, 404, 'User not found');
         }
 
         const profileData = {
@@ -32,9 +33,9 @@ export const getProfile = async (req, res) => {
             badges: user.badges || []
         };
 
-        res.status(200).json({ success: true, data: profileData });
+        sendSuccess(res, profileData);
     } catch (error) {
-        res.status(500).json({ success: false, message: 'Server error' });
+        sendError(res, 500, 'Server error');
     }
 };
 
@@ -46,26 +47,23 @@ export const updateProfile = async (req, res) => {
 
         // Validate age if provided
         if (age && (age < 6 || age > 80)) {
-            return res.status(400).json({ success: false, message: 'Age must be between 6 and 80' });
+            return sendError(res, 400, 'Age must be between 6 and 80');
         }
 
         // Validate username format if provided
         if (username && !/^[a-zA-Z0-9_]+$/.test(username)) {
-            return res.status(400).json({ 
-                success: false, 
-                message: 'Username can only contain letters, numbers, and underscores' 
-            });
+            return sendError(res, 400, 'Username can only contain letters, numbers, and underscores');
         }
 
         // Check username uniqueness if changed
         if (username) {
-            const existingUser = await User.findOne({ 
-                username, 
-                _id: { $ne: userId } 
+            const existingUser = await User.findOne({
+                username,
+                _id: { $ne: userId }
             }).lean();
-            
+
             if (existingUser) {
-                return res.status(400).json({ success: false, message: 'Username already taken' });
+                return sendError(res, 400, 'Username already taken');
             }
         }
 
@@ -84,9 +82,9 @@ export const updateProfile = async (req, res) => {
             { new: true, runValidators: true }
         ).select('firstName lastName username bio location age gender');
 
-        res.status(200).json({ success: true, data: updatedUser });
+        sendSuccess(res, updatedUser);
     } catch (error) {
-        res.status(500).json({ success: false, message: 'Server error' });
+        sendError(res, 500, 'Server error');
     }
 };
 
@@ -96,35 +94,31 @@ export const checkUsernameAvailability = async (req, res) => {
         const { username } = req.query;
 
         if (!username) {
-            return res.status(400).json({ success: false, message: 'Username is required' });
+            return sendError(res, 400, 'Username is required');
         }
 
         // Validate format
         if (!/^[a-zA-Z0-9_]+$/.test(username)) {
-            return res.status(400).json({ 
-                success: false, 
-                available: false,
-                message: 'Username can only contain letters, numbers, and underscores' 
+            return sendError(res, 400, 'Username can only contain letters, numbers, and underscores', {
+                available: false
             });
         }
 
         if (username.length < 3 || username.length > 20) {
-            return res.status(400).json({ 
-                success: false, 
-                available: false,
-                message: 'Username must be between 3 and 20 characters' 
+            return sendError(res, 400, 'Username must be between 3 and 20 characters', {
+                available: false
             });
         }
 
         const existingUser = await User.findOne({ username }).lean();
 
-        res.status(200).json({ 
-            success: true, 
+        res.status(200).json({
+            success: true,
             available: !existingUser,
             message: existingUser ? 'Username is already taken' : 'Username is available'
         });
     } catch (error) {
-        res.status(500).json({ success: false, message: 'Server error' });
+        sendError(res, 500, 'Server error');
     }
 };
 
@@ -139,7 +133,7 @@ export const getProblemsStats = async (req, res) => {
             .lean();
 
         if (!user) {
-            return res.status(404).json({ success: false, message: 'User not found' });
+            return sendError(res, 404, 'User not found');
         }
 
         const solvedProblemIds = user.problemsSolved?.map(p => p.problemId) || [];
@@ -175,7 +169,7 @@ export const getProblemsStats = async (req, res) => {
 
         // ✅ NEW: Get total submissions count and accepted submissions count
         const userObjectId = new mongoose.Types.ObjectId(user._id);
-        
+
         const submissionStats = await Submission.aggregate([
             {
                 $match: {
@@ -202,8 +196,8 @@ export const getProblemsStats = async (req, res) => {
         // Calculate acceptance rate
         const totalSubmissions = submissionStats[0]?.totalSubmissions || 0;
         const acceptedSubmissions = submissionStats[0]?.acceptedSubmissions || 0;
-        const acceptanceRate = totalSubmissions > 0 
-            ? Math.round((acceptedSubmissions / totalSubmissions) * 100) 
+        const acceptanceRate = totalSubmissions > 0
+            ? Math.round((acceptedSubmissions / totalSubmissions) * 100)
             : 0;
 
         // Format results
@@ -238,9 +232,9 @@ export const getProblemsStats = async (req, res) => {
             }
         };
 
-        res.status(200).json({ success: true, data: stats });
+        sendSuccess(res, stats);
     } catch (error) {
-        res.status(500).json({ success: false, message: 'Server error' });
+        sendError(res, 500, 'Server error');
     }
 };
 
@@ -254,7 +248,7 @@ export const getHeatmapData = async (req, res) => {
         const user = await User.findOne({ username }).select('_id').lean();
 
         if (!user) {
-            return res.status(404).json({ success: false, message: 'User not found' });
+            return sendError(res, 404, 'User not found');
         }
 
         let startDate, endDate;
@@ -302,13 +296,13 @@ export const getHeatmapData = async (req, res) => {
             count: item.count
         }));
 
-        res.status(200).json({ 
-            success: true, 
+        res.status(200).json({
+            success: true,
             data: heatmapData,
             period: year ? `Year ${year}` : 'Last 365 days'
         });
     } catch (error) {
-        res.status(500).json({ success: false, message: 'Server error' });
+        sendError(res, 500, 'Server error');
     }
 };
 
@@ -324,7 +318,7 @@ export const getRecentSubmissions = async (req, res) => {
         const user = await User.findOne({ username }).select('_id').lean();
 
         if (!user) {
-            return res.status(404).json({ success: false, message: 'User not found' });
+            return sendError(res, 404, 'User not found');
         }
 
         const query = { userId: user._id };
@@ -351,7 +345,7 @@ export const getRecentSubmissions = async (req, res) => {
             }
         });
     } catch (error) {
-        res.status(500).json({ success: false, message: 'Server error' });
+        sendError(res, 500, 'Server error');
     }
 };
 
@@ -369,14 +363,14 @@ export const followUser = async (req, res) => {
         const userToFollow = await User.findOne({ username }).select('_id username followers');
 
         if (!userToFollow) {
-            return res.status(404).json({ success: false, message: 'User not found' });
+            return sendError(res, 404, 'User not found');
         }
 
         const targetUserId = userToFollow._id;
 
         // Prevent following yourself
         if (currentUserId === targetUserId.toString()) {
-            return res.status(400).json({ success: false, message: 'You cannot follow yourself' });
+            return sendError(res, 400, 'You cannot follow yourself');
         }
 
         // Check if already following
@@ -386,7 +380,7 @@ export const followUser = async (req, res) => {
         );
 
         if (isAlreadyFollowing) {
-            return res.status(400).json({ success: false, message: 'Already following this user' });
+            return sendError(res, 400, 'Already following this user');
         }
 
         // Add to following array of current user
@@ -401,16 +395,12 @@ export const followUser = async (req, res) => {
             { $addToSet: { followers: currentUserId } }
         );
 
-        res.status(200).json({ 
-            success: true, 
-            message: `You are now following ${userToFollow.username}`,
-            data: {
-                followingUsername: userToFollow.username,
-                followingId: targetUserId
-            }
-        });
+        sendSuccess(res, {
+            followingUsername: userToFollow.username,
+            followingId: targetUserId
+        }, `You are now following ${userToFollow.username}`);
     } catch (error) {
-        res.status(500).json({ success: false, message: 'Server error' });
+        sendError(res, 500, 'Server error');
     }
 };
 
@@ -424,14 +414,14 @@ export const unfollowUser = async (req, res) => {
         const userToUnfollow = await User.findOne({ username }).select('_id username');
 
         if (!userToUnfollow) {
-            return res.status(404).json({ success: false, message: 'User not found' });
+            return sendError(res, 404, 'User not found');
         }
 
         const targetUserId = userToUnfollow._id;
 
         // Prevent unfollowing yourself
         if (currentUserId === targetUserId.toString()) {
-            return res.status(400).json({ success: false, message: 'Invalid operation' });
+            return sendError(res, 400, 'Invalid operation');
         }
 
         // Check if currently following
@@ -441,7 +431,7 @@ export const unfollowUser = async (req, res) => {
         );
 
         if (!isFollowing) {
-            return res.status(400).json({ success: false, message: 'You are not following this user' });
+            return sendError(res, 400, 'You are not following this user');
         }
 
         // Remove from following array of current user
@@ -456,16 +446,12 @@ export const unfollowUser = async (req, res) => {
             { $pull: { followers: currentUserId } }
         );
 
-        res.status(200).json({ 
-            success: true, 
-            message: `You have unfollowed ${userToUnfollow.username}`,
-            data: {
-                unfollowedUsername: userToUnfollow.username,
-                unfollowedId: targetUserId
-            }
-        });
+        sendSuccess(res, {
+            unfollowedUsername: userToUnfollow.username,
+            unfollowedId: targetUserId
+        }, `You have unfollowed ${userToUnfollow.username}`);
     } catch (error) {
-        res.status(500).json({ success: false, message: 'Server error' });
+        sendError(res, 500, 'Server error');
     }
 };
 
@@ -479,7 +465,7 @@ export const getFollowStatus = async (req, res) => {
         const targetUser = await User.findOne({ username }).select('_id');
 
         if (!targetUser) {
-            return res.status(404).json({ success: false, message: 'User not found' });
+            return sendError(res, 404, 'User not found');
         }
 
         // Check if current user follows target user
@@ -488,14 +474,8 @@ export const getFollowStatus = async (req, res) => {
             id => id.toString() === targetUser._id.toString()
         );
 
-        res.status(200).json({ 
-            success: true, 
-            data: {
-                isFollowing,
-                username
-            }
-        });
+        sendSuccess(res, { isFollowing, username });
     } catch (error) {
-        res.status(500).json({ success: false, message: 'Server error' });
+        sendError(res, 500, 'Server error');
     }
 };

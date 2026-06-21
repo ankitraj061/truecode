@@ -60,9 +60,9 @@ export default function ProfileHeader({ username }: ProfileHeaderProps) {
           setError(response.data.message || 'Failed to load profile');
         }
       } catch (error) {
-        const err = error as AxiosError<{ message?: string }>;
+        const err = error as AxiosError<{ error?: string }>;
         setError(
-          err.response?.data?.message ||
+          err.response?.data?.error ||
           err.message ||
           'An error occurred'
         );
@@ -118,7 +118,7 @@ export default function ProfileHeader({ username }: ProfileHeaderProps) {
             prev ? { ...prev, followersCount: prev.followersCount - 1 } : null
           );
         } else {
-          setFollowError(response.data.message || 'Failed to unfollow');
+          setFollowError(response.data.error || 'Failed to unfollow');
         }
       } else {
         const response = await axiosClient.post(`/api/${username}/follow`);
@@ -129,13 +129,13 @@ export default function ProfileHeader({ username }: ProfileHeaderProps) {
             prev ? { ...prev, followersCount: prev.followersCount + 1 } : null
           );
         } else {
-          setFollowError(response.data.message || 'Failed to follow');
+          setFollowError(response.data.error || 'Failed to follow');
         }
       }
     } catch (error) {
-      const err = error as AxiosError<{ message?: string }>;
+      const err = error as AxiosError<{ error?: string }>;
       setFollowError(
-        err.response?.data?.message || err.message || 'An error occurred'
+        err.response?.data?.error || err.message || 'An error occurred'
       );
     } finally {
       setFollowLoading(false);

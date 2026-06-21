@@ -1,5 +1,6 @@
 // routes/user.js or similar
 import User from '../models/user.js';
+import { sendError } from '../contracts/apiResponse.js';
 export const updateTheme = async (req, res) => {
     
     try {
@@ -17,6 +18,6 @@ export const updateTheme = async (req, res) => {
             theme: user.preferences.theme
         });
     } catch (error) {
-        res.status(400).json({ error: error.message });
+        sendError(res, 400, error.message);
     }
 };

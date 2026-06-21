@@ -6,6 +6,7 @@ import { redisClient } from "../config/redis.js";
 import Submission from "../models/submission.js";
 import { generateUsername } from "../utils/validator.js";
 import dotenv from "dotenv";
+import { sendError } from "../contracts/apiResponse.js";
 dotenv.config();
 
 let passportInstance;
@@ -39,7 +40,7 @@ export const googleAuth = async (req, res, next) => {
     const initialized = await registerGoogleStrategy();
 
     if (!initialized) {
-        return res.status(503).json({ success: false, error: 'Google OAuth is currently unavailable.' });
+        return sendError(res, 503, 'Google OAuth is currently unavailable.');
     }
 
     passport.authenticate('google', {
@@ -135,7 +136,7 @@ export const register = async (req, res) => {
             user:reply
         } );
     } catch (error) {
-        res.status(400).json({ error: error.message });
+        sendError(res, 400, error.message);
     }
 };
 
@@ -169,7 +170,7 @@ export const adminRegister = async (req, res) => {
             user:reply
         } );
     } catch (error) {
-        res.status(400).json({ error: error.message });
+        sendError(res, 400, error.message);
     }
 };
 
@@ -210,7 +211,7 @@ export const login = async (req, res) => {
         });
     }
     catch (error) {
-        res.status(400).json({ error: error.message });
+        sendError(res, 400, error.message);
     }
 }
 
@@ -244,7 +245,7 @@ export const logout = async (req, res) => {
         res.status(200).json({ message: 'User logged out successfully' });
 
     } catch (err) {
-        res.status(400).json({ error: err.message });
+        sendError(res, 400, err.message);
     }
 };
 
@@ -257,7 +258,7 @@ export const deleteUserAccount = async (req, res) => {
        await Submission.deleteMany({ userId });
         res.status(200).json({ message: 'User account deleted successfully' });
     } catch (error) {
-        res.status(400).json({ error: error.message });
+        sendError(res, 400, error.message);
     }
 };
 
@@ -292,6 +293,6 @@ export const checkAuthFunction = async (req, res) => {
             message: `${user.username} logged in successfully`
         });
     } catch (error) {
-        res.status(400).json({ error: error.message });
+        sendError(res, 400, error.message);
     }
 };

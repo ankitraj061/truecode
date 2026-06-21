@@ -47,12 +47,12 @@ export default function ProblemsStatsCard({ username }: ProblemsStatsCardProps) 
         if (response.data.success) {
           setStats(response.data.data);
         } else {
-          setError(response.data.message || 'Failed to load stats');
+          setError(response.data.error || 'Failed to load stats');
         }
       } catch (error) {
-        const err = error as AxiosError<{ message?: string }>;
+        const err = error as AxiosError<{ error?: string }>;
         setError(
-          err.response?.data?.message || err.message || 'An error occurred'
+          err.response?.data?.error || err.message || 'An error occurred'
         );
       } finally {
         setLoading(false);

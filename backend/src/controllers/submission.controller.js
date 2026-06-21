@@ -1,6 +1,7 @@
 import mongoose from 'mongoose';
 import Submission from '../models/submission.js';
 import Problem from '../models/problem.js';
+import { sendError } from '../contracts/apiResponse.js';
 
 // GET /api/problems/:problemId/submissions
 export const getUserSubmissionsForProblem = async (req, res) => {
@@ -9,22 +10,22 @@ export const getUserSubmissionsForProblem = async (req, res) => {
         const userId = req.user._id;
 
         if (!problemId) {
-            return res.status(400).json({ error: 'Problem ID is required' });
+            return sendError(res, 400, 'Problem ID is required');
         }
 
         if (!userId) {
-            return res.status(400).json({ error: 'User not authenticated' });
+            return sendError(res, 400, 'User not authenticated');
         }
 
         // Validate problemId format
         if (!mongoose.Types.ObjectId.isValid(problemId)) {
-            return res.status(400).json({ error: 'Invalid problem ID format' });
+            return sendError(res, 400, 'Invalid problem ID format');
         }
 
         // Check if problem exists
         const problem = await Problem.findById(problemId);
         if (!problem) {
-            return res.status(404).json({ error: 'Problem not found' });
+            return sendError(res, 404, 'Problem not found');
         }
 
         // Get all submissions for this user and problem
@@ -71,7 +72,7 @@ export const getUserSubmissionsForProblem = async (req, res) => {
         });
 
     } catch (error) {
-        res.status(500).json({ error: 'Failed to fetch submissions' });
+        sendError(res, 500, 'Failed to fetch submissions');
     }
 };
 
@@ -83,11 +84,11 @@ export const getSubmissionDetails = async (req, res) => {
         const userId = req.user._id;
 
         if (!submissionId) {
-            return res.status(400).json({ error: 'Submission ID is required' });
+            return sendError(res, 400, 'Submission ID is required');
         }
 
         if (!mongoose.Types.ObjectId.isValid(submissionId)) {
-            return res.status(400).json({ error: 'Invalid submission ID format' });
+            return sendError(res, 400, 'Invalid submission ID format');
         }
 
         // Get submission with problem details
@@ -96,12 +97,12 @@ export const getSubmissionDetails = async (req, res) => {
             .lean();
 
         if (!submission) {
-            return res.status(404).json({ error: 'Submission not found' });
+            return sendError(res, 404, 'Submission not found');
         }
 
         // Verify submission belongs to the user
         if (submission.userId.toString() !== userId.toString()) {
-            return res.status(403).json({ error: 'Access denied. This submission does not belong to you.' });
+            return sendError(res, 403, 'Access denied. This submission does not belong to you.');
         }
 
         // ✅ NEW: Get performance statistics for this problem
@@ -145,7 +146,7 @@ export const getSubmissionDetails = async (req, res) => {
         });
 
     } catch (error) {
-        res.status(500).json({ error: 'Failed to fetch submission details' });
+        sendError(res, 500, 'Failed to fetch submission details');
     }
 };
 
@@ -344,28 +345,28 @@ export const addOrUpdateNotes = async (req, res) => {
         const userId = req.user._id;
 
         if (!submissionId) {
-            return res.status(400).json({ error: 'Submission ID is required' });
+            return sendError(res, 400, 'Submission ID is required');
         }
 
         if (!mongoose.Types.ObjectId.isValid(submissionId)) {
-            return res.status(400).json({ error: 'Invalid submission ID format' });
+            return sendError(res, 400, 'Invalid submission ID format');
         }
 
         // Validate timeTaken if provided
         if (timeTaken !== undefined && (typeof timeTaken !== 'number' || timeTaken < 0)) {
-            return res.status(400).json({ error: 'timeTaken must be a non-negative number' });
+            return sendError(res, 400, 'timeTaken must be a non-negative number');
         }
 
         // Find the submission
         const submission = await Submission.findById(submissionId);
 
         if (!submission) {
-            return res.status(404).json({ error: 'Submission not found' });
+            return sendError(res, 404, 'Submission not found');
         }
 
         // Verify submission belongs to the user
         if (submission.userId.toString() !== userId.toString()) {
-            return res.status(403).json({ error: 'Access denied. This submission does not belong to you.' });
+            return sendError(res, 403, 'Access denied. This submission does not belong to you.');
         }
 
         // Update notes
@@ -382,6 +383,6 @@ export const addOrUpdateNotes = async (req, res) => {
         });
 
     } catch (error) {
-        res.status(500).json({ error: 'Failed to update notes' });
+        sendError(res, 500, 'Failed to update notes');
     }
 }

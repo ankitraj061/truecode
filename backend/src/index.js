@@ -25,6 +25,7 @@ import userContestRouter from './routes/userContest.route.js';
 import userPointsRouter from './routes/userPoints.route.js';
 import userRedemptionRouter from './routes/userRedemption.route.js';
 import adminRedemptionRouter from './routes/adminRedemption.route.js';
+import { sendErrorFromException, AppError } from './contracts/apiResponse.js';
 
 
 app.use(cors({
@@ -79,25 +80,15 @@ app.use('/api/admin/redemptions', adminRedemptionRouter);
 app.use('/health', (_req, res) => res.send('OK'));
 app.use('/', (_req, res) => res.send('Welcome to the API'));
 
-// Global error handler — must be after all routes
+// Global error handler — must be after all routes.
+// Every error reaching here should be an AppError (thrown with an explicit
+// statusCode) so the response shape/status is decided at the throw site,
+// not guessed here by matching message text.
 app.use((err, req, res, _next) => {
-    const msg = err.message || 'Internal server error';
-
-    if (msg.includes('Too many AI requests'))
-        return res.status(429).json({ success: false, error: msg });
-    if (msg.includes('Problem not found'))
-        return res.status(404).json({ success: false, error: msg });
-    if (msg.includes('not currently available'))
-        return res.status(403).json({ success: false, error: msg });
-    if (msg.includes('AI service authentication failed'))
-        return res.status(503).json({ success: false, error: 'AI service unavailable' });
-    if (msg.includes('AI service temporarily unavailable') || msg.includes('Failed to process AI request'))
-        return res.status(503).json({ success: false, error: 'AI service temporarily unavailable. Please try again.' });
-    if (msg.includes('Invalid request to AI service'))
-        return res.status(400).json({ success: false, error: msg });
-
-    console.error('Unhandled error:', err);
-    res.status(500).json({ success: false, error: 'Internal server error' });
+    if (!(err instanceof AppError)) {
+        console.error('Unhandled error:', err);
+    }
+    sendErrorFromException(res, err);
 });
 
 const PORT = process.env.PORT || 8000;

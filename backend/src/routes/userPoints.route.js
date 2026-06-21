@@ -4,13 +4,14 @@ import { checkAuth as authMiddleware } from '../middlewares/checkAuthMiddleware.
 
 const router = express.Router();
 
-// All points routes require authentication
-router.use(authMiddleware);
+// NOTE: authMiddleware applied per-route, not via router.use(authMiddleware)
+// — see profile.route.js / submit.route.js for why a blanket router-level
+// .use() is dangerous on routers mounted at a shared prefix.
 
 // GET /api/user/points — returns current points balance
-router.get('/points', getPoints);
+router.get('/points', authMiddleware, getPoints);
 
 // POST /api/user/points/add — add/subtract points (internal/admin use)
-router.post('/points/add', addPoints);
+router.post('/points/add', authMiddleware, addPoints);
 
 export default router;

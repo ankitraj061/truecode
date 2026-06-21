@@ -1,4 +1,5 @@
 import User from '../models/user.js';
+import { sendError } from '../contracts/apiResponse.js';
 
 /**
  * GET /api/user/points
@@ -10,12 +11,12 @@ export const getPoints = async (req, res) => {
 
         const user = await User.findById(userId).select('points').lean();
         if (!user) {
-            return res.status(404).json({ success: false, message: 'User not found' });
+            return sendError(res, 404, 'User not found');
         }
 
         return res.status(200).json({ success: true, points: user.points ?? 0 });
     } catch (error) {
-        return res.status(500).json({ success: false, message: error.message });
+        return sendError(res, 500, error.message);
     }
 };
 
@@ -30,7 +31,7 @@ export const addPoints = async (req, res) => {
         const { amount, reason } = req.body;
 
         if (amount === undefined || typeof amount !== 'number') {
-            return res.status(400).json({ success: false, message: '`amount` must be a number' });
+            return sendError(res, 400, '`amount` must be a number');
         }
 
         const user = await User.findByIdAndUpdate(
@@ -40,7 +41,7 @@ export const addPoints = async (req, res) => {
         );
 
         if (!user) {
-            return res.status(404).json({ success: false, message: 'User not found' });
+            return sendError(res, 404, 'User not found');
         }
 
         return res.status(200).json({
@@ -50,6 +51,6 @@ export const addPoints = async (req, res) => {
             reason: reason || 'manual adjustment'
         });
     } catch (error) {
-        return res.status(500).json({ success: false, message: error.message });
+        return sendError(res, 500, error.message);
     }
 };

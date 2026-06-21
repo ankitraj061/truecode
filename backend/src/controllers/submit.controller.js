@@ -7,6 +7,7 @@ import { submitBatch,submitToken } from "../utils/problemUtility.js";
 import mongoose from "mongoose";
 import { compileCode } from "../services/compiler.service.js";
 import { updateUserAfterProblemSolve } from "../services/user.service.js";
+import { sendError } from '../contracts/apiResponse.js';
 
 
 export const submitProblem = async (req, res) => {
@@ -26,18 +27,13 @@ export const submitProblem = async (req, res) => {
 
         // Check premium access
         if (problem.isPremium && req.user.subscriptionType !== 'premium') {
-            return res.status(403).json({ 
-                error: 'Premium subscription required',
-                isPremium: true 
-            });
+            return sendError(res, 403, 'Premium subscription required', { isPremium: true });
         }
 
         // Local compilation check before sending to Judge0
         const compilationResult = await compileCode({ code, language });
         if (!compilationResult.success) {
-            return res.status(400).json({
-                success: false,
-                error: 'Compilation Error',
+            return sendError(res, 400, 'Compilation Error', {
                 compilationError: compilationResult.error,
                 status: 'compilation error'
             });
@@ -216,7 +212,7 @@ export const submitProblem = async (req, res) => {
         });
 
     } catch (error) {
-        res.status(400).json({ error: error.message });
+        sendError(res, 400, error.message);
     }
 };
 
@@ -262,17 +258,13 @@ export const runProblem = async (req, res) => {
 
         // Check premium access
         if (problem.isPremium && req.user.subscriptionType !== 'premium') {
-            return res.status(403).json({ 
-                error: 'Premium subscription required' 
-            });
+            return sendError(res, 403, 'Premium subscription required');
         }
 
         // Local compilation check
         const compilationResult = await compileCode({ code, language });
         if (!compilationResult.success) {
-            return res.status(400).json({
-                success: false,
-                error: 'Compilation Error',
+            return sendError(res, 400, 'Compilation Error', {
                 compilationError: compilationResult.error
             });
         }
@@ -372,10 +364,7 @@ export const runProblem = async (req, res) => {
         });
 
     } catch (error) {
-        res.status(400).json({ 
-            success: false,
-            error: error.message 
-        });
+        sendError(res, 400, error.message);
     }
 };
 
@@ -398,26 +387,24 @@ export const submitContestProblem = async (req, res) => {
         if (!language) throw new Error('Language not found');
 
         const contest = await Contest.findById(contestId).lean();
-        if (!contest) return res.status(404).json({ error: 'Contest not found' });
+        if (!contest) return sendError(res, 404, 'Contest not found');
 
         const now = new Date();
-        if (now < contest.startTime) return res.status(400).json({ error: 'Contest has not started' });
-        if (now > contest.endTime) return res.status(400).json({ error: 'Contest has ended' });
+        if (now < contest.startTime) return sendError(res, 400, 'Contest has not started');
+        if (now > contest.endTime) return sendError(res, 400, 'Contest has ended');
 
         const problemIds = (contest.problems || []).map((p) => p.toString());
-        if (!problemIds.includes(problemId)) return res.status(404).json({ error: 'Problem not in this contest' });
+        if (!problemIds.includes(problemId)) return sendError(res, 404, 'Problem not in this contest');
 
         const participant = (contest.participants || []).find((p) => p.userId?.toString() === userId.toString());
-        if (!participant) return res.status(403).json({ error: 'You must register for this contest first' });
+        if (!participant) return sendError(res, 403, 'You must register for this contest first');
 
         const problem = await Problem.findById(problemId);
-        if (!problem) return res.status(404).json({ error: 'Problem not found' });
+        if (!problem) return sendError(res, 404, 'Problem not found');
 
         const compilationResult = await compileCode({ code, language });
         if (!compilationResult.success) {
-            return res.status(400).json({
-                success: false,
-                error: 'Compilation Error',
+            return sendError(res, 400, 'Compilation Error', {
                 compilationError: compilationResult.error,
                 status: 'compilation error'
             });
@@ -605,7 +592,7 @@ export const submitContestProblem = async (req, res) => {
             contest: status === 'accepted' ? { score: contestScore, penalty: contestPenalty, rank } : undefined
         });
     } catch (error) {
-        res.status(400).json({ error: error.message });
+        sendError(res, 400, error.message);
     }
 };
 

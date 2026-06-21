@@ -45,14 +45,14 @@ export default function ProblemEditorialPage() {
         if (response.data.success) {
           setEditorialData(response.data.data);
         } else {
-          setError(response.data.message || "Failed to load editorial");
+          setError(response.data.error || "Failed to load editorial");
         }
       } catch (error) {
-        const err = error as AxiosError<{ message?: string }>;
+        const err = error as AxiosError<{ error?: string }>;
 
 
         setError(
-          err.response?.data?.message ||
+          err.response?.data?.error ||
             err.message ||
             "Failed to load editorial content"
         );

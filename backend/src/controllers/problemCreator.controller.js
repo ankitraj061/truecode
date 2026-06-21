@@ -9,6 +9,7 @@ import Contest from "../models/contest.js";
 import Company from "../models/company.js";
 import Discussion from "../models/discussion.js";
 import { generateSlug } from "../utils/slugify.js";
+import { sendError } from '../contracts/apiResponse.js';
 
 const createProblem = async (req, res) => {
     const {
@@ -35,7 +36,7 @@ const createProblem = async (req, res) => {
         // check for duplicate slugs
         const existingProblem = await Problem.findOne({ slug });
         if (existingProblem) {
-            return res.status(400).json({ error: 'A problem with a similar title already exists. Please modify the title to be more unique.' });
+            return sendError(res, 400, 'A problem with a similar title already exists. Please modify the title to be more unique.');
         }
         // Validate required fields
         if (!constraints || constraints.length === 0) {
@@ -131,7 +132,7 @@ const createProblem = async (req, res) => {
         });
 
     } catch (error) {
-        res.status(400).json({ error: error.message });
+        sendError(res, 400, error.message);
     }
 };
 
@@ -189,7 +190,7 @@ const getAllProblemsAdmin = async (req, res) => {
             limit: limitNumber,
         });
     } catch (error) {
-        res.status(400).json({ error: error.message });
+        sendError(res, 400, error.message);
     }
 };
 
@@ -197,7 +198,7 @@ const updateProblemById = async (req, res) => {
     const { id } = req.params;
     
     if (!id) {
-        return res.status(400).json({ error: 'Problem id not found' });
+        return sendError(res, 400, 'Problem id not found');
     }
 
     const {
@@ -222,7 +223,7 @@ const updateProblemById = async (req, res) => {
         // Check if problem exists
         const existingProblem = await Problem.findById(id);
         if (!existingProblem) {
-            return res.status(404).json({ error: 'Problem not found' });
+            return sendError(res, 404, 'Problem not found');
         }
 
         let slugToUpdate = existingProblem.slug; // Keep current slug by default
@@ -238,9 +239,7 @@ const updateProblemById = async (req, res) => {
             });
             
             if (slugConflict) {
-                return res.status(400).json({ 
-                    error: 'A problem with a similar title already exists. Please modify the title to be more unique.' 
-                });
+                return sendError(res, 400, 'A problem with a similar title already exists. Please modify the title to be more unique.');
             }
             
             slugToUpdate = newSlug; // Update slug if title changed
@@ -359,7 +358,7 @@ const updateProblemById = async (req, res) => {
         });
 
     } catch (error) {
-        res.status(400).json({ error: error.message });
+        sendError(res, 400, error.message);
     }
 };
 
@@ -367,13 +366,13 @@ const toggleProblemActive = async (req, res) => {
     const { id } = req.params;
 
     if (!id) {
-        return res.status(400).json({ error: "Problem id is required" });
+        return sendError(res, 400, "Problem id is required");
     }
 
     try {
         const problem = await Problem.findById(id);
         if (!problem) {
-            return res.status(404).json({ error: "Problem not found" });
+            return sendError(res, 404, "Problem not found");
         }
 
         problem.isActive = !problem.isActive;
@@ -389,7 +388,7 @@ const toggleProblemActive = async (req, res) => {
             },
         });
     } catch (error) {
-        res.status(400).json({ error: error.message });
+        sendError(res, 400, error.message);
     }
 };
 
@@ -397,7 +396,7 @@ const deleteProblemById = async (req, res) => {
     const { id } = req.params;
     
     if (!id) {
-        return res.status(400).json({ error: 'Problem id is required' });
+        return sendError(res, 400, 'Problem id is required');
     }
 
     // Start a transaction for atomic deletion
@@ -512,16 +511,15 @@ const deleteProblemById = async (req, res) => {
     } catch (error) {
         
         if (error.message === 'Problem not found') {
-            return res.status(404).json({ error: 'Problem not found' });
+            return sendError(res, 404, 'Problem not found');
         }
         
         if (error.name === 'CastError') {
-            return res.status(400).json({ error: 'Invalid problem ID format' });
+            return sendError(res, 400, 'Invalid problem ID format');
         }
         
-        res.status(500).json({ 
-            error: 'Internal server error while deleting problem and related data',
-            details: error.message 
+        sendError(res, 500, 'Internal server error while deleting problem and related data', {
+            details: error.message
         });
     } finally {
         await session.endSession();
@@ -541,7 +539,7 @@ const problemFetchById= async (req, res) => {
         }
         res.status(200).json(problem);
     } catch (error) {
-        res.status(400).json({ error: error.message });
+        sendError(res, 400, error.message);
     }
 }
 
@@ -569,7 +567,7 @@ const solvedProblems=async(req,res)=>{
 
     }
     catch(error){
-        res.status(400).json({ error: error.message });
+        sendError(res, 400, error.message);
     }
 
 }
@@ -591,7 +589,7 @@ const submissionsByProblemId=async(req,res)=>{
 
     }
     catch(error){
-        res.status(400).json({ error: error.message });
+        sendError(res, 400, error.message);
     }
 }
 export {

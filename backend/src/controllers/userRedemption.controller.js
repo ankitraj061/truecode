@@ -1,5 +1,6 @@
 import User from '../models/user.js';
 import Redemption from '../models/redemption.js';
+import { sendError } from '../contracts/apiResponse.js';
 
 /**
  * POST /api/redeem
@@ -12,16 +13,16 @@ export const createRedemption = async (req, res) => {
         const { productId, productName, pointsSpent, address } = req.body;
 
         if (!productId || !productName || pointsSpent === undefined || pointsSpent === null || !address) {
-            return res.status(400).json({ success: false, message: 'productId, productName, pointsSpent, and address are required' });
+            return sendError(res, 400, 'productId, productName, pointsSpent, and address are required');
         }
 
         const user = await User.findById(userId).select('points');
         if (!user) {
-            return res.status(404).json({ success: false, message: 'User not found' });
+            return sendError(res, 404, 'User not found');
         }
 
         if (user.points < pointsSpent) {
-            return res.status(400).json({ success: false, message: 'Insufficient points' });
+            return sendError(res, 400, 'Insufficient points');
         }
 
         // Deduct points atomically
@@ -39,7 +40,7 @@ export const createRedemption = async (req, res) => {
 
         return res.status(201).json({ success: true, redemption });
     } catch (error) {
-        return res.status(500).json({ success: false, message: error.message });
+        return sendError(res, 500, error.message);
     }
 };
 
@@ -56,7 +57,7 @@ export const getMyRedemptions = async (req, res) => {
 
         return res.status(200).json({ success: true, redemptions });
     } catch (error) {
-        return res.status(500).json({ success: false, message: error.message });
+        return sendError(res, 500, error.message);
     }
 };
 
@@ -76,6 +77,6 @@ export const getMyAddress = async (req, res) => {
 
         return res.status(200).json({ success: true, address });
     } catch (error) {
-        return res.status(500).json({ success: false, message: error.message });
+        return sendError(res, 500, error.message);
     }
 };

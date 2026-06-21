@@ -1,5 +1,6 @@
 import Discussion from "../models/discussion.js";
 import Problem from "../models/problem.js";
+import { sendError } from '../contracts/apiResponse.js';
 
 const hasVoted = (arr, userId) => Array.isArray(arr) && arr.some((id) => id.toString() === userId.toString());
 
@@ -20,16 +21,16 @@ export const getProblemDiscussions = async (req, res) => {
         // Verify problem exists and user has access
         const problem = await Problem.findById(problemId);
         if (!problem) {
-            return res.status(404).json({ error: 'Problem not found' });
+            return sendError(res, 404, 'Problem not found');
         }
         
         if (!problem.isActive) {
-            return res.status(403).json({ error: 'Problem is not available' });
+            return sendError(res, 403, 'Problem is not available');
         }
         
         // Check premium access
         if (problem.isPremium && req.user.subscriptionType !== 'premium') {
-            return res.status(403).json({ error: 'Premium subscription required' });
+            return sendError(res, 403, 'Premium subscription required');
         }
         
         const filter = { problemId };
@@ -61,7 +62,7 @@ export const getProblemDiscussions = async (req, res) => {
         });
         
     } catch (error) {
-        res.status(500).json({ error: 'Failed to fetch discussions' });
+        sendError(res, 500, 'Failed to fetch discussions');
     }
 };
 
@@ -78,7 +79,7 @@ export const getDiscussion = async (req, res) => {
             .populate('replies.userId', 'username profilePicture');
             
         if (!discussion) {
-            return res.status(404).json({ error: 'Discussion not found' });
+            return sendError(res, 404, 'Discussion not found');
         }
         
         // Add vote counts and user vote status
@@ -105,7 +106,7 @@ export const getDiscussion = async (req, res) => {
         });
         
     } catch (error) {
-        res.status(500).json({ error: 'Failed to fetch discussion' });
+        sendError(res, 500, 'Failed to fetch discussion');
     }
 };
 
@@ -118,15 +119,15 @@ export const createDiscussion = async (req, res) => {
         // Verify problem exists and user has access
         const problem = await Problem.findById(problemId);
         if (!problem) {
-            return res.status(404).json({ error: 'Problem not found' });
+            return sendError(res, 404, 'Problem not found');
         }
         
         if (!problem.isActive) {
-            return res.status(403).json({ error: 'Cannot create discussion for inactive problem' });
+            return sendError(res, 403, 'Cannot create discussion for inactive problem');
         }
         
         if (problem.isPremium && req.user.subscriptionType !== 'premium') {
-            return res.status(403).json({ error: 'Premium subscription required' });
+            return sendError(res, 403, 'Premium subscription required');
         }
         
         const discussion = await Discussion.create({
@@ -149,7 +150,7 @@ export const createDiscussion = async (req, res) => {
         });
         
     } catch (error) {
-        res.status(500).json({ error: 'Failed to create discussion' });
+        sendError(res, 500, 'Failed to create discussion');
     }
 };
 
@@ -162,11 +163,11 @@ export const updateDiscussion = async (req, res) => {
         // Find discussion and verify ownership
         const discussion = await Discussion.findById(discussionId);
         if (!discussion) {
-            return res.status(404).json({ error: 'Discussion not found' });
+            return sendError(res, 404, 'Discussion not found');
         }
         
         if (discussion.userId.toString() !== req.user._id.toString()) {
-            return res.status(403).json({ error: 'You can only edit your own discussions' });
+            return sendError(res, 403, 'You can only edit your own discussions');
         }
         
         const updateData = {};
@@ -189,7 +190,7 @@ export const updateDiscussion = async (req, res) => {
         });
         
     } catch (error) {
-        res.status(500).json({ error: 'Failed to update discussion' });
+        sendError(res, 500, 'Failed to update discussion');
     }
 };
 
@@ -200,11 +201,11 @@ export const deleteDiscussion = async (req, res) => {
         
         const discussion = await Discussion.findById(discussionId);
         if (!discussion) {
-            return res.status(404).json({ error: 'Discussion not found' });
+            return sendError(res, 404, 'Discussion not found');
         }
         
         if (discussion.userId.toString() !== req.user._id.toString()) {
-            return res.status(403).json({ error: 'You can only delete your own discussions' });
+            return sendError(res, 403, 'You can only delete your own discussions');
         }
         
         await Discussion.findByIdAndDelete(discussionId);
@@ -216,9 +217,9 @@ export const deleteDiscussion = async (req, res) => {
         
     } catch (error) {
         if (error.name === 'CastError') {
-            return res.status(400).json({ error: 'Invalid discussion ID format' });
+            return sendError(res, 400, 'Invalid discussion ID format');
         }
-        res.status(500).json({ error: 'Failed to delete discussion' });
+        sendError(res, 500, 'Failed to delete discussion');
     }
 };
 
@@ -232,16 +233,16 @@ export const addReply = async (req, res) => {
             .populate('problemId', 'isActive isPremium');
             
         if (!discussion) {
-            return res.status(404).json({ error: 'Discussion not found' });
+            return sendError(res, 404, 'Discussion not found');
         }
         
         // Check access to problem
         if (!discussion.problemId.isActive) {
-            return res.status(403).json({ error: 'Cannot reply to discussion of inactive problem' });
+            return sendError(res, 403, 'Cannot reply to discussion of inactive problem');
         }
         
         if (discussion.problemId.isPremium && req.user.subscriptionType !== 'premium') {
-            return res.status(403).json({ error: 'Premium subscription required' });
+            return sendError(res, 403, 'Premium subscription required');
         }
         
         const reply = {
@@ -265,7 +266,7 @@ export const addReply = async (req, res) => {
         });
         
     } catch (error) {
-        res.status(500).json({ error: 'Failed to add reply' });
+        sendError(res, 500, 'Failed to add reply');
     }
 };
 
@@ -277,12 +278,12 @@ export const voteDiscussion = async (req, res) => {
         const userId = req.user._id;
         
         if (!['upvote', 'downvote'].includes(voteType)) {
-            return res.status(400).json({ error: 'Invalid vote type' });
+            return sendError(res, 400, 'Invalid vote type');
         }
         
         const discussion = await Discussion.findById(discussionId);
         if (!discussion) {
-            return res.status(404).json({ error: 'Discussion not found' });
+            return sendError(res, 404, 'Discussion not found');
         }
         
         // Initialize arrays if they don't exist or are numbers (from old schema)
@@ -374,7 +375,7 @@ export const voteDiscussion = async (req, res) => {
         });
         
     } catch (error) {
-        res.status(500).json({ error: 'Failed to vote on discussion' });
+        sendError(res, 500, 'Failed to vote on discussion');
     }
 };
 
@@ -388,17 +389,17 @@ export const voteReply = async (req, res) => {
         const userId = req.user._id;
         
         if (!['upvote', 'downvote'].includes(voteType)) {
-            return res.status(400).json({ error: 'Invalid vote type' });
+            return sendError(res, 400, 'Invalid vote type');
         }
         
         const discussion = await Discussion.findById(discussionId);
         if (!discussion) {
-            return res.status(404).json({ error: 'Discussion not found' });
+            return sendError(res, 404, 'Discussion not found');
         }
         
         const reply = discussion.replies.id(replyId);
         if (!reply) {
-            return res.status(404).json({ error: 'Reply not found' });
+            return sendError(res, 404, 'Reply not found');
         }
         
         // Initialize arrays if they don't exist or are numbers (from old schema)
@@ -472,7 +473,7 @@ export const voteReply = async (req, res) => {
         });
         
     } catch (error) {
-        res.status(500).json({ error: 'Failed to vote on reply' });
+        sendError(res, 500, 'Failed to vote on reply');
     }
 };
 
@@ -506,7 +507,7 @@ export const getMyDiscussions = async (req, res) => {
         });
         
     } catch (error) {
-        res.status(500).json({ error: 'Failed to fetch your discussions' });
+        sendError(res, 500, 'Failed to fetch your discussions');
     }
 };
 
@@ -519,17 +520,17 @@ export const deleteOwnReply = async (req, res) => {
         
         const discussion = await Discussion.findById(discussionId);
         if (!discussion) {
-            return res.status(404).json({ error: 'Discussion not found' });
+            return sendError(res, 404, 'Discussion not found');
         }
         
         const reply = discussion.replies.id(replyId);
         if (!reply) {
-            return res.status(404).json({ error: 'Reply not found' });
+            return sendError(res, 404, 'Reply not found');
         }
         
         // Check ownership - user can only delete their own replies
         if (reply.userId.toString() !== userId.toString()) {
-            return res.status(403).json({ error: 'You can only delete your own replies' });
+            return sendError(res, 403, 'You can only delete your own replies');
         }
         
         // Remove the reply from the discussion
@@ -544,9 +545,9 @@ export const deleteOwnReply = async (req, res) => {
         
     } catch (error) {
         if (error.name === 'CastError') {
-            return res.status(400).json({ error: 'Invalid discussion or reply ID format' });
+            return sendError(res, 400, 'Invalid discussion or reply ID format');
         }
-        res.status(500).json({ error: 'Failed to delete reply' });
+        sendError(res, 500, 'Failed to delete reply');
     }
 };
 
@@ -560,22 +561,22 @@ export const editOwnReply = async (req, res) => {
         const userId = req.user._id;
         
         if (!content || content.trim().length === 0) {
-            return res.status(400).json({ error: 'Reply content is required' });
+            return sendError(res, 400, 'Reply content is required');
         }
         
         const discussion = await Discussion.findById(discussionId);
         if (!discussion) {
-            return res.status(404).json({ error: 'Discussion not found' });
+            return sendError(res, 404, 'Discussion not found');
         }
         
         const reply = discussion.replies.id(replyId);
         if (!reply) {
-            return res.status(404).json({ error: 'Reply not found' });
+            return sendError(res, 404, 'Reply not found');
         }
         
         // Check ownership - user can only edit their own replies
         if (reply.userId.toString() !== userId.toString()) {
-            return res.status(403).json({ error: 'You can only edit your own replies' });
+            return sendError(res, 403, 'You can only edit your own replies');
         }
         
         // Update the reply content
@@ -613,8 +614,8 @@ export const editOwnReply = async (req, res) => {
         
     } catch (error) {
         if (error.name === 'CastError') {
-            return res.status(400).json({ error: 'Invalid discussion or reply ID format' });
+            return sendError(res, 400, 'Invalid discussion or reply ID format');
         }
-        res.status(500).json({ error: 'Failed to edit reply' });
+        sendError(res, 500, 'Failed to edit reply');
     }
 };

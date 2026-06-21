@@ -1,0 +1,153 @@
+// Shared API response contract for the whole backend.
+//
+// Every controller MUST send error responses through `sendError` (or by
+// throwing an AppError subclass and letting the global error handler in
+// index.js catch it). This is the single source of truth for what an API
+// response looks like — do not hand-write res.status().json({...}) for
+// errors anywhere else.
+//
+// This file is TypeScript for editor type-checking / safety, but the rest
+// of the backend is plain JS. Run `npm run build:contracts` after editing
+// this file to regenerate apiResponse.js / apiResponse.d.ts, and commit
+// both — the runtime imports the compiled .js, there is no build step in
+// the Docker image.
+
+export interface ApiSuccessResponse<T = unknown> {
+  success: true;
+  data?: T;
+  message?: string;
+}
+
+export interface ApiErrorResponse {
+  success: false;
+  error: string;
+  code?: string;
+  [extra: string]: unknown;
+}
+
+export type ApiResponse<T = unknown> = ApiSuccessResponse<T> | ApiErrorResponse;
+
+// Base application error — every thrown error that should map to a
+// specific HTTP status should extend this instead of a plain Error.
+export class AppError extends Error {
+  statusCode: number;
+  code?: string;
+  extra?: Record<string, unknown>;
+
+  constructor(
+    message: string,
+    statusCode = 500,
+    code?: string,
+    extra?: Record<string, unknown>
+  ) {
+    super(message);
+    this.name = "AppError";
+    this.statusCode = statusCode;
+    this.code = code;
+    this.extra = extra;
+  }
+}
+
+export class BadRequestError extends AppError {
+  constructor(message = "Bad request", code?: string, extra?: Record<string, unknown>) {
+    super(message, 400, code, extra);
+    this.name = "BadRequestError";
+  }
+}
+
+export class UnauthorizedError extends AppError {
+  constructor(message = "Unauthorized", code?: string, extra?: Record<string, unknown>) {
+    super(message, 401, code, extra);
+    this.name = "UnauthorizedError";
+  }
+}
+
+export class ForbiddenError extends AppError {
+  constructor(message = "Forbidden", code?: string, extra?: Record<string, unknown>) {
+    super(message, 403, code, extra);
+    this.name = "ForbiddenError";
+  }
+}
+
+export class NotFoundError extends AppError {
+  constructor(message = "Not found", code?: string, extra?: Record<string, unknown>) {
+    super(message, 404, code, extra);
+    this.name = "NotFoundError";
+  }
+}
+
+export class TooManyRequestsError extends AppError {
+  constructor(message = "Too many requests", code?: string, extra?: Record<string, unknown>) {
+    super(message, 429, code, extra);
+    this.name = "TooManyRequestsError";
+  }
+}
+
+export class InternalServerError extends AppError {
+  constructor(message = "Internal server error", code?: string, extra?: Record<string, unknown>) {
+    super(message, 500, code, extra);
+    this.name = "InternalServerError";
+  }
+}
+
+// Minimal shape of the bits of Express's Response we actually use —
+// avoids needing @types/express as a dependency for this standalone module.
+interface ResLike {
+  status(code: number): ResLike;
+  json(body: unknown): void;
+}
+
+/**
+ * Send a successful API response. Always includes `success: true`.
+ * Does not force a particular data shape — pass whatever payload the
+ * endpoint already returns; existing success payloads are left as-is.
+ */
+export function sendSuccess<T>(
+  res: ResLike,
+  data?: T,
+  message?: string,
+  statusCode = 200
+): void {
+  const body: ApiSuccessResponse<T> = { success: true };
+  if (data !== undefined) body.data = data;
+  if (message !== undefined) body.message = message;
+  res.status(statusCode).json(body);
+}
+
+/**
+ * Send an error API response. This is the ONE place that decides the
+ * error response shape — every controller should funnel error responses
+ * through this function instead of hand-writing res.status().json({...}).
+ *
+ * `extra` lets call sites attach additional flat fields the frontend
+ * already expects for specific flows (e.g. isPremium, requiresSubscription,
+ * compilationError, action, remainingTime) without breaking the core
+ * {success: false, error: string} contract.
+ */
+export function sendError(
+  res: ResLike,
+  statusCode: number,
+  error: string,
+  extra?: Record<string, unknown>
+): void {
+  const body: ApiErrorResponse = { success: false, error, ...extra };
+  res.status(statusCode).json(body);
+}
+
+/**
+ * Send an error response from a caught exception. If the exception is an
+ * AppError (or subclass), uses its statusCode/code/extra; otherwise falls
+ * back to 500 with the exception's message (or a generic fallback).
+ */
+export function sendErrorFromException(res: ResLike, err: unknown): void {
+  if (err instanceof AppError) {
+    sendError(res, err.statusCode, err.message, {
+      ...(err.code ? { code: err.code } : {}),
+      ...(err.extra ?? {}),
+    });
+    return;
+  }
+
+  const message = err instanceof Error ? err.message : "Internal server error";
+  sendError(res, 500, message);
+}

@@ -24,7 +24,7 @@ interface ProfileResponse {
   data: {
     badges: Badge[];
   };
-  message?: string;
+  error?: string;
 }
 
 export default function BadgesCard({ username }: BadgesCardProps) {
@@ -43,12 +43,12 @@ export default function BadgesCard({ username }: BadgesCardProps) {
         if (response.data.success) {
           setBadges(response.data.data.badges || []);
         } else {
-          setError(response.data.message || 'Failed to load badges');
+          setError(response.data.error || 'Failed to load badges');
         }
       } catch (error) {
-        const axiosError = error as AxiosError<{ message: string }>;
+        const axiosError = error as AxiosError<{ error: string }>;
         setError(
-          axiosError.response?.data?.message ||
+          axiosError.response?.data?.error ||
           axiosError.message ||
           "An error occurred"
         );

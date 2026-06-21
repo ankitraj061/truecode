@@ -2,6 +2,7 @@ import Discussion from "../models/discussion.js";
 import Problem from "../models/problem.js";
 import User from "../models/user.js";
 import mongoose from 'mongoose';
+import { sendError } from '../contracts/apiResponse.js';
 
 // Get all discussions with admin filters and pagination
 export const getAllDiscussions = async (req, res) => {
@@ -83,7 +84,7 @@ export const getAllDiscussions = async (req, res) => {
         });
         
     } catch (error) {
-        res.status(500).json({ error: 'Failed to fetch discussions' });
+        sendError(res, 500, 'Failed to fetch discussions');
     }
 };
 
@@ -98,7 +99,7 @@ export const getDiscussionById = async (req, res) => {
             .populate('replies.userId', 'username profilePicture email');
             
         if (!discussion) {
-            return res.status(404).json({ error: 'Discussion not found' });
+            return sendError(res, 404, 'Discussion not found');
         }
         
         // Add stats for admin view
@@ -132,9 +133,9 @@ export const getDiscussionById = async (req, res) => {
         
     } catch (error) {
         if (error.name === 'CastError') {
-            return res.status(400).json({ error: 'Invalid discussion ID format' });
+            return sendError(res, 400, 'Invalid discussion ID format');
         }
-        res.status(500).json({ error: 'Failed to fetch discussion' });
+        sendError(res, 500, 'Failed to fetch discussion');
     }
 };
 
@@ -156,7 +157,7 @@ export const createDiscussion = async (req, res) => {
         // Validate problem exists
         const problem = await Problem.findById(problemId);
         if (!problem) {
-            return res.status(404).json({ error: 'Problem not found' });
+            return sendError(res, 404, 'Problem not found');
         }
         
         // If creating on behalf of user, validate user exists
@@ -164,7 +165,7 @@ export const createDiscussion = async (req, res) => {
         if (onBehalfOfUserId) {
             const targetUser = await User.findById(onBehalfOfUserId);
             if (!targetUser) {
-                return res.status(404).json({ error: 'Target user not found' });
+                return sendError(res, 404, 'Target user not found');
             }
             targetUserId = onBehalfOfUserId;
         }
@@ -204,7 +205,7 @@ export const createDiscussion = async (req, res) => {
         });
         
     } catch (error) {
-        res.status(500).json({ error: 'Failed to create discussion' });
+        sendError(res, 500, 'Failed to create discussion');
     }
 };
 
@@ -224,7 +225,7 @@ export const updateDiscussion = async (req, res) => {
         
         const discussion = await Discussion.findById(discussionId);
         if (!discussion) {
-            return res.status(404).json({ error: 'Discussion not found' });
+            return sendError(res, 404, 'Discussion not found');
         }
         
         const updateData = {};
@@ -272,7 +273,7 @@ export const updateDiscussion = async (req, res) => {
         });
         
     } catch (error) {
-        res.status(500).json({ error: 'Failed to update discussion' });
+        sendError(res, 500, 'Failed to update discussion');
     }
 };
 
@@ -286,7 +287,7 @@ export const deleteDiscussion = async (req, res) => {
             .populate('problemId', 'title');
             
         if (!discussion) {
-            return res.status(404).json({ error: 'Discussion not found' });
+            return sendError(res, 404, 'Discussion not found');
         }
         
         // Store info for response
@@ -311,9 +312,9 @@ export const deleteDiscussion = async (req, res) => {
         
     } catch (error) {
         if (error.name === 'CastError') {
-            return res.status(400).json({ error: 'Invalid discussion ID format' });
+            return sendError(res, 400, 'Invalid discussion ID format');
         }
-        res.status(500).json({ error: 'Failed to delete discussion' });
+        sendError(res, 500, 'Failed to delete discussion');
     }
 };
 
@@ -337,7 +338,7 @@ export const toggleDiscussionPin = async (req, res) => {
          .populate('problemId', 'title');
         
         if (!discussion) {
-            return res.status(404).json({ error: 'Discussion not found' });
+            return sendError(res, 404, 'Discussion not found');
         }
         
         res.json({
@@ -347,7 +348,7 @@ export const toggleDiscussionPin = async (req, res) => {
         });
         
     } catch (error) {
-        res.status(500).json({ error: 'Failed to update pin status' });
+        sendError(res, 500, 'Failed to update pin status');
     }
 };
 
@@ -359,7 +360,7 @@ export const markAsSolution = async (req, res) => {
         
         const discussion = await Discussion.findById(discussionId);
         if (!discussion) {
-            return res.status(404).json({ error: 'Discussion not found' });
+            return sendError(res, 404, 'Discussion not found');
         }
         
         const updateData = {};
@@ -395,7 +396,7 @@ export const markAsSolution = async (req, res) => {
         });
         
     } catch (error) {
-        res.status(500).json({ error: 'Failed to mark as solution' });
+        sendError(res, 500, 'Failed to mark as solution');
     }
 };
 
@@ -405,7 +406,7 @@ export const bulkDiscussionActions = async (req, res) => {
         const { discussionIds, action, data } = req.body;
         
         if (!Array.isArray(discussionIds) || discussionIds.length === 0) {
-            return res.status(400).json({ error: 'Discussion IDs array is required' });
+            return sendError(res, 400, 'Discussion IDs array is required');
         }
         
         let result;
@@ -446,7 +447,7 @@ export const bulkDiscussionActions = async (req, res) => {
                 break;
                 
             default:
-                return res.status(400).json({ error: 'Invalid action' });
+                return sendError(res, 400, 'Invalid action');
         }
         
         res.json({ 
@@ -459,7 +460,7 @@ export const bulkDiscussionActions = async (req, res) => {
         });
         
     } catch (error) {
-        res.status(500).json({ error: 'Failed to perform bulk action' });
+        sendError(res, 500, 'Failed to perform bulk action');
     }
 };
 
@@ -558,7 +559,7 @@ export const getDiscussionStats = async (req, res) => {
         });
         
     } catch (error) {
-        res.status(500).json({ error: 'Failed to fetch discussion statistics' });
+        sendError(res, 500, 'Failed to fetch discussion statistics');
     }
 };
 
@@ -569,12 +570,12 @@ export const deleteReply = async (req, res) => {
         
         const discussion = await Discussion.findById(discussionId);
         if (!discussion) {
-            return res.status(404).json({ error: 'Discussion not found' });
+            return sendError(res, 404, 'Discussion not found');
         }
         
         const reply = discussion.replies.id(replyId);
         if (!reply) {
-            return res.status(404).json({ error: 'Reply not found' });
+            return sendError(res, 404, 'Reply not found');
         }
         
         // Store reply info for response
@@ -594,6 +595,6 @@ export const deleteReply = async (req, res) => {
         });
         
     } catch (error) {
-        res.status(500).json({ error: 'Failed to delete reply' });
+        sendError(res, 500, 'Failed to delete reply');
     }
 };

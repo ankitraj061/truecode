@@ -1,6 +1,7 @@
 import Contest from "../models/contest.js";
 import Problem from "../models/problem.js";
 import mongoose from "mongoose";
+import { sendError } from '../contracts/apiResponse.js';
 
 const DIFFICULTY_SCORE = { easy: 1, medium: 2, hard: 3 };
 
@@ -25,7 +26,7 @@ export const getAvailableProblemsForContest = async (req, res) => {
             .lean();
         return res.status(200).json({ problems });
     } catch (error) {
-        return res.status(500).json({ error: error.message });
+        return sendError(res, 500, error.message);
     }
 };
 
@@ -48,14 +49,14 @@ export const createContest = async (req, res) => {
         const createdBy = req.user._id;
 
         if (!title || !description || !startTime || !endTime)
-            return res.status(400).json({ error: "Missing required fields: title, description, startTime, endTime" });
+            return sendError(res, 400, "Missing required fields: title, description, startTime, endTime");
 
         const start = new Date(startTime);
         const end = new Date(endTime);
         if (isNaN(start.getTime()) || isNaN(end.getTime()))
-            return res.status(400).json({ error: "Invalid startTime or endTime" });
+            return sendError(res, 400, "Invalid startTime or endTime");
         if (end <= start)
-            return res.status(400).json({ error: "endTime must be after startTime" });
+            return sendError(res, 400, "endTime must be after startTime");
 
         // Derive duration in minutes from start/end
         const rawDurationMinutes = Math.round((end.getTime() - start.getTime()) / (60 * 1000));
@@ -63,11 +64,11 @@ export const createContest = async (req, res) => {
 
         const validTypes = ["public", "private", "educational"];
         if (!validTypes.includes(type))
-            return res.status(400).json({ error: "Invalid type" });
+            return sendError(res, 400, "Invalid type");
 
         const uniqueIds = [...new Set(problemIds.map((id) => id?.toString()).filter(Boolean))];
         if (uniqueIds.length === 0)
-            return res.status(400).json({ error: "At least one problem is required" });
+            return sendError(res, 400, "At least one problem is required");
 
         const problems = await Problem.find({
             _id: { $in: uniqueIds.map((id) => new mongoose.Types.ObjectId(id)) },
@@ -77,17 +78,16 @@ export const createContest = async (req, res) => {
             (id) => !problems.some((p) => p._id.toString() === id)
         );
         if (notFound.length)
-            return res.status(400).json({
-                error: "Some problem IDs were not found",
-                notFound,
-            });
+            return sendError(res, 400, "Some problem IDs were not found", { notFound });
 
         const activeProblems = problems.filter((p) => p.isActive);
         if (activeProblems.length > 0)
-            return res.status(400).json({
-                error: "Contest can only include inactive problems (isActive: false). One or more selected problems are active.",
-                activeIds: activeProblems.map((p) => p._id.toString()),
-            });
+            return sendError(
+                res,
+                400,
+                "Contest can only include inactive problems (isActive: false). One or more selected problems are active.",
+                { activeIds: activeProblems.map((p) => p._id.toString()) }
+            );
 
         const orderPreserved = uniqueIds.map((id) =>
             problems.find((p) => p._id.toString() === id)?._id
@@ -136,7 +136,7 @@ export const createContest = async (req, res) => {
             .lean();
         return res.status(201).json({ contest: populated });
     } catch (error) {
-        return res.status(500).json({ error: error.message });
+        return sendError(res, 500, error.message);
     }
 };
 
@@ -176,7 +176,7 @@ export const listContestsAdmin = async (req, res) => {
             total,
         });
     } catch (error) {
-        return res.status(500).json({ error: error.message });
+        return sendError(res, 500, error.message);
     }
 };
 
@@ -191,11 +191,11 @@ export const getContestAdmin = async (req, res) => {
             .populate("createdBy", "username")
             .lean();
         if (!contest)
-            return res.status(404).json({ error: "Contest not found" });
+            return sendError(res, 404, "Contest not found");
         const status = computeStatus(contest.startTime, contest.endTime);
         return res.status(200).json({ contest: { ...contest, status } });
     } catch (error) {
-        return res.status(500).json({ error: error.message });
+        return sendError(res, 500, error.message);
     }
 };
 
@@ -219,7 +219,7 @@ export const updateContestAdmin = async (req, res) => {
 
         const contest = await Contest.findById(contestId);
         if (!contest)
-            return res.status(404).json({ error: "Contest not found" });
+            return sendError(res, 404, "Contest not found");
 
         if (title != null) contest.title = title;
         if (description != null) contest.description = description;
@@ -227,7 +227,7 @@ export const updateContestAdmin = async (req, res) => {
         if (endTime != null) contest.endTime = new Date(endTime);
         if (type != null) {
             if (!["public", "private", "educational"].includes(type))
-                return res.status(400).json({ error: "Invalid type" });
+                return sendError(res, 400, "Invalid type");
             contest.type = type;
         }
         if (maxParticipants !== undefined) contest.maxParticipants = maxParticipants == null ? undefined : Number(maxParticipants);
@@ -244,10 +244,12 @@ export const updateContestAdmin = async (req, res) => {
             // Only new additions must be inactive; existing contest problems may have been activated after contest ended
             const activeNew = newIds.filter((id) => problemMap[id]?.isActive);
             if (activeNew.length > 0)
-                return res.status(400).json({
-                    error: "New problems added to the contest must be inactive (isActive: false).",
-                    activeIds: activeNew,
-                });
+                return sendError(
+                    res,
+                    400,
+                    "New problems added to the contest must be inactive (isActive: false).",
+                    { activeIds: activeNew }
+                );
             const orderPreserved = uniqueIds
                 .map((id) => problems.find((p) => p._id.toString() === id)?._id)
                 .filter(Boolean);
@@ -285,7 +287,7 @@ export const updateContestAdmin = async (req, res) => {
             .lean();
         return res.status(200).json({ contest: { ...populated, status: contest.status } });
     } catch (error) {
-        return res.status(500).json({ error: error.message });
+        return sendError(res, 500, error.message);
     }
 };
 
@@ -297,9 +299,9 @@ export const deleteContestAdmin = async (req, res) => {
         const { contestId } = req.params;
         const contest = await Contest.findByIdAndDelete(contestId);
         if (!contest)
-            return res.status(404).json({ error: "Contest not found" });
+            return sendError(res, 404, "Contest not found");
         return res.status(200).json({ message: "Contest deleted successfully" });
     } catch (error) {
-        return res.status(500).json({ error: error.message });
+        return sendError(res, 500, error.message);
     }
 };

@@ -57,12 +57,12 @@ export default function HeatmapCard({ username }: HeatmapCardProps) {
         if (response.data.success) {
           setHeatmapData(response.data.data || []);
         } else {
-          setError(response.data.message || 'Failed to load heatmap');
+          setError(response.data.error || 'Failed to load heatmap');
         }
       } catch (err) {
-        const e = err as AxiosError<{ message?: string }>;
+        const e = err as AxiosError<{ error?: string }>;
         setError(
-          e.response?.data?.message || e.message || 'An error occurred'
+          e.response?.data?.error || e.message || 'An error occurred'
         );
       } finally {
         setLoading(false);

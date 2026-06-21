@@ -1,4 +1,5 @@
 import Redemption from '../models/redemption.js';
+import { sendError } from '../contracts/apiResponse.js';
 
 /**
  * GET /api/admin/redemptions
@@ -35,7 +36,7 @@ export const getAllRedemptions = async (req, res) => {
             limit: limitNumber,
         });
     } catch (error) {
-        return res.status(500).json({ success: false, message: error.message });
+        return sendError(res, 500, error.message);
     }
 };
 
@@ -50,12 +51,12 @@ export const updateRedemptionStatus = async (req, res) => {
         const { status, note } = req.body;
 
         if (!status) {
-            return res.status(400).json({ success: false, message: '`status` is required' });
+            return sendError(res, 400, '`status` is required');
         }
 
         const redemption = await Redemption.findById(id);
         if (!redemption) {
-            return res.status(404).json({ success: false, message: 'Redemption not found' });
+            return sendError(res, 404, 'Redemption not found');
         }
 
         redemption.status = status;
@@ -64,6 +65,6 @@ export const updateRedemptionStatus = async (req, res) => {
 
         return res.status(200).json({ success: true, redemption });
     } catch (error) {
-        return res.status(500).json({ success: false, message: error.message });
+        return sendError(res, 500, error.message);
     }
 };

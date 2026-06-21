@@ -1,6 +1,7 @@
 import bcrypt from "bcrypt";
 import User from "../models/user.js";
 import { generateUsername } from "../utils/validator.js";
+import { sendError } from '../contracts/apiResponse.js';
 
 // GET /api/admin/users/admins
 export const getAdmins = async (req, res) => {
@@ -27,7 +28,7 @@ export const getAdmins = async (req, res) => {
             limit: limitNumber,
         });
     } catch (error) {
-        res.status(400).json({ error: error.message });
+        sendError(res, 400, error.message);
     }
 };
 
@@ -37,13 +38,13 @@ export const promoteToAdmin = async (req, res) => {
         const { emailId } = req.body;
 
         if (!emailId) {
-            return res.status(400).json({ error: "emailId is required" });
+            return sendError(res, 400, "emailId is required");
         }
 
         const user = await User.findOne({ emailId: emailId.toLowerCase() });
 
         if (!user) {
-            return res.status(404).json({ error: "User not found" });
+            return sendError(res, 404, "User not found");
         }
 
         if (user.role === "admin") {
@@ -75,7 +76,7 @@ export const promoteToAdmin = async (req, res) => {
             },
         });
     } catch (error) {
-        res.status(400).json({ error: error.message });
+        sendError(res, 400, error.message);
     }
 };
 
@@ -85,12 +86,12 @@ export const createAdminUser = async (req, res) => {
         const { firstName, lastName, emailId, password } = req.body;
 
         if (!firstName || !emailId || !password) {
-            return res.status(400).json({ error: "firstName, emailId and password are required" });
+            return sendError(res, 400, "firstName, emailId and password are required");
         }
 
         const existingUser = await User.findOne({ emailId: emailId.toLowerCase() });
         if (existingUser) {
-            return res.status(400).json({ error: "A user with this email already exists" });
+            return sendError(res, 400, "A user with this email already exists");
         }
 
         const username = generateUsername(firstName);
@@ -117,7 +118,7 @@ export const createAdminUser = async (req, res) => {
             },
         });
     } catch (error) {
-        res.status(400).json({ error: error.message });
+        sendError(res, 400, error.message);
     }
 };
 

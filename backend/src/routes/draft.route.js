@@ -9,15 +9,18 @@ import {
 
 const router = express.Router();
 
-// All routes require authentication
-router.use(checkAuth);
+// NOTE: checkAuth is applied per-route, not via router.use(checkAuth) — this
+// router is mounted at the generic '/api' prefix shared by other routers
+// (chat, etc). A router-level .use() with no path runs for every request
+// reaching this router, even ones meant for a different, later-mounted
+// router, silently blocking them with 401 before they're ever reached.
 
 // Problem-specific draft routes
-router.post('/problems/:problemId/draft', saveSolutionDraft);
-router.get('/problems/:problemId/draft', getSolutionDraft);
-router.delete('/problems/:problemId/draft', deleteSolutionDraft);
+router.post('/problems/:problemId/draft', checkAuth, saveSolutionDraft);
+router.get('/problems/:problemId/draft', checkAuth, getSolutionDraft);
+router.delete('/problems/:problemId/draft', checkAuth, deleteSolutionDraft);
 
 // User draft management
-router.get('/drafts', getUserDrafts);
+router.get('/drafts', checkAuth, getUserDrafts);
 
 export default router;

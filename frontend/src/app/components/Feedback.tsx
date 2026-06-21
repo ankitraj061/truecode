@@ -80,7 +80,7 @@ export default function FeedbackModal({ isOpen, onClose }: FeedbackModalProps) {
     } catch (error: unknown) {
       let errorMessage = "Failed to submit feedback";
       if (error instanceof AxiosError) {
-        errorMessage = error.response?.data?.message || errorMessage;
+        errorMessage = error.response?.data?.error || errorMessage;
       }
       setSubmitError(errorMessage);
     } finally {

@@ -1,6 +1,7 @@
 import mongoose from 'mongoose';
 import Problem from '../models/problem.js';
 import SolutionDraft from '../models/solutionDraft.js';
+import { sendError } from '../contracts/apiResponse.js';
 
 // POST /api/problems/:problemId/draft - Save solution draft
 export const saveSolutionDraft = async (req, res) => {
@@ -11,27 +12,18 @@ export const saveSolutionDraft = async (req, res) => {
 
         // Validation
         if (!problemId || !userId || !code || !language) {
-            return res.status(400).json({ 
-                success: false,
-                error: 'Missing required fields: code and language are required' 
-            });
+            return sendError(res, 400, 'Missing required fields: code and language are required');
         }
 
         // Validate ObjectId
         if (!mongoose.Types.ObjectId.isValid(problemId)) {
-            return res.status(400).json({ 
-                success: false,
-                error: 'Invalid problem ID format' 
-            });
+            return sendError(res, 400, 'Invalid problem ID format');
         }
 
         // Get problem to check starter code
         const problem = await Problem.findById(problemId);
         if (!problem) {
-            return res.status(404).json({ 
-                success: false,
-                error: 'Problem not found' 
-            });
+            return sendError(res, 404, 'Problem not found');
         }
 
         // Get starter code for the language
@@ -94,16 +86,10 @@ export const saveSolutionDraft = async (req, res) => {
         
         // Handle duplicate key error (shouldn't happen with upsert, but just in case)
         if (error.code === 11000) {
-            return res.status(409).json({ 
-                success: false,
-                error: 'Draft already exists for this problem' 
-            });
+            return sendError(res, 409, 'Draft already exists for this problem');
         }
 
-        res.status(500).json({ 
-            success: false,
-            error: 'Failed to save draft' 
-        });
+        sendError(res, 500, 'Failed to save draft');
     }
 };
 
@@ -114,10 +100,7 @@ export const getSolutionDraft = async (req, res) => {
         const userId = req.user._id;
 
         if (!mongoose.Types.ObjectId.isValid(problemId)) {
-            return res.status(400).json({ 
-                success: false,
-                error: 'Invalid problem ID format' 
-            });
+            return sendError(res, 400, 'Invalid problem ID format');
         }
 
         const draft = await SolutionDraft.findOne({
@@ -146,10 +129,7 @@ export const getSolutionDraft = async (req, res) => {
         });
 
     } catch (error) {
-        res.status(500).json({ 
-            success: false,
-            error: 'Failed to retrieve draft' 
-        });
+        sendError(res, 500, 'Failed to retrieve draft');
     }
 };
 
@@ -160,10 +140,7 @@ export const deleteSolutionDraft = async (req, res) => {
         const userId = req.user._id;
 
         if (!mongoose.Types.ObjectId.isValid(problemId)) {
-            return res.status(400).json({ 
-                success: false,
-                error: 'Invalid problem ID format' 
-            });
+            return sendError(res, 400, 'Invalid problem ID format');
         }
 
         const deletedDraft = await SolutionDraft.findOneAndDelete({ 
@@ -172,10 +149,7 @@ export const deleteSolutionDraft = async (req, res) => {
         });
 
         if (!deletedDraft) {
-            return res.status(404).json({
-                success: false,
-                message: 'No draft found to delete'
-            });
+            return sendError(res, 404, 'No draft found to delete');
         }
 
         res.status(200).json({
@@ -189,10 +163,7 @@ export const deleteSolutionDraft = async (req, res) => {
         });
 
     } catch (error) {
-        res.status(500).json({ 
-            success: false,
-            error: 'Failed to delete draft' 
-        });
+        sendError(res, 500, 'Failed to delete draft');
     }
 };
 
@@ -239,9 +210,6 @@ export const getUserDrafts = async (req, res) => {
         });
 
     } catch (error) {
-        res.status(500).json({ 
-            success: false,
-            error: 'Failed to retrieve drafts' 
-        });
+        sendError(res, 500, 'Failed to retrieve drafts');
     }
 };

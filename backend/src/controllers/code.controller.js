@@ -3,6 +3,7 @@ import prettier from 'prettier';
 import Submission from '../models/submission.js';
 import Problem from '../models/problem.js';
 import mongoose from 'mongoose';
+import { sendError } from '../contracts/apiResponse.js';
 
 export const formatCode = async (req, res) => {
     try {
@@ -10,36 +11,24 @@ export const formatCode = async (req, res) => {
 
         // Validate input
         if (!code || !language) {
-            return res.status(400).json({
-                success: false,
-                error: 'Code and language are required'
-            });
+            return sendError(res, 400, 'Code and language are required');
         }
 
         if (typeof code !== 'string' || code.trim().length === 0) {
-            return res.status(400).json({
-                success: false,
-                error: 'Code must be a non-empty string'
-            });
+            return sendError(res, 400, 'Code must be a non-empty string');
         }
 
         // Check code length limit (prevent abuse)
         if (code.length > 50000) { // 50KB limit
-            return res.status(400).json({
-                success: false,
-                error: 'Code is too large. Maximum 50,000 characters allowed.'
-            });
+            return sendError(res, 400, 'Code is too large. Maximum 50,000 characters allowed.');
         }
 
         const normalizedLanguage = language.toLowerCase();
-        
+
         // Check if language is supported
         const supportedLanguages = ['javascript', 'c', 'cpp', 'python', 'java'];
         if (!supportedLanguages.includes(normalizedLanguage)) {
-            return res.status(400).json({
-                success: false,
-                error: `Language '${language}' is not supported. Supported languages: ${supportedLanguages.join(', ')}`
-            });
+            return sendError(res, 400, `Language '${language}' is not supported. Supported languages: ${supportedLanguages.join(', ')}`);
         }
 
         let formattedCode;
@@ -76,10 +65,7 @@ export const formatCode = async (req, res) => {
                     break;
 
                 default:
-                    return res.status(400).json({
-                        success: false,
-                        error: `Unsupported language: ${language}`
-                    });
+                    return sendError(res, 400, `Unsupported language: ${language}`);
             }
 
             res.json({
@@ -102,9 +88,7 @@ export const formatCode = async (req, res) => {
         }
 
     } catch (error) {
-        res.status(500).json({
-            success: false,
-            error: 'Failed to format code',
+        sendError(res, 500, 'Failed to format code', {
             details: process.env.NODE_ENV === 'development' ? error.message : undefined
         });
     }
@@ -226,10 +210,7 @@ export const getLastSubmission = async (req, res) => {
 
         // Validate problem ID format
         if (!mongoose.Types.ObjectId.isValid(problemId)) {
-            return res.status(400).json({
-                success: false,
-                error: 'Invalid problem ID format'
-            });
+            return sendError(res, 400, 'Invalid problem ID format');
         }
 
         // Build query object
@@ -244,10 +225,7 @@ export const getLastSubmission = async (req, res) => {
             const normalizedLanguage = language.toLowerCase();
             
             if (!supportedLanguages.includes(normalizedLanguage)) {
-                return res.status(400).json({
-                    success: false,
-                    error: `Unsupported language: ${language}. Supported languages: ${supportedLanguages.join(', ')}`
-                });
+                return sendError(res, 400, `Unsupported language: ${language}. Supported languages: ${supportedLanguages.join(', ')}`);
             }
             
             query.language = normalizedLanguage;
@@ -260,13 +238,14 @@ export const getLastSubmission = async (req, res) => {
             .lean(); // Use lean() for better performance
 
         if (!lastSubmission) {
-            return res.status(404).json({
-                success: false,
-                error: language 
+            return sendError(
+                res,
+                404,
+                language
                     ? `No previous submission found for this problem in ${language}`
                     : 'No previous submission found for this problem',
-                hasSubmission: false
-            });
+                { hasSubmission: false }
+            );
         }
 
         // Return the submission data
@@ -288,9 +267,7 @@ export const getLastSubmission = async (req, res) => {
         });
 
     } catch (error) {
-        res.status(500).json({
-            success: false,
-            error: 'Failed to retrieve last submission',
+        sendError(res, 500, 'Failed to retrieve last submission', {
             details: process.env.NODE_ENV === 'development' ? error.message : undefined
         });
     }

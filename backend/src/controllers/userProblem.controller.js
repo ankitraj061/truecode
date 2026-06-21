@@ -4,6 +4,7 @@ import Submission from "../models/submission.js";
 import mongoose from "mongoose";
 import SolutionDraft from "../models/solutionDraft.js";
 import Discussion from "../models/discussion.js";
+import { sendError } from '../contracts/apiResponse.js';
 
 export const toggleSaveProblem = async (req, res) => {
   try {
@@ -13,7 +14,7 @@ export const toggleSaveProblem = async (req, res) => {
     // Validate problem exists and is active
     const problem = await Problem.findOne({ _id: problemId, isActive: true });
     if (!problem) {
-      return res.status(404).json({ error: "Problem not found or inactive" });
+      return sendError(res, 404, "Problem not found or inactive");
     }
 
     // REMOVED: Premium access check - users can save any problem
@@ -21,7 +22,7 @@ export const toggleSaveProblem = async (req, res) => {
     // Find user and check if problem is already saved
     const user = await User.findById(userId);
     if (!user) {
-      return res.status(404).json({ error: "User not found" });
+      return sendError(res, 404, "User not found");
     }
 
     const isAlreadySaved = user.savedProblems.includes(problemId);
@@ -57,9 +58,9 @@ export const toggleSaveProblem = async (req, res) => {
     });
   } catch (error) {
     if (error.name === "CastError") {
-      return res.status(400).json({ error: "Invalid problem ID format" });
+      return sendError(res, 400, "Invalid problem ID format");
     }
-    res.status(500).json({ error: "Failed to toggle saved problem" });
+    sendError(res, 500, "Failed to toggle saved problem");
   }
 };
 
@@ -338,11 +339,11 @@ export const getAllProblemsForUser = async (req, res) => {
           .json({ error: "Query too complex, please refine your filters" });
       }
       if (error.code === 16552) {
-        return res.status(400).json({ error: "Invalid search query" });
+        return sendError(res, 400, "Invalid search query");
       }
     }
 
-    res.status(500).json({ error: "Failed to fetch problems" });
+    sendError(res, 500, "Failed to fetch problems");
   }
 };
 
@@ -357,7 +358,7 @@ export const getProblemForUserBySlug = async (req, res) => {
       typeof problemSlug !== "string" ||
       problemSlug.trim() === ""
     ) {
-      return res.status(400).json({ error: "Invalid problem slug format" });
+      return sendError(res, 400, "Invalid problem slug format");
     }
 
     const aggregatePipeline = [
@@ -402,15 +403,14 @@ export const getProblemForUserBySlug = async (req, res) => {
     const [problemData] = await Problem.aggregate(aggregatePipeline);
 
     if (!problemData) {
-      return res.status(404).json({ error: "Problem not found" });
+      return sendError(res, 404, "Problem not found");
     }
 
     const userStatus = problemData.userStatus || {};
 
     // Premium access check - unauthenticated users cannot access premium problems
     if (problemData.isPremium && userStatus.subscriptionType !== "premium") {
-      return res.status(403).json({
-        error: "Please subscribe to unlock this problem",
+      return sendError(res, 403, "Please subscribe to unlock this problem", {
         isPremium: true,
         requiresSubscription: true,
         problem: {
@@ -523,7 +523,7 @@ export const getProblemForUserBySlug = async (req, res) => {
       userStatus: userData,
     });
   } catch (error) {
-    res.status(500).json({ error: "Failed to fetch problem details" });
+    sendError(res, 500, "Failed to fetch problem details");
   }
 };
 
@@ -601,7 +601,7 @@ export const getAllCompaniesWithCount = async (req, res) => {
       totalCompanies: companies.length,
     });
   } catch (error) {
-    res.status(500).json({ error: "Failed to fetch companies" });
+    sendError(res, 500, "Failed to fetch companies");
   }
 };
 
@@ -643,7 +643,7 @@ export const getAllTopicsWithCount = async (req, res) => {
       totalTopics: topics.length,
     });
   } catch (error) {
-    res.status(500).json({ error: "Failed to fetch topics" });
+    sendError(res, 500, "Failed to fetch topics");
   }
 };
 
@@ -652,14 +652,14 @@ export const getSolutionByProblemId = async (req, res) => {
     const { problemId } = req.params;
 
     if (!mongoose.Types.ObjectId.isValid(problemId)) {
-      return res.status(400).json({ error: "Invalid problem ID format" });
+      return sendError(res, 400, "Invalid problem ID format");
     }
 
     const problem = await Problem.findById(problemId)
       .select("referenceSolution")
       .lean();
     if (!problem) {
-      return res.status(404).json({ error: "Problem not found" });
+      return sendError(res, 404, "Problem not found");
     }
 
     res.json({
@@ -667,7 +667,7 @@ export const getSolutionByProblemId = async (req, res) => {
       referenceSolution: problem.referenceSolution || [],
     });
   } catch (error) {
-    res.status(500).json({ error: "Failed to fetch reference solution" });
+    sendError(res, 500, "Failed to fetch reference solution");
   }
 };
 
@@ -680,10 +680,7 @@ export const getEditorialByProblemId = async (req, res) => {
 
     // Validate ObjectId
     if (!problemId.match(/^[0-9a-fA-F]{24}$/)) {
-      return res.status(400).json({
-        success: false,
-        message: 'Invalid problem ID format'
-      });
+      return sendError(res, 400, 'Invalid problem ID format');
     }
 
     // Find problem and select only editorialContent field
@@ -691,18 +688,12 @@ export const getEditorialByProblemId = async (req, res) => {
       .select('editorialContent title slug');
 
     if (!problem) {
-      return res.status(404).json({
-        success: false,
-        message: 'Problem not found'
-      });
+      return sendError(res, 404, 'Problem not found');
     }
 
     // Check if editorial content exists
     if (!problem.editorialContent) {
-      return res.status(404).json({
-        success: false,
-        message: 'Editorial content not available for this problem'
-      });
+      return sendError(res, 404, 'Editorial content not available for this problem');
     }
 
     res.status(200).json({
@@ -715,11 +706,7 @@ export const getEditorialByProblemId = async (req, res) => {
       }
     });
   } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: 'Server error while fetching editorial content',
-      error: error.message
-    });
+    sendError(res, 500, 'Server error while fetching editorial content');
   }
 };
 
