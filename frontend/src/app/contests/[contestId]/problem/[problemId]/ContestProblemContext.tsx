@@ -77,7 +77,9 @@ export function ContestProblemProvider({ children }: { children: React.ReactNode
 
   useEffect(() => {
     if (!isInitialized || !isAuthenticated) {
-      if (isInitialized && !isAuthenticated) router.push('/accounts/login');
+      if (isInitialized && !isAuthenticated) {
+        router.push(`/accounts/login?redirect=${encodeURIComponent(`/contests/${contestId}/problem/${problemId}/description`)}`);
+      }
       setLoading(false);
       return;
     }

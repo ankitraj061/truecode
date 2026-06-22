@@ -12,6 +12,8 @@ import {
   LogOut,
   LayoutDashboard,
   ShoppingCart,
+  Users,
+  MessageSquare,
 } from 'lucide-react';
 import type { RootState, AppDispatch } from '@/app/store/store';
 import { logoutUser } from '@/app/slices/authSlice';
@@ -53,6 +55,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     { href: '/admin/create-contest', label: 'Create contest', icon: CalendarPlus },
     { href: '/admin/create-admins', label: 'Admins', icon: Shield },
     { href: '/admin/redemptions', label: 'Redemptions', icon: ShoppingCart },
+    { href: '/admin/users', label: 'Users', icon: Users },
+    { href: '/admin/feedback', label: 'Feedback', icon: MessageSquare },
   ];
 
   const isActive = (href: string) => {
@@ -60,6 +64,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     if (href === '/admin/contests' && pathname?.startsWith('/admin/contests')) return true;
     if (href === '/admin/problems' && pathname?.startsWith('/admin/problems')) return true;
     if (href === '/admin/redemptions' && pathname?.startsWith('/admin/redemptions')) return true;
+    if (href === '/admin/users' && pathname?.startsWith('/admin/users')) return true;
+    if (href === '/admin/feedback' && pathname?.startsWith('/admin/feedback')) return true;
     return false;
   };
 

@@ -1,5 +1,6 @@
 import { toggleSaveProblem, getAllProblemsForUser,getProblemForUserBySlug,getAllCompaniesWithCount,getAllTopicsWithCount,getSolutionByProblemId,getEditorialByProblemId} from "../controllers/userProblem.controller.js";
 import { userMiddleware } from "../middlewares/userMiddleware.js";
+import { optionalUserMiddleware } from "../middlewares/optionalUserMiddleware.js";
 import express from "express";
 import { requestLoggingMiddleware } from "../middlewares/requestLoggingMiddleware.js";
 import { ipRateLimitMiddleware } from "../middlewares/ipRateLimitMiddleware.js";
@@ -51,8 +52,7 @@ userProblemRouter.post('/save/:problemId',
 userProblemRouter.get('/all',
     // ipRateLimitMiddleware,
     requestLoggingMiddleware,
-    userMiddleware,
-    activeAccountMiddleware,
+    optionalUserMiddleware,
     getAllProblemsForUser
 );
 

@@ -6,39 +6,7 @@ import { RootState } from '@/app/store/store';
 import { useDispatch } from 'react-redux';
 import type { AppDispatch } from '@/app/store/store';
 import { checkAuth } from '@/app/slices/authSlice';
-
-// Define Razorpay interfaces
-export interface RazorpayOptions {
-  key: string;
-  amount: number;
-  currency: string;
-  name: string;
-  description: string;
-  order_id: string;
-  handler: (response: RazorpayResponse) => Promise<void> | void;
-  prefill: {
-    name?: string;
-    email?: string;
-  };
-  notes: {
-    plan: string;
-  };
-  theme: {
-    color: string;
-  };
-}
-
-interface RazorpayResponse {
-  razorpay_order_id: string;
-  razorpay_payment_id: string;
-  razorpay_signature: string;
-}
-
-export interface RazorpayInstance {
-  open(): void;
-  on?(event: string, handler: () => void): void;
-}
-
+import { loadRazorpayScript, openRazorpayCheckout, type RazorpayResponse } from './razorpay';
 
 export default function PayButton({ plan = 'monthly' }: { plan?: 'monthly' | 'yearly' }) {
   const [loading, setLoading] = useState(false);
@@ -47,14 +15,7 @@ export default function PayButton({ plan = 'monthly' }: { plan?: 'monthly' | 'ye
   const dispatch = useDispatch<AppDispatch>();
 
   useEffect(() => {
-    // add razorpay script if not present
-    if (!document.querySelector('#razorpay-script')) {
-      const s = document.createElement('script');
-      s.id = 'razorpay-script';
-      s.src = 'https://checkout.razorpay.com/v1/checkout.js';
-      s.async = true;
-      document.body.appendChild(s);
-    }
+    loadRazorpayScript();
   }, []);
 
   const handlePay = async () => {
@@ -65,20 +26,15 @@ export default function PayButton({ plan = 'monthly' }: { plan?: 'monthly' | 'ye
       const resp = await axiosClient.post('/api/payments/create-order', { plan });
       const { order, key } = resp.data;
 
-      if (typeof window === 'undefined' || typeof window.Razorpay !== 'function') {
-        setPaymentMessage('Payment service is still loading. Please try again in a moment.');
-        setLoading(false);
-        return;
-      }
-
-      const options: RazorpayOptions = {
+      const opened = openRazorpayCheckout({
+        order,
         key: key || process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || '',
-        amount: order.amount,
-        currency: order.currency,
-        name: 'TrueCode',
-        description: `Subscription: ${plan}`,
-        order_id: order.id,
-        handler: async function (response: RazorpayResponse) {
+        plan,
+        prefill: {
+          name: user?.firstName ? `${user.firstName} ${user.lastName || ''}`.trim() : undefined,
+          email: user?.emailId,
+        },
+        onSuccess: async (response: RazorpayResponse) => {
           try {
             await axiosClient.post('/api/payments/verify-payment', {
               razorpay_order_id: response.razorpay_order_id,
@@ -88,31 +44,24 @@ export default function PayButton({ plan = 'monthly' }: { plan?: 'monthly' | 'ye
             });
             await dispatch(checkAuth());
             setPaymentMessage('Payment successful! Subscription activated.');
-          } catch (err) {
+          } catch {
             setPaymentMessage('Payment verification failed on server.');
           } finally {
             setLoading(false);
           }
         },
-        prefill: {
-          name: user?.firstName ? `${user.firstName} ${user.lastName || ''}`.trim() : undefined,
-          email: user?.emailId
+        onFailure: () => {
+          setPaymentMessage('Payment failed. Please try again.');
+          setLoading(false);
         },
-        notes: {
-          plan
-        },
-        theme: {
-          color: '#3B82F6' // Brand color
-        }
-      };
-
-      const rzp = new window.Razorpay(options);
-      rzp.on?.('payment.failed', () => {
-        setPaymentMessage('Payment failed. Please try again.');
-        setLoading(false);
+        onDismiss: () => setLoading(false),
       });
-      rzp.open();
-    } catch (err) {
+
+      if (!opened) {
+        setPaymentMessage('Payment service is still loading. Please try again in a moment.');
+        setLoading(false);
+      }
+    } catch {
       setPaymentMessage('Unable to start payment, try again.');
       setLoading(false);
     }
@@ -123,9 +72,9 @@ export default function PayButton({ plan = 'monthly' }: { plan?: 'monthly' | 'ye
 
   return (
     <>
-      <button 
-        disabled={loading} 
-        onClick={handlePay} 
+      <button
+        disabled={loading}
+        onClick={handlePay}
         className="w-full bg-brand hover:bg-brand-hover text-inverse py-3 px-6 rounded-lg font-semibold transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed transform hover:scale-105"
       >
         {loading ? (

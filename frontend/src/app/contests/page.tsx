@@ -543,12 +543,7 @@ export default function ContestsPage() {
 
   // ── Load active contests ──────────────────────────────────────────────────
   useEffect(() => {
-    if (!isInitialized || !isAuthenticated) {
-      setActiveLoading(false);
-      setMyLoading(false);
-      setLbLoading(false);
-      return;
-    }
+    if (!isInitialized) return;
 
     // Running + upcoming in parallel
     Promise.all([
@@ -561,11 +556,15 @@ export default function ContestsPage() {
       })
       .catch((err) => setActiveError(err.response?.data?.error || 'Failed to load contests'))
       .finally(() => setActiveLoading(false));
-  }, [isInitialized, isAuthenticated]);
+  }, [isInitialized]);
 
   // ── Load my contests ──────────────────────────────────────────────────────
   useEffect(() => {
-    if (!isInitialized || !isAuthenticated) return;
+    if (!isInitialized) return;
+    if (!isAuthenticated) {
+      setMyLoading(false);
+      return;
+    }
 
     contestAPI
       .my()
@@ -576,7 +575,7 @@ export default function ContestsPage() {
 
   // ── Load leaderboard from most recent ended contest ───────────────────────
   useEffect(() => {
-    if (!isInitialized || !isAuthenticated) return;
+    if (!isInitialized) return;
 
     contestAPI
       .list({ status: 'ended', page: 1, limit: 1 })
@@ -593,7 +592,7 @@ export default function ContestsPage() {
       })
       .catch((err) => setLbError(err.response?.data?.error || 'Failed to load leaderboard'))
       .finally(() => setLbLoading(false));
-  }, [isInitialized, isAuthenticated]);
+  }, [isInitialized]);
 
   // ── Lazy load past contests ───────────────────────────────────────────────
   const loadPastContests = useCallback(() => {
@@ -618,37 +617,6 @@ export default function ContestsPage() {
   // ── Auth guards ───────────────────────────────────────────────────────────
   if (!isInitialized) {
     return <ContestsPageSkeleton />;
-  }
-
-  if (!isAuthenticated) {
-    return (
-      <div className="min-h-screen" style={{ background: 'var(--bg-primary)' }}>
-        <div className="max-w-3xl mx-auto px-6 py-24 text-center">
-          <div
-            className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl"
-            style={{ background: 'rgba(var(--primary),0.1)', color: 'var(--primary)' }}
-          >
-            <Trophy className="h-8 w-8" aria-hidden />
-          </div>
-          <h1 className="text-3xl font-bold mb-3" style={{ color: 'var(--text-primary)' }}>
-            Contests
-          </h1>
-          <p className="text-base mb-8 max-w-xl mx-auto" style={{ color: 'var(--text-secondary)' }}>
-            Log in to register for live contests, compete on the leaderboard, and unlock
-            exclusive problems after each round.
-          </p>
-          <Link
-            href="/accounts/login"
-            className="inline-flex items-center justify-center gap-2 rounded-xl px-5 py-2.5 text-sm font-semibold hover:opacity-90 transition-opacity"
-            style={{ background: 'var(--primary)', color: '#fff' }}
-          >
-            <Sparkles className="h-4 w-4" aria-hidden />
-            Log in to join contests
-          </Link>
-        </div>
-        <Footer />
-      </div>
-    );
   }
 
   const podium = leaderboard.slice(0, 3) as LeaderboardEntry[];
@@ -772,7 +740,23 @@ export default function ContestsPage() {
               count={myLoading ? undefined : myContests.length}
             />
             {myError && <ErrorBanner message={myError} />}
-            {myLoading ? (
+            {!isAuthenticated ? (
+              <EmptyState
+                icon={<Users className="h-6 w-6" />}
+                title="Log in to see your contests"
+                message="Track your registrations and contest history once you're signed in."
+                action={
+                  <Link
+                    href={`/accounts/login?redirect=${encodeURIComponent('/contests')}`}
+                    className="inline-flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-semibold hover:opacity-90"
+                    style={{ background: 'var(--primary)', color: '#fff' }}
+                  >
+                    <Sparkles className="h-4 w-4" />
+                    Log in
+                  </Link>
+                }
+              />
+            ) : myLoading ? (
               <div className="space-y-2">
                 {Array.from({ length: 3 }).map((_, i) => <MyContestSkeleton key={i} />)}
               </div>

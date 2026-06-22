@@ -106,26 +106,27 @@ export default function FeedbackModal({ isOpen, onClose }: FeedbackModalProps) {
     }));
   };
 
-  const getTypeStyles = (colorType: string, isSelected: boolean) => {
+  const getTypeStyles = (isSelected: boolean) => {
     const baseStyles = `
       border-2 transition-all duration-200 cursor-pointer
       hover:shadow-md hover:transform hover:scale-[1.02]
     `;
 
     if (isSelected) {
-      const selectedStyles = {
-        error: "border-error-500 bg-error-50",
-        primary: "border-primary-500 bg-primary-50",
-        accent: "border-accent-500 bg-accent-50",
-        secondary: "border-secondary bg-tertiary",
-      };
-      return `${baseStyles} ${
-        selectedStyles[colorType as keyof typeof selectedStyles] ||
-        selectedStyles.secondary
-      }`;
+      return baseStyles;
     }
 
     return `${baseStyles} border-primary hover:border-secondary hover:bg-secondary`;
+  };
+
+  const getTypeSelectedColors = (colorType: string) => {
+    const colors: Record<string, { borderColor: string; backgroundColor: string }> = {
+      error: { borderColor: "var(--error-500)", backgroundColor: "var(--error-50)" },
+      primary: { borderColor: "var(--primary-500)", backgroundColor: "var(--primary-50)" },
+      accent: { borderColor: "var(--accent-500)", backgroundColor: "var(--accent-50)" },
+      secondary: { borderColor: "var(--border-secondary)", backgroundColor: "var(--bg-tertiary)" },
+    };
+    return colors[colorType] || colors.secondary;
   };
 
   if (!isOpen) return null;
@@ -241,9 +242,13 @@ export default function FeedbackModal({ isOpen, onClose }: FeedbackModalProps) {
                       type="button"
                       onClick={() => handleChange("type", type.value)}
                       className={`p-4 text-left rounded-xl ${getTypeStyles(
-                        type.color,
                         formData.type === type.value
                       )}`}
+                      style={
+                        formData.type === type.value
+                          ? getTypeSelectedColors(type.color)
+                          : undefined
+                      }
                     >
                       <div className="flex items-start space-x-3">
                         <span className="text-2xl flex-shrink-0">

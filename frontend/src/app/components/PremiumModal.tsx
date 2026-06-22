@@ -52,7 +52,6 @@ const PremiumModal: React.FC<PremiumModalProps> = ({ isOpen, onClose, problemTit
   if (!isOpen) return null;
 
   const handleSubscribe = () => {
-    // Navigate to premium subscription page
     router.push('/premium');
   };
 

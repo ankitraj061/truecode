@@ -1,5 +1,6 @@
 import express from "express";
 import { userMiddleware } from "../middlewares/userMiddleware.js";
+import { optionalUserMiddleware } from "../middlewares/optionalUserMiddleware.js";
 import { activeAccountMiddleware } from "../middlewares/activeAccountMiddleware.js";
 import { requestLoggingMiddleware } from "../middlewares/requestLoggingMiddleware.js";
 import { ipRateLimitMiddleware } from "../middlewares/ipRateLimitMiddleware.js";
@@ -16,19 +17,19 @@ import submitCodeWaitingTimeMiddleware from "../middlewares/submitCodeWaitingTim
 
 const userContestRouter = express.Router();
 
-userContestRouter.use(
-    ipRateLimitMiddleware,
-    requestLoggingMiddleware,
-    userMiddleware,
-    activeAccountMiddleware
-);
+userContestRouter.use(ipRateLimitMiddleware, requestLoggingMiddleware);
 
-userContestRouter.get("/list", listContests);
-userContestRouter.get("/my", myContests);
-userContestRouter.get("/:contestId", getContest);
-userContestRouter.post("/:contestId/register", registerContest);
-userContestRouter.get("/:contestId/leaderboard", getLeaderboard);
-userContestRouter.get("/:contestId/problem/:problemId", getContestProblem);
-userContestRouter.post("/:contestId/submit/:problemId", submitCodeWaitingTimeMiddleware, submitContestProblem);
+// Public: viewing contests doesn't require login
+userContestRouter.get("/list", optionalUserMiddleware, listContests);
+userContestRouter.get("/:contestId/leaderboard", optionalUserMiddleware, getLeaderboard);
+
+// Auth required: anything that acts on behalf of the user
+userContestRouter.get("/my", userMiddleware, activeAccountMiddleware, myContests);
+userContestRouter.post("/:contestId/register", userMiddleware, activeAccountMiddleware, registerContest);
+userContestRouter.get("/:contestId/problem/:problemId", userMiddleware, activeAccountMiddleware, getContestProblem);
+userContestRouter.post("/:contestId/submit/:problemId", userMiddleware, activeAccountMiddleware, submitCodeWaitingTimeMiddleware, submitContestProblem);
+
+// Public: viewing a single contest's details doesn't require login
+userContestRouter.get("/:contestId", optionalUserMiddleware, getContest);
 
 export default userContestRouter;

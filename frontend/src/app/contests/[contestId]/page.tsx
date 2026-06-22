@@ -35,11 +35,7 @@ export default function ContestDetailPage() {
   const [registering, setRegistering] = useState(false);
 
   useEffect(() => {
-    if (!isInitialized || !isAuthenticated || !contestId) {
-      if (!isAuthenticated && isInitialized) router.push('/accounts/login');
-      setLoading(false);
-      return;
-    }
+    if (!isInitialized || !contestId) return;
     setLoading(true);
     setError(null);
     Promise.all([
@@ -52,9 +48,13 @@ export default function ContestDetailPage() {
       })
       .catch((err) => setError(err.response?.data?.error || 'Failed to load contest'))
       .finally(() => setLoading(false));
-  }, [contestId, isAuthenticated, isInitialized, router]);
+  }, [contestId, isInitialized]);
 
   const handleRegister = () => {
+    if (!isAuthenticated) {
+      router.push(`/accounts/login?redirect=${encodeURIComponent(`/contests/${contestId}`)}`);
+      return;
+    }
     if (!contestId || registering) return;
     setRegistering(true);
     contestAPI
@@ -67,13 +67,7 @@ export default function ContestDetailPage() {
       .finally(() => setRegistering(false));
   };
 
-  if (!isInitialized || !isAuthenticated) {
-    return (
-      <Loader fullPage message="Loading..." submessage="Checking access..." />
-    );
-  }
-
-  if (loading && !contest) {
+  if (!isInitialized || (loading && !contest)) {
     return (
       <Loader fullPage message="Loading contest" submessage="Fetching contest details..." />
     );

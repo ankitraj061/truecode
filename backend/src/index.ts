@@ -25,6 +25,7 @@ import userContestRouter from './routes/userContest.route.js';
 import userPointsRouter from './routes/userPoints.route.js';
 import userRedemptionRouter from './routes/userRedemption.route.js';
 import adminRedemptionRouter from './routes/adminRedemption.route.js';
+import adminFeedbackRouter from './routes/adminFeedback.route.js';
 import { sendErrorFromException, AppError } from './contracts/apiResponse.js';
 
 
@@ -77,6 +78,7 @@ app.use('/api/user/contest', userContestRouter);
 app.use('/api/user', userPointsRouter);
 app.use('/api/redeem', userRedemptionRouter);
 app.use('/api/admin/redemptions', adminRedemptionRouter);
+app.use('/api/admin/feedback', adminFeedbackRouter);
 app.use('/health', (_req, res) => res.send('OK'));
 app.use('/', (_req, res) => res.send('Welcome to the API'));
 

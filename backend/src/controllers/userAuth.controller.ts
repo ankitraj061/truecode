@@ -35,6 +35,10 @@ const AUTH_COOKIE_OPTIONS = {
 
 
 
+const isSafeRedirectPath = (path) => {
+    return typeof path === 'string' && path.startsWith('/') && !path.startsWith('//');
+};
+
 export const googleAuth = async (req, res, next) => {
     const { passport, registerGoogleStrategy } = await loadPassportModule();
     const initialized = await registerGoogleStrategy();
@@ -43,28 +47,37 @@ export const googleAuth = async (req, res, next) => {
         return sendError(res, 503, 'Google OAuth is currently unavailable.');
     }
 
-    passport.authenticate('google', {
+    const redirect = req.query.redirect;
+    const authOptions: { scope: string[]; state?: string } = {
         scope: ['profile', 'email']
-    })(req, res, next);
+    };
+    if (isSafeRedirectPath(redirect)) {
+        authOptions.state = redirect;
+    }
+
+    passport.authenticate('google', authOptions)(req, res, next);
 };
 
 export const googleCallback = async (req, res, next) => {
     const { passport, registerGoogleStrategy } = await loadPassportModule();
     const initialized = await registerGoogleStrategy();
+    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+    const redirectState = req.query.state;
+    const destination = isSafeRedirectPath(redirectState) ? redirectState : '/';
 
     if (!initialized) {
-        return res.redirect(`${process.env.FRONTEND_URL || 'http://localhost:3000'}/login?error=oauth_unavailable`);
+        return res.redirect(`${frontendUrl}/login?error=oauth_unavailable`);
     }
 
     passport.authenticate('google', {
-        failureRedirect: `${process.env.FRONTEND_URL || 'http://localhost:3000'}/`
+        failureRedirect: `${frontendUrl}/`
     }, async (err, user) => {
         if (err) {
-            return res.redirect(`${process.env.FRONTEND_URL || 'http://localhost:3000'}/`);
+            return res.redirect(`${frontendUrl}/`);
         }
-        
+
         if (!user) {
-            return res.redirect(`${process.env.FRONTEND_URL || 'http://localhost:3000'}/`);
+            return res.redirect(`${frontendUrl}/`);
         }
 
         try {
@@ -96,11 +109,11 @@ export const googleCallback = async (req, res, next) => {
             // Set cookie (same as your existing auth)
             res.cookie('token', token, AUTH_COOKIE_OPTIONS);
 
-            // Redirect to frontend dashboard
-            res.redirect(`${process.env.FRONTEND_URL || 'http://localhost:3000'}/`);
-            
+            // Redirect back to the page the user originated from, if any
+            res.redirect(`${frontendUrl}${destination}`);
+
         } catch (error) {
-            res.redirect(`${process.env.FRONTEND_URL || 'http://localhost:3000'}/login?error=server_error`);
+            res.redirect(`${frontendUrl}/login?error=server_error`);
         }
     })(req, res, next);
 };

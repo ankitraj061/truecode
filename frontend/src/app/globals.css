@@ -660,3 +660,30 @@ body {
 .animate-shimmer {
   animation: shimmer 1.5s infinite;
 }
+
+/* ============================================================
+   Razorpay Checkout — render as a centered modal card instead of
+   a near-fullscreen panel. Razorpay injects `.razorpay-container`
+   (a fixed, fullscreen click-catcher) directly into <body>, with
+   `.razorpay-checkout-frame` (the actual iframe) inside it. We only
+   reposition/size the iframe and dim the container as a backdrop —
+   never touch `.razorpay-container`'s `display`, since Razorpay
+   toggles that itself to show/hide the overlay; forcing it breaks
+   that and leaves an invisible full-page click-blocker behind.
+   Always uses the centered card size, regardless of viewport width.
+   ============================================================ */
+.razorpay-container {
+  background: rgba(0, 0, 0, 0.6) !important;
+  backdrop-filter: blur(2px) !important;
+}
+
+.razorpay-container .razorpay-checkout-frame {
+  position: fixed !important;
+  top: 50% !important;
+  left: 50% !important;
+  transform: translate(-50%, -50%) !important;
+  width: min(890px, 92vw) !important;
+  height: min(620px, 88vh) !important;
+  border-radius: var(--radius-2xl) !important;
+  box-shadow: var(--shadow-xl) !important;
+}

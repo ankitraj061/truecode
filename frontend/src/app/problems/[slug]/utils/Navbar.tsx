@@ -3,7 +3,7 @@
 import { useSelector } from "react-redux";
 import Link from "next/link";
 import Image from "next/image";
-import { useRouter, useParams } from "next/navigation";
+import { useRouter, useParams, usePathname } from "next/navigation";
 import { RootState } from "@/app/store/store";
 import { useState, useEffect, useRef } from "react";
 import { useRunCode } from "@/app/problems/[slug]/utils/useRunCode";
@@ -31,7 +31,12 @@ export default function Navbar({ onTimerUpdate, onTimerReset }: TimerProps = {})
   const { isAuthenticated, user } = useSelector((state: RootState) => state.auth);
   const { problem } = useSelector((state: RootState) => state.problem);
   const router = useRouter();
+  const pathname = usePathname();
   const { slug } = useParams();
+
+  const redirectToLogin = () => {
+    router.push(`/accounts/login?redirect=${encodeURIComponent(pathname)}`);
+  };
 
   // Theme state
   const [theme, setTheme] = useState<"light" | "dark">("light");
@@ -244,6 +249,7 @@ export default function Navbar({ onTimerUpdate, onTimerReset }: TimerProps = {})
   const handleRunCode = async () => {
     if (!isAuthenticated) {
       showToast('Please login first to run code', 'info');
+      redirectToLogin();
       return;
     }
     // Prevent running if already running or submitting
@@ -335,6 +341,7 @@ export default function Navbar({ onTimerUpdate, onTimerReset }: TimerProps = {})
   const handleSubmitCode = async () => {
     if (!isAuthenticated) {
       showToast('Please login first to submit code', 'info');
+      redirectToLogin();
       return;
     }
     // Prevent submitting if already running or submitting
@@ -717,7 +724,7 @@ export default function Navbar({ onTimerUpdate, onTimerReset }: TimerProps = {})
             </div>
           ) : (
             <Link
-              href="/accounts/login"
+              href={`/accounts/login?redirect=${encodeURIComponent(pathname)}`}
               className="btn-secondary text-sm"
             >
               Login

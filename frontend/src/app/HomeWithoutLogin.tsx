@@ -2,7 +2,6 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
-import { ThemeToggle } from '@/app/components/themeToggle';
 import { FlickeringGrid } from '@/components/ui/flickering-grid';
 import Footer from './components/Footer';
 import ShowcaseModal from './components/ShowcaseModal';
@@ -11,7 +10,7 @@ import {
   Save, FlaskConical, Lightbulb, BarChart3, MessageSquare,
   Bot, Zap, Target, BookOpen, Trophy, Star, Gift, Lock,
   Flame, FileText, Award, ArrowRight, CheckCircle2,
-  Sparkles, Menu, X,
+  Sparkles,
 } from 'lucide-react';
 
 // ── Framer Motion helpers ──────────────────────────────────────
@@ -134,126 +133,12 @@ function SectionHeading({
   );
 }
 
-// ── Marketing Nav Link ─────────────────────────────────────────
-function NavLink({ href, children }: { href: string; children: React.ReactNode }) {
-  return (
-    <a
-      href={href}
-      className="relative group text-sm font-medium text-[var(--muted-foreground)] hover:text-[var(--foreground)] transition-colors duration-200"
-    >
-      {children}
-      <span className="absolute inset-x-0 -bottom-0.5 h-0.5 bg-[var(--primary)] scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left rounded-full" />
-    </a>
-  );
-}
-
 // ── Main Component ─────────────────────────────────────────────
 export default function HomeWithoutLogin() {
   const [showShowcase, setShowShowcase] = useState(false);
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   return (
     <div className="min-h-screen bg-[var(--background)]">
-
-      {/* ── Marketing Header ──────────────────────────────────── */}
-      <header className="bg-[var(--card)]/80 backdrop-blur-md border-b border-[var(--border)] sticky top-0 z-50 shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6">
-          <div className="flex justify-between items-center h-16">
-            {/* Logo */}
-            <Link href="/" className="group flex items-center gap-2">
-              <div className="w-8 h-8 bg-[var(--primary)] rounded-lg flex items-center justify-center transition-all duration-300 group-hover:scale-110 group-hover:rotate-6">
-                <Code2 className="w-4 h-4 text-white" />
-              </div>
-              <span className="text-xl font-bold bg-gradient-to-r from-[var(--primary)] to-emerald-400 bg-clip-text text-transparent">
-                TrueCode
-              </span>
-            </Link>
-
-            {/* Desktop nav */}
-            <nav className="hidden md:flex items-center gap-7">
-              <NavLink href="#features">Features</NavLink>
-              <NavLink href="#premium">Premium</NavLink>
-              <NavLink href="#products">Rewards</NavLink>
-            </nav>
-
-            {/* Actions */}
-            <div className="flex items-center gap-3">
-              <ThemeToggle />
-              <div className="hidden md:flex items-center gap-3">
-                <Link
-                  href="/accounts/login"
-                  className="text-sm font-medium px-4 py-2 rounded-lg border border-[var(--border)] text-[var(--foreground)] hover:bg-[var(--muted)] transition-colors duration-200"
-                >
-                  Sign In
-                </Link>
-                <Link
-                  href="/accounts/signup"
-                  className="text-sm font-semibold px-4 py-2 rounded-lg bg-[var(--primary)] text-white hover:opacity-90 transition-opacity shadow-sm hover:shadow-md"
-                >
-                  Get Started
-                </Link>
-              </div>
-
-              {/* Mobile hamburger */}
-              <button
-                className="md:hidden p-2 rounded-lg hover:bg-[var(--muted)] transition-colors"
-                onClick={() => setMobileMenuOpen(true)}
-              >
-                <Menu className="w-5 h-5 text-[var(--foreground)]" />
-              </button>
-            </div>
-          </div>
-        </div>
-      </header>
-
-      {/* Mobile menu drawer */}
-      {mobileMenuOpen && (
-        <>
-          <div
-            className="fixed inset-0 bg-black/40 backdrop-blur-sm z-40 md:hidden"
-            onClick={() => setMobileMenuOpen(false)}
-          />
-          <div className="fixed top-0 right-0 h-full w-64 bg-[var(--card)] border-l border-[var(--border)] shadow-2xl z-50 md:hidden animate-slide-in-top">
-            <div className="flex items-center justify-between px-5 py-4 border-b border-[var(--border)]">
-              <span className="font-bold text-[var(--foreground)]">Menu</span>
-              <button
-                onClick={() => setMobileMenuOpen(false)}
-                className="p-1.5 rounded-lg hover:bg-[var(--muted)]"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-            <nav className="px-3 py-4 space-y-1">
-              {['#features', '#premium', '#products'].map((href) => (
-                <a
-                  key={href}
-                  href={href}
-                  onClick={() => setMobileMenuOpen(false)}
-                  className="block px-3 py-2.5 rounded-lg text-[var(--foreground)] hover:bg-[var(--muted)] font-medium capitalize"
-                >
-                  {href.replace('#', '')}
-                </a>
-              ))}
-            </nav>
-            <div className="absolute bottom-0 left-0 right-0 px-5 py-6 border-t border-[var(--border)] space-y-3">
-              <Link
-                href="/accounts/login"
-                onClick={() => setMobileMenuOpen(false)}
-                className="flex items-center justify-center w-full py-2.5 rounded-lg border border-[var(--border)] text-[var(--foreground)] font-medium text-sm hover:bg-[var(--muted)]"
-              >
-                Sign In
-              </Link>
-              <Link
-                href="/accounts/signup"
-                onClick={() => setMobileMenuOpen(false)}
-                className="flex items-center justify-center w-full py-2.5 rounded-lg bg-[var(--primary)] text-white font-semibold text-sm hover:opacity-90"
-              >
-                Get Started Free
-              </Link>
-            </div>
-          </div>
-        </>
-      )}
 
       {/* ── Hero Section ──────────────────────────────────────── */}
       <section className="relative overflow-hidden bg-[var(--card)]">

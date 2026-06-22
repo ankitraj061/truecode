@@ -79,7 +79,7 @@ export const getAllProblemsForUser = async (req, res) => {
       order = "asc",
     } = req.query;
 
-    const userId = req.user._id;
+    const userId = req.user?._id || null;
 
     // Build match stage for initial filtering
     const matchStage: Record<string, any> = {

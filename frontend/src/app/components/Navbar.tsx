@@ -11,7 +11,7 @@ import { useRouter, usePathname } from 'next/navigation';
 import type { RootState, AppDispatch } from '@/app/store/store';
 import {
   User, ShoppingBag, LogOut, Menu, X, Code2,
-  Trophy, BookOpen, Gift, Calendar, Crown, Sparkles,
+  Trophy, BookOpen, Gift, Calendar, Crown, Sparkles, Receipt,
 } from 'lucide-react';
 
 interface User {
@@ -223,6 +223,15 @@ function UserProfileDropdown({ user }: { user: User }) {
           >
             <ShoppingBag className="w-4 h-4 text-[var(--muted-foreground)]" />
             My Orders
+          </Link>
+
+          <Link
+            href="/my-transactions"
+            className="flex items-center gap-3 px-4 py-2.5 text-sm text-[var(--foreground)] hover:bg-[var(--muted)] transition-colors duration-150"
+            onClick={() => setIsOpen(false)}
+          >
+            <Receipt className="w-4 h-4 text-[var(--muted-foreground)]" />
+            My Transactions
           </Link>
 
           <div className="border-t border-[var(--border)] my-1" />

@@ -12,7 +12,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
       <AuthInitializer>
         {children}
         </AuthInitializer>
-      
+
       </Provider>
     </ThemeProvider>
   );

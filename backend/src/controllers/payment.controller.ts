@@ -4,7 +4,12 @@ import Payment from '../models/payment.js';
 import User from '../models/user.js';
 import dotenv from 'dotenv';
 import { sendError } from '../contracts/apiResponse.js';
+import { redisClient } from '../config/redis.js';
 dotenv.config();
+
+// How long a freshly created (unpaid) order can be resumed from "My Transactions".
+const PAYMENT_RESERVATION_TTL_SECONDS = 10 * 60; // 10 minutes
+const reservationKey = (paymentId: string) => `payment:reserve:${paymentId}`;
 
 const isRazorpayConfigured = () => Boolean(
   process.env.RAZORPAY_KEY_ID?.trim() && process.env.RAZORPAY_KEY_SECRET?.trim()
@@ -66,6 +71,19 @@ export const createOrder = async (req, res) => {
       status: 'created'
     });
 
+    // Reserve this order for 10 minutes so the user can resume it from
+    // "My Transactions" if they navigate away before completing checkout,
+    // instead of silently creating a duplicate order.
+    try {
+      await redisClient.set(
+        reservationKey(payment._id.toString()),
+        JSON.stringify({ orderId: order.id, amount: order.amount, currency: order.currency }),
+        { ex: PAYMENT_RESERVATION_TTL_SECONDS }
+      );
+    } catch {
+      // Redis is best-effort here — payment still succeeds via Mongo record.
+    }
+
     return res.json({
       success: true,
       order,            // send order.id etc to frontend
@@ -109,6 +127,11 @@ export const verifyPayment = async (req, res) => {
     );
 
     if (!payment) {
+    } else {
+      // Payment is settled — release the 10-minute resume reservation.
+      try {
+        await redisClient.del(reservationKey(payment._id.toString()));
+      } catch {}
     }
 
     // Update user's subscriptionExpiry intelligently:
@@ -163,6 +186,10 @@ export const webhookHandler = async (req, res) => {
       );
 
       if (payment) {
+        try {
+          await redisClient.del(reservationKey(payment._id.toString()));
+        } catch {}
+
         const user = await User.findById(payment.user);
         const now = new Date();
         const currentExpiry = user?.subscriptionExpiry ? new Date(user.subscriptionExpiry) : null;
@@ -180,5 +207,117 @@ export const webhookHandler = async (req, res) => {
     return res.json({ ok: true });
   } catch (err) {
     return res.status(500).send('error');
+  }
+};
+
+// List the current user's payment history (for the "My Transactions" page).
+// Flags any still-pending order as `resumable` if its 10-minute Redis
+// reservation hasn't expired yet, so the frontend can offer to reopen checkout.
+// Any "created" payment whose reservation has lapsed is lazily flipped to
+// "expired" here, instead of sitting as "Pending" forever until someone
+// happens to click Resume.
+export const getMyTransactions = async (req, res) => {
+  try {
+    const userId = (req.user && req.user._id) || req.body.userId;
+    if (!userId) return sendError(res, 401, 'Unauthorized');
+
+    const payments = await Payment.find({ user: userId }).sort({ createdAt: -1 });
+
+    const transactions = await Promise.all(
+      payments.map(async (payment) => {
+        let resumable = false;
+
+        if (payment.status === 'created') {
+          let reservationExists: boolean | null = null;
+          try {
+            reservationExists = Boolean(await redisClient.exists(reservationKey(payment._id.toString())));
+          } catch {
+            // Redis unreachable — leave status as-is rather than guessing.
+            reservationExists = null;
+          }
+
+          if (reservationExists === true) {
+            resumable = true;
+          } else if (reservationExists === false) {
+            payment.status = 'expired';
+            await payment.save();
+          }
+        }
+
+        return { ...payment.toObject(), resumable };
+      })
+    );
+
+    return res.json({ success: true, transactions });
+  } catch (err) {
+    return sendError(res, 500, 'Failed to fetch transactions');
+  }
+};
+
+// Cancel a still-pending order before it's paid (e.g. user changed their
+// mind). Releases the Redis reservation so it can't be resumed afterwards.
+export const cancelPayment = async (req, res) => {
+  try {
+    const userId = (req.user && req.user._id) || req.body.userId;
+    const { paymentId } = req.params;
+    if (!userId) return sendError(res, 401, 'Unauthorized');
+
+    const payment = await Payment.findOne({ _id: paymentId, user: userId });
+    if (!payment) return sendError(res, 404, 'Transaction not found');
+
+    if (payment.status !== 'created') {
+      return sendError(res, 400, `This payment is already ${payment.status}`);
+    }
+
+    payment.status = 'cancelled';
+    await payment.save();
+
+    try {
+      await redisClient.del(reservationKey(payment._id.toString()));
+    } catch {}
+
+    return res.json({ success: true, message: 'Payment cancelled' });
+  } catch (err) {
+    return sendError(res, 500, 'Unable to cancel payment');
+  }
+};
+
+// Resume a still-reserved pending order (e.g. user navigated back before
+// finishing checkout). Returns the same Razorpay order so a duplicate
+// order isn't created; fails once the 10-minute reservation has expired.
+export const resumePayment = async (req, res) => {
+  try {
+    const userId = (req.user && req.user._id) || req.body.userId;
+    const { paymentId } = req.params;
+    if (!userId) return sendError(res, 401, 'Unauthorized');
+
+    const payment = await Payment.findOne({ _id: paymentId, user: userId });
+    if (!payment) return sendError(res, 404, 'Transaction not found');
+
+    if (payment.status !== 'created') {
+      return sendError(res, 400, `This payment is already ${payment.status}`);
+    }
+
+    let reserved: string | null = null;
+    try {
+      reserved = await redisClient.get(reservationKey(payment._id.toString()));
+    } catch {}
+
+    if (!reserved) {
+      payment.status = 'expired';
+      await payment.save();
+      return sendError(res, 410, 'Payment window expired. Please start a new payment.');
+    }
+
+    const data = typeof reserved === 'string' ? JSON.parse(reserved) : reserved;
+
+    return res.json({
+      success: true,
+      order: { id: data.orderId, amount: data.amount, currency: data.currency },
+      paymentId: payment._id,
+      key: process.env.RAZORPAY_KEY_ID
+    });
+  } catch (err) {
+    return sendError(res, 500, 'Unable to resume payment');
   }
 };

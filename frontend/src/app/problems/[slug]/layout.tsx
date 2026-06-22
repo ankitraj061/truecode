@@ -18,7 +18,7 @@ import ProblemFooter from "./utils/Footer";
 import PremiumModal from "@/app/components/PremiumModal";
 import { RootState, AppDispatch } from "@/app/store/store";
 import { SubmissionResponse, TestCaseDetail , CodeEditorData, TestCase} from "./utils/types";
-import { RazorpayOptions, RazorpayInstance } from "@/app/premium/PayButton";
+import { RazorpayOptions, RazorpayInstance } from "@/app/premium/razorpay";
 
 // declare global {
 //   interface Window {

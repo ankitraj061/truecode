@@ -23,7 +23,7 @@ const difficultyConfig: Record<string, { label: string; className: string }> = {
 
 const ProblemItem: React.FC<ProblemItemProps> = ({ problem, index, onSaveToggle }) => {
   const router = useRouter();
-  const { user } = useSelector((state: RootState) => state.auth);
+  const { user, isAuthenticated } = useSelector((state: RootState) => state.auth);
   const [showPremiumModal, setShowPremiumModal] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
 
@@ -41,6 +41,10 @@ const ProblemItem: React.FC<ProblemItemProps> = ({ problem, index, onSaveToggle 
 
   const handleSaveToggle = async (e: React.MouseEvent) => {
     e.stopPropagation();
+    if (!isAuthenticated) {
+      router.push(`/accounts/login?redirect=${encodeURIComponent('/problems')}`);
+      return;
+    }
     if (isSaving) return;
     setIsSaving(true);
     try {

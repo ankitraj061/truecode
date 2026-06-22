@@ -19,6 +19,11 @@ const feedbackSchema = new mongoose.Schema({
   problemSlug: {
     type: String,
     sparse: true
+  },
+  status: {
+    type: String,
+    enum: ['open', 'resolved'],
+    default: 'open'
   }
 }, {
   timestamps: true

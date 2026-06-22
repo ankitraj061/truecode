@@ -9,7 +9,7 @@ const paymentSchema = new Schema({
   razorpayOrderId: { type: String },
   razorpayPaymentId: { type: String },
   razorpaySignature: { type: String },
-  status: { type: String, enum: ['created','paid','failed'], default: 'created' },
+  status: { type: String, enum: ['created','paid','failed','expired','cancelled'], default: 'created' },
   createdAt: { type: Date, default: Date.now }
 });
 

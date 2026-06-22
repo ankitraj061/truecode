@@ -24,15 +24,20 @@ export default function LoginPageContent() {
   const [rememberMe, setRememberMe] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  const getRedirectTarget = (role?: string) => {
+    if (role === 'admin') return '/admin';
+    const redirect = searchParams.get('redirect');
+    if (redirect && redirect.startsWith('/') && !redirect.startsWith('//')) {
+      return redirect;
+    }
+    return '/';
+  };
+
   useEffect(() => {
     if (isInitialized && isAuthenticated) {
-      if (user?.role === 'admin') {
-        router.push('/admin');
-      } else {
-        router.push('/');
-      }
+      router.push(getRedirectTarget(user?.role));
     }
-  }, [isAuthenticated, isInitialized, user, router]);
+  }, [isAuthenticated, isInitialized, user, router, searchParams]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -43,7 +48,11 @@ export default function LoginPageContent() {
   };
 
   const handleGoogleLogin = () => {
-    window.location.href = `${BACKEND_URL}/api/auth/google`;
+    const redirect = searchParams.get('redirect');
+    const query = redirect && redirect.startsWith('/') && !redirect.startsWith('//')
+      ? `?redirect=${encodeURIComponent(redirect)}`
+      : '';
+    window.location.href = `${BACKEND_URL}/api/auth/google${query}`;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -60,11 +69,7 @@ export default function LoginPageContent() {
 
       if (loginUser.fulfilled.match(result)) {
         const loggedInUser = result.payload as RootState['auth']['user'];
-        if (loggedInUser?.role === 'admin') {
-          router.push('/admin');
-        } else {
-          router.push('/');
-        }
+        router.push(getRedirectTarget(loggedInUser?.role));
       } else if (loginUser.rejected.match(result)) {
         const message =
           typeof result.payload === 'string'

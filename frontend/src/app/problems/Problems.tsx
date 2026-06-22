@@ -1,19 +1,14 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { useSelector } from 'react-redux';
-import { useRouter } from 'next/navigation';
-import { ProblemsFilters, Problem, Topic, Company, PaginationInfo, RootState } from './utils/types';
+import { ProblemsFilters, Problem, Topic, Company, PaginationInfo } from './utils/types';
 import { problemsAPI } from './utils/globalAPI';
 import TopicsBar from './utils/TopicsBar';
 import FilterSidebar from './utils/FilterSidebar';
 import CompaniesSidebar from './utils/CompaniesSidebar';
 import SearchAndSort from './utils/SearchAndSort';
 import ProblemsList from './utils/ProblemsList';
+import { AlertTriangle, RefreshCw } from 'lucide-react';
 
 const ProblemsPage: React.FC = () => {
-  const router = useRouter();
-  // Redux state
-  const { user, isAuthenticated } = useSelector((state: RootState) => state.auth);
-
   // Component state
   const [problems, setProblems] = useState<Problem[]>([]);
   const [topics, setTopics] = useState<Topic[]>([]);
@@ -89,11 +84,6 @@ const ProblemsPage: React.FC = () => {
 
   // Fetch problems with user context
   const fetchProblems = useCallback(async () => {
-    if (!isAuthenticated || !user) {
-      setError('Please login to access problems');
-      return;
-    }
-
     setLoading(prev => ({ ...prev, problems: true }));
     setError(null);
     
@@ -111,12 +101,10 @@ const ProblemsPage: React.FC = () => {
     } finally {
       setLoading(prev => ({ ...prev, problems: false }));
     }
-  }, [filters, isAuthenticated, user]);
+  }, [filters]);
 
   // Fetch topics
   const fetchTopics = useCallback(async () => {
-    if (!isAuthenticated) return;
-    
     setLoading(prev => ({ ...prev, topics: true }));
     
     try {
@@ -126,12 +114,10 @@ const ProblemsPage: React.FC = () => {
     } finally {
       setLoading(prev => ({ ...prev, topics: false }));
     }
-  }, [isAuthenticated]);
+  }, []);
 
   // Fetch companies
   const fetchCompanies = useCallback(async () => {
-    if (!isAuthenticated) return;
-    
     setLoading(prev => ({ ...prev, companies: true }));
     
     try {
@@ -141,70 +127,35 @@ const ProblemsPage: React.FC = () => {
     } finally {
       setLoading(prev => ({ ...prev, companies: false }));
     }
-  }, [isAuthenticated]);
+  }, []);
 
   // Effects
   useEffect(() => {
-    if (isAuthenticated) {
-      fetchTopics();
-      fetchCompanies();
-    }
-  }, [fetchTopics, fetchCompanies, isAuthenticated]);
+    fetchTopics();
+    fetchCompanies();
+  }, [fetchTopics, fetchCompanies]);
 
   useEffect(() => {
-    if (isAuthenticated) {
-      fetchProblems();
-    }
-  }, [fetchProblems, isAuthenticated]);
-
-  // Authentication check
-  if (!isAuthenticated || !user) {
-    return (
-      <div className="min-h-screen bg-secondary flex items-center justify-center animate-fade-in">
-        <div className="bg-elevated rounded-3xl shadow-xl max-w-md w-full mx-4 p-8 border border-primary text-center">
-          <div className="w-20 h-20 mx-auto bg-warning/20 rounded-3xl flex items-center justify-center mb-6">
-            <svg className="h-10 w-10 text-warning" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-            </svg>
-          </div>
-          <h3 className="text-xl font-bold text-primary mb-3">
-            Authentication Required
-          </h3>
-          <p className="text-secondary mb-6">
-            Please log in to access the problems dashboard and start your coding journey.
-          </p>
-          <button
-            onClick={() => router.push('/accounts/login')}
-            className="btn-primary w-full hover:scale-105 active:scale-95 transition-all duration-300"
-          >
-            Go to Login
-          </button>
-        </div>
-      </div>
-    );
-  }
+    fetchProblems();
+  }, [fetchProblems]);
 
   // Error display
   if (error) {
     return (
-      <div className="min-h-screen bg-secondary flex items-center justify-center animate-fade-in">
-        <div className="bg-elevated rounded-3xl shadow-xl max-w-md w-full mx-4 p-8 border border-primary">
-          {/* Error Icon */}
+      <div className="min-h-[calc(100vh-4rem)] bg-[var(--background)] flex items-center justify-center animate-fade-in">
+        <div className="bg-[var(--card)] rounded-2xl max-w-md w-full mx-4 p-8 border border-[var(--border)]">
           <div className="text-center mb-6">
-            <div className="w-20 h-20 mx-auto bg-error/20 rounded-3xl flex items-center justify-center mb-4 relative">
-              <svg className="h-10 w-10 text-error" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-              <div className="absolute -top-1 -right-1 w-6 h-6 bg-error/30 rounded-full animate-ping"></div>
+            <div className="w-16 h-16 mx-auto bg-[var(--destructive)]/10 rounded-2xl flex items-center justify-center mb-4">
+              <AlertTriangle className="w-8 h-8 text-[var(--destructive)]" />
             </div>
           </div>
-          
-          <h3 className="text-xl font-bold text-primary text-center mb-3">
-            Oops! Something went wrong
+
+          <h3 className="text-lg font-bold text-[var(--foreground)] text-center mb-2">
+            Something went wrong
           </h3>
-          <p className="text-secondary text-center mb-6 leading-relaxed">{error}</p>
-          
-          <div className="flex flex-col gap-3">
+          <p className="text-sm text-[var(--muted-foreground)] text-center mb-6 leading-relaxed">{error}</p>
+
+          <div className="flex flex-col gap-2">
             <button
               onClick={() => {
                 setError(null);
@@ -212,18 +163,14 @@ const ProblemsPage: React.FC = () => {
                 fetchTopics();
                 fetchCompanies();
               }}
-              className="btn-primary w-full hover:scale-105 active:scale-95 transition-all duration-300"
+              className="inline-flex items-center justify-center gap-2 w-full rounded-lg bg-[var(--primary)] text-white text-sm font-semibold py-2.5 hover:opacity-90 transition-opacity"
             >
-              <span className="flex items-center justify-center gap-2">
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                </svg>
-                Try Again
-              </span>
+              <RefreshCw className="w-4 h-4" />
+              Try Again
             </button>
             <button
               onClick={() => setError(null)}
-              className="btn-secondary w-full hover:scale-105 active:scale-95 transition-all duration-300"
+              className="w-full rounded-lg bg-[var(--muted)] text-[var(--foreground)] text-sm font-medium py-2.5 hover:bg-[var(--muted)]/70 transition-colors"
             >
               Dismiss
             </button>
@@ -234,67 +181,31 @@ const ProblemsPage: React.FC = () => {
   }
 
   return (
-    <div className="bg-secondary overflow-hidden">
-      {/* Welcome Header for First Time Load */}
-      {/* {problems.length > 0 && (
-        <div className="bg-elevated border-b border-primary p-4 animate-slide-up">
-          <div className="max-w-7xl mx-auto flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <div className={`w-12 h-12 rounded-2xl flex items-center justify-center ${
-                hasPremiumAccess ? 'bg-success/20' : 'bg-warning/20'
-              }`}>
-                {hasPremiumAccess ? (
-                  <svg className="w-6 h-6 text-success" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
-                  </svg>
-                ) : (
-                  <svg className="w-6 h-6 text-warning" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                  </svg>
-                )}
-              </div>
-              <div>
-                <h1 className="text-lg font-bold text-primary">
-                  Welcome back, {user.firstName}! 🚀
-                </h1>
-                <p className="text-sm text-secondary">
-                  {hasPremiumAccess 
-                    ? `You have full access to ${pagination.totalProblems} problems` 
-                    : `${pagination.totalProblems} problems available • Upgrade for premium content`
-                  }
-                </p>
-              </div>
-            </div>
-            {!hasPremiumAccess && (
-              <button className="bg-gradient-to-r from-warning to-accent text-inverse px-6 py-2 rounded-xl font-medium hover:scale-105 transition-all duration-300">
-                <span className="flex items-center gap-2">
-                  <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
-                  </svg>
-                  Upgrade to Premium
-                </span>
-              </button>
-            )}
-          </div>
-        </div>
-      )} */}
-
+    <div className="bg-[var(--background)] overflow-hidden">
       <div className="flex h-[calc(100vh-4rem)] overflow-hidden">
         {/* Left Sidebar - Filters */}
-        <div className="w-64 flex-shrink-0 animate-slide-up" style={{ animationDelay: '0.1s' }}>
+        <aside className="w-64 flex-shrink-0 animate-slide-up hidden lg:block" style={{ animationDelay: '0.1s' }}>
           <FilterSidebar
             filters={filters}
             onFilterChange={handleFilterChange}
           />
-        </div>
+        </aside>
 
         {/* Middle Column - Main Content */}
         <div className="flex-1 flex flex-col min-w-0 animate-slide-up" style={{ animationDelay: '0.2s' }}>
+          {/* Page heading */}
+          <div className="px-6 pt-5 pb-3 flex items-baseline gap-3">
+            <h1 className="text-xl font-bold text-[var(--foreground)]">Problems</h1>
+            <span className="text-sm text-[var(--muted-foreground)]">
+              {pagination.totalProblems.toLocaleString()} total
+            </span>
+          </div>
+
           {/* Topics Bar */}
           <TopicsBar
             topics={topics}
             selectedTopic={filters.topic || ''}
-            totalProblems ={pagination.totalProblems}
+            totalProblems={pagination.totalProblems}
             onTopicSelect={handleTopicSelect}
             isLoading={loading.topics}
           />
@@ -319,14 +230,14 @@ const ProblemsPage: React.FC = () => {
         </div>
 
         {/* Right Sidebar - Companies */}
-        <div className="w-64 flex-shrink-0 animate-slide-up" style={{ animationDelay: '0.3s' }}>
+        <aside className="w-64 flex-shrink-0 animate-slide-up hidden xl:block" style={{ animationDelay: '0.3s' }}>
           <CompaniesSidebar
             companies={companies}
             selectedCompany={filters.company || ''}
             onCompanySelect={handleCompanySelect}
             isLoading={loading.companies}
           />
-        </div>
+        </aside>
       </div>
 
       {/* Custom Scrollbar Styles */}

@@ -59,6 +59,7 @@ export interface AdminUserSummary {
   emailId: string;
   username: string;
   role: "admin" | "user";
+  isActive?: boolean;
   createdAt?: string;
 }
 
@@ -71,6 +72,54 @@ export interface AdminUsersResponse {
 
 export interface APIError {
   error: string;
+}
+
+export interface AdminUserListItem {
+  _id: string;
+  firstName: string;
+  lastName?: string;
+  emailId: string;
+  username: string;
+  role: "admin" | "user";
+  isActive: boolean;
+  subscriptionType: "free" | "premium";
+  createdAt: string;
+}
+
+export interface AdminUsersListResponse {
+  users: AdminUserListItem[];
+  total: number;
+  page: number;
+  limit: number;
+}
+
+export type FeedbackType = "bug" | "suggestion" | "question" | "other";
+export type FeedbackStatus = "open" | "resolved";
+
+export interface AdminFeedbackUser {
+  _id: string;
+  firstName: string;
+  lastName?: string;
+  emailId: string;
+  username: string;
+}
+
+export interface AdminFeedbackItem {
+  _id: string;
+  userId: AdminFeedbackUser;
+  type: FeedbackType;
+  message: string;
+  problemSlug?: string;
+  status: FeedbackStatus;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface AdminFeedbackResponse {
+  feedback: AdminFeedbackItem[];
+  total: number;
+  page: number;
+  limit: number;
 }
 
 export interface ContestAvailableProblem {
@@ -329,6 +378,81 @@ export class AdminAPI {
       `/api/admin/contest/${contestId}`
     );
     return response.data as { message: string };
+  }
+
+  // Manage users
+  static async getAllUsers(params: {
+    page?: number;
+    limit?: number;
+    search?: string;
+    role?: "admin" | "user";
+    isActive?: boolean;
+  }): Promise<AdminUsersListResponse> {
+    const searchParams = new URLSearchParams();
+    Object.entries(params).forEach(([key, value]) => {
+      if (value !== undefined && value !== null && value !== "") {
+        searchParams.append(key, String(value));
+      }
+    });
+
+    const response = await axiosClient.get(
+      `/api/admin/users?${searchParams.toString()}`
+    );
+    return response.data as AdminUsersListResponse;
+  }
+
+  static async toggleUserActive(id: string) {
+    const response = await axiosClient.patch(
+      `/api/admin/users/${id}/toggle-active`
+    );
+    return response.data as { message: string; user: { _id: string; isActive: boolean } };
+  }
+
+  static async updateUserRole(id: string, role: "admin" | "user") {
+    const response = await axiosClient.patch(`/api/admin/users/${id}/role`, {
+      role,
+    });
+    return response.data as { message: string; user: { _id: string; role: string } };
+  }
+
+  static async updateUserDetails(
+    id: string,
+    payload: { firstName?: string; lastName?: string; password?: string }
+  ) {
+    const response = await axiosClient.patch(`/api/admin/users/${id}`, payload);
+    return response.data as { message: string; user: AdminUserSummary };
+  }
+
+  static async deleteUser(id: string) {
+    const response = await axiosClient.delete(`/api/admin/users/${id}`);
+    return response.data as { message: string };
+  }
+
+  // Feedback
+  static async getAdminFeedback(params: {
+    page?: number;
+    limit?: number;
+    type?: FeedbackType;
+    status?: FeedbackStatus;
+  }): Promise<AdminFeedbackResponse> {
+    const searchParams = new URLSearchParams();
+    Object.entries(params).forEach(([key, value]) => {
+      if (value !== undefined && value !== null) {
+        searchParams.append(key, String(value));
+      }
+    });
+
+    const response = await axiosClient.get(
+      `/api/admin/feedback?${searchParams.toString()}`
+    );
+    return response.data as AdminFeedbackResponse;
+  }
+
+  static async updateFeedbackStatus(id: string, status: FeedbackStatus) {
+    const response = await axiosClient.patch(`/api/admin/feedback/${id}/status`, {
+      status,
+    });
+    return response.data as { success: boolean; feedback: AdminFeedbackItem };
   }
 }
 

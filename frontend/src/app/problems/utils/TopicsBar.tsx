@@ -1,5 +1,6 @@
 import React from 'react';
 import { Topic } from './types';
+import { Sparkles } from 'lucide-react';
 
 interface TopicsBarProps {
   topics: Topic[];
@@ -16,43 +17,9 @@ const TopicsBar: React.FC<TopicsBarProps> = ({
   totalProblems,
   isLoading
 }) => {
-  const getTopicIcon = (topic: string) => {
-    const iconMap: { [key: string]: string } = {
-      'Array': '🔢',
-      'String': '📝',
-      'Linked List': '🔗',
-      'Binary Tree': '🌳',
-      'Binary Search Tree': '🌲',
-      'Graph': '🕸️',
-      'Dynamic Programming': '⚡',
-      'Greedy': '🎯',
-      'Backtracking': '🔄',
-      'Divide and Conquer': '⚔️',
-      'Hash Table': '🗂️',
-      'Stack': '📚',
-      'Queue': '🚶',
-      'Heap': '⛰️',
-      'Trie': '🌐',
-      'Bit Manipulation': '🔢',
-      'Math': '🧮',
-      'Two Pointers': '👉',
-      'Sliding Window': '🪟',
-      'Binary Search': '🔍',
-      'Sorting': '📊',
-      'Union Find': '🤝',
-      'Topological Sort': '📈',
-      'Recursion': '🔁',
-      'Tree': '🎄',
-      'Design': '🎨',
-      'Database': '💾',
-      'System Design': '🏗️'
-    };
-    return iconMap[topic] || '💡';
-  };
-
   if (isLoading) {
     return (
-      <div className="bg-elevated border-b border-primary px-4 py-2.5">
+      <div className="bg-[var(--card)] border-b border-[var(--border)] px-4 py-2.5">
         <div className="flex gap-2 overflow-x-auto scrollbar-hide">
           {[...Array(8)].map((_, i) => (
             <div key={i} className="h-7 w-24 skeleton rounded-full flex-shrink-0" />
@@ -63,41 +30,43 @@ const TopicsBar: React.FC<TopicsBarProps> = ({
   }
 
   return (
-    <div className="bg-elevated border-b border-primary">
+    <div className="bg-[var(--card)] border-b border-[var(--border)]">
       <div className="px-4 py-2.5 flex gap-2 overflow-x-auto scrollbar-hide">
         {/* All Topics pill */}
         <button
           onClick={() => onTopicSelect('')}
-          className={`flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all duration-200 ${
+          className={`flex-shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all duration-150 border ${
             selectedTopic === ''
-              ? 'bg-brand text-inverse shadow-sm'
-              : 'bg-secondary text-secondary hover:bg-brand/10 hover:text-brand border border-primary'
+              ? 'bg-[var(--primary)] text-white border-[var(--primary)] shadow-sm'
+              : 'bg-[var(--muted)] text-[var(--muted-foreground)] border-[var(--border)] hover:border-[var(--primary)]/50 hover:text-[var(--foreground)]'
           }`}
         >
-          <span>🌟</span>
-          <span>All</span>
+          <Sparkles className="w-3 h-3" />
+          All
           <span className={`text-[10px] ${selectedTopic === '' ? 'opacity-80' : 'opacity-60'}`}>
             {totalProblems}
           </span>
         </button>
 
-        {topics.map((topic) => (
-          <button
-            key={topic.topic}
-            onClick={() => onTopicSelect(topic.topic === selectedTopic ? '' : topic.topic)}
-            className={`flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all duration-200 ${
-              selectedTopic === topic.topic
-                ? 'bg-brand text-inverse shadow-sm'
-                : 'bg-secondary text-secondary hover:bg-brand/10 hover:text-brand border border-primary'
-            }`}
-          >
-            <span>{getTopicIcon(topic.topic)}</span>
-            <span>{topic.topic}</span>
-            <span className={`text-[10px] ${selectedTopic === topic.topic ? 'opacity-80' : 'opacity-60'}`}>
-              {topic.count}
-            </span>
-          </button>
-        ))}
+        {topics.map((topic) => {
+          const active = selectedTopic === topic.topic;
+          return (
+            <button
+              key={topic.topic}
+              onClick={() => onTopicSelect(active ? '' : topic.topic)}
+              className={`flex-shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all duration-150 border ${
+                active
+                  ? 'bg-[var(--primary)] text-white border-[var(--primary)] shadow-sm'
+                  : 'bg-[var(--muted)] text-[var(--muted-foreground)] border-[var(--border)] hover:border-[var(--primary)]/50 hover:text-[var(--foreground)]'
+              }`}
+            >
+              {topic.topic}
+              <span className={`text-[10px] ${active ? 'opacity-80' : 'opacity-60'}`}>
+                {topic.count}
+              </span>
+            </button>
+          );
+        })}
       </div>
 
       <style jsx>{`
