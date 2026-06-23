@@ -3,6 +3,7 @@
 import React, { useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { usePathname, useRouter } from 'next/navigation';
+import Image from 'next/image';
 import {
   ListChecks,
   FilePlus,
@@ -10,7 +11,6 @@ import {
   CalendarPlus,
   Shield,
   LogOut,
-  LayoutDashboard,
   ShoppingCart,
   Users,
   MessageSquare,
@@ -93,10 +93,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         <div className="p-4 flex flex-col gap-4 h-full overflow-y-auto">
           <div>
             <div className="flex items-center gap-2 mb-1">
-              <LayoutDashboard className="h-5 w-5 text-brand" aria-hidden />
-              <p className="text-xs font-semibold text-brand uppercase tracking-wide">
-                TrueCode
-              </p>
+              <Image src="/logo.png" alt="TrueCode" width={240} height={48} className="h-12 w-auto" />
             </div>
             <h1 className="text-xl font-bold text-primary">Admin panel</h1>
             <p className="text-xs text-secondary mt-1">

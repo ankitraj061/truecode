@@ -1,8 +1,9 @@
 'use client';
 import Link from 'next/link';
+import Image from 'next/image';
 import { useState } from 'react';
 import FeedbackModal from './Feedback';
-import { Code2, Mail, Github, Twitter, Linkedin, ExternalLink } from 'lucide-react';
+import { Mail, Github, Twitter, Linkedin, ExternalLink } from 'lucide-react';
 
 const Footer = () => {
   const currentYear = new Date().getFullYear();
@@ -45,12 +46,13 @@ const Footer = () => {
             {/* Brand column */}
             <div className="lg:col-span-2">
               <Link href="/" className="group inline-flex items-center gap-2 mb-4">
-                <div className="w-8 h-8 bg-[var(--primary)] rounded-lg flex items-center justify-center transition-all duration-300 group-hover:scale-110">
-                  <Code2 className="w-4 h-4 text-white" />
-                </div>
-                <span className="text-lg font-bold bg-gradient-to-r from-[var(--primary)] to-emerald-400 bg-clip-text text-transparent">
-                  TrueCode
-                </span>
+                <Image
+                  src="/logo.png"
+                  alt="TrueCode"
+                  width={320}
+                  height={56}
+                  className="h-14 w-auto transition-transform duration-300 group-hover:scale-105"
+                />
               </Link>
               <p className="text-sm leading-relaxed mb-6 max-w-xs">
                 A comprehensive coding platform — practice DSA problems, participate in contests,

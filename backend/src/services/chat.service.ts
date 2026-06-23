@@ -1,7 +1,8 @@
 import groqClient from '../utils/groqClient.js';
+import geminiClient from '../utils/geminiClient.js';
 import { promptGenerator } from '../utils/promtGenerator.js';
 import Problem from '../models/problem.js';
-import { NotFoundError, ForbiddenError } from '../contracts/apiResponse.js';
+import { NotFoundError, ForbiddenError, AppError } from '../contracts/apiResponse.js';
 
 
 class ChatService {
@@ -99,8 +100,19 @@ class ChatService {
     ];
 
 
-    // Call Groq API
-    const completion: any = await groqClient.createChatCompletion(messages);
+    // Call Groq API, falling back to Gemini if Groq is unavailable
+    let completion: any;
+    try {
+      completion = await groqClient.createChatCompletion(messages);
+    } catch (error) {
+      // Fall back to Gemini for anything that isn't a client-input problem
+      // (auth failure, rate limit, or upstream/unknown Groq errors).
+      if (error instanceof AppError && error.statusCode !== 400) {
+        completion = await geminiClient.createChatCompletion(messages);
+      } else {
+        throw error;
+      }
+    }
 
 
     const aiResponse = completion.choices[0].message.content;

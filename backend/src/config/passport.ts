@@ -152,7 +152,11 @@ const getGithubStrategyConfig = () => {
   const config = {
     clientID,
     clientSecret,
-    callbackURL: `${backendUrl}/api/auth/github/callback`
+    callbackURL: `${backendUrl}/api/auth/github/callback`,
+    // passport-github2 only fetches /user/emails (needed since GitHub users can
+    // hide their email) when `scope` is set here, on the strategy itself —
+    // setting it only in the per-request authenticate() options has no effect.
+    scope: ['user:email']
   };
 
   if (!clientID || !clientSecret) {

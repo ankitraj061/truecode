@@ -10,7 +10,7 @@ import { useState, useRef, useEffect } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import type { RootState, AppDispatch } from '@/app/store/store';
 import {
-  User, ShoppingBag, LogOut, Menu, X, Code2,
+  User, ShoppingBag, LogOut, Menu, X,
   Trophy, BookOpen, Gift, Calendar, Crown, Sparkles, Receipt,
 } from 'lucide-react';
 
@@ -294,17 +294,14 @@ function MobileNavDrawer({
 
       {/* Drawer */}
       <div
-        className={`fixed top-0 right-0 h-full w-72 bg-[var(--card)] border-l border-[var(--border)] shadow-2xl z-50 transform transition-transform duration-300 ease-out md:hidden ${
+        className={`fixed top-0 right-0 h-full w-82 bg-[var(--card)] border-l border-[var(--border)] shadow-2xl z-50 transform transition-transform duration-300 ease-out md:hidden ${
           isOpen ? 'translate-x-0' : 'translate-x-full'
         }`}
       >
         {/* Drawer header */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-[var(--border)]">
           <div className="flex items-center gap-2">
-            <div className="w-7 h-7 bg-[var(--primary)] rounded-lg flex items-center justify-center">
-              <Code2 className="w-4 h-4 text-white" />
-            </div>
-            <span className="font-bold text-[var(--foreground)]">TrueCode</span>
+            <Image src="/logo.png" alt="TrueCode" width={420} height={72} className="h-12 w-auto" />
           </div>
           <button
             onClick={onClose}
@@ -416,12 +413,13 @@ export default function Navbar() {
             {/* Left Section */}
             <div className="flex items-center gap-8">
               <Link href="/" className="group flex items-center gap-2">
-                <div className="w-8 h-8 bg-[var(--primary)] rounded-lg flex items-center justify-center transition-all duration-300 group-hover:scale-110 group-hover:rotate-6 group-hover:shadow-lg">
-                  <Code2 className="w-4 h-4 text-white" />
-                </div>
-                <span className="text-xl font-bold bg-gradient-to-r from-[var(--primary)] to-emerald-400 bg-clip-text text-transparent group-hover:from-emerald-400 group-hover:to-[var(--primary)] transition-all duration-300">
-                  TrueCode
-                </span>
+                <Image
+                  src="/logo.png"
+                  alt="TrueCode"
+                  width={320}
+                  height={56}
+                  className="h-14 w-auto transition-transform duration-300 group-hover:scale-105"
+                />
               </Link>
 
               <div className="hidden md:flex items-center gap-6">

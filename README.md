@@ -27,7 +27,7 @@ truecode/
 - 10-second Redis cooldown per user between submissions to prevent spam
 
 ### AI Chat Assistant
-- Groq LLM (Llama) embedded per problem workspace
+- Groq LLM (Llama) embedded per problem workspace, with automatic fallback to Gemini if Groq is unavailable (auth failure, rate limit, or upstream error)
 - Validates message relevance — off-topic questions get a short redirect response
 - Detects "give me the solution" requests and refuses full solutions
 - Structured hints pulled from the problem's `hints[]` field if available
@@ -35,7 +35,7 @@ truecode/
 
 ### Authentication
 - Email/password login with bcrypt + JWT stored in HTTP-only cookies
-- Google OAuth via Passport.js (stores `googleId`, `authProvider: 'google'`)
+- Google and GitHub OAuth via Passport.js (stores `googleId`/`githubId`, `authProvider`)
 - Logout blacklists the JWT token in Redis until it expires
 - Email verification middleware gates certain actions on unverified accounts
 
@@ -64,7 +64,7 @@ truecode/
 
 ### Admin Panel
 - Create/edit/delete problems with visible + hidden test cases, starter code, and reference solutions
-- Manage users, contests, redemption orders, discussions
+- Manage users (promote to admin, change role, activate/deactivate, edit/delete), contests, redemption orders, discussions (stats, bulk actions, pin/solution marking), and feedback
 - Admin seeding script: `npm run seed:admin`
 
 ---
@@ -76,9 +76,9 @@ truecode/
 | Frontend | Next.js 15, React 19, TypeScript, Tailwind CSS v4, Redux Toolkit, Framer Motion, Monaco Editor |
 | Backend | Node.js, Express 5, Mongoose (MongoDB), Redis (Upstash or self-hosted) |
 | Code Execution | Judge0 (via RapidAPI) |
-| AI | Groq SDK (Llama models) |
+| AI | Groq SDK (Llama models, primary) + Gemini SDK (fallback) |
 | Payments | Razorpay |
-| OAuth | Passport.js + Google OAuth 2.0 |
+| OAuth | Passport.js + Google & GitHub OAuth 2.0 |
 | Deployment | truecode.shop |
 
 ---
@@ -90,9 +90,9 @@ truecode/
 - MongoDB (Atlas or local)
 - Redis (Upstash or local)
 - Judge0 API key (RapidAPI)
-- Groq API key
+- Groq API key (+ optional Gemini API key for AI fallback)
 - Razorpay account (for payments)
-- Google OAuth credentials (for Google login)
+- Google and/or GitHub OAuth credentials (for social login)
 
 ### 1. Backend
 
@@ -148,9 +148,10 @@ Request hits route → userMiddleware (auth) → problemAccessMiddleware
 
 ### AI Chat Flow
 ```
-User sends message → validate message is problem-relevant (Groq)
+User sends message → validate message is problem-relevant
   → check if asking for full solution (block)
   → check if asking for hint (return structured hint from DB)
   → else: send message + problem context (no hidden tests) to Groq
-  → stream response back
+  → if Groq fails (non-400 error): retry the same request against Gemini
+  → return response
 ```

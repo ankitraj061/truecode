@@ -203,7 +203,7 @@ export default function ContestProblemDescriptionPage() {
                         }}
                       >
                         <div className="px-4 py-3 border-b" style={{ backgroundColor: 'var(--primary-50)', borderColor: 'var(--primary-200)' }}>
-                          <span style={{ fontSize: 'var(--font-size-sm)', fontWeight: '600', color: 'var(--primary-800)' }}>Explanation</span>
+                          <span style={{ fontSize: 'var(--font-size-sm)', fontWeight: '600', color: 'var(--text-primary)' }}>Explanation</span>
                         </div>
                         <div style={{ padding: 'var(--spacing-lg)', backgroundColor: 'var(--bg-primary)' }}>
                           <p className="leading-relaxed" style={{ color: 'var(--text-primary)', fontSize: 'var(--font-size-sm)', lineHeight: '1.6' }}>

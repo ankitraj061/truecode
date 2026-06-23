@@ -159,10 +159,7 @@ export default function ContestNavbar() {
     >
       <div className="flex items-center space-x-4">
         <Link href="/" className="flex items-center space-x-2 interactive">
-          <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ backgroundColor: 'var(--accent-500)' }}>
-            <span className="font-bold text-sm" style={{ color: 'var(--text-inverse)' }}>TC</span>
-          </div>
-          <span className="text-xl font-bold" style={{ color: 'var(--text-primary)' }}>TrueCode</span>
+          <Image src="/logo.png" alt="TrueCode" width={320} height={56} className="h-14 w-auto" />
         </Link>
         <Link href={`/contests/${contestId}`} className="text-sm text-brand hover:underline">
           ← {contest?.title ?? 'Contest'}

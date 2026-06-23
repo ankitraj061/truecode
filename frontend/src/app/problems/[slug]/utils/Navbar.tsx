@@ -485,17 +485,13 @@ export default function Navbar({ onTimerUpdate, onTimerReset }: TimerProps = {})
         {/* Left: Brand + Problem List Button */}
         <div className="flex items-center space-x-4">
           <Link href="/" className="group flex items-center space-x-2 interactive">
-            <div
-              className="w-8 h-8 rounded-lg flex items-center justify-center transition-all duration-300 group-hover:scale-110 group-hover:rotate-6"
-              style={{ backgroundColor: 'var(--primary)' }}
-            >
-              <span className="font-bold text-sm" style={{ color: 'var(--text-inverse)' }}>
-                TC
-              </span>
-            </div>
-            <span className="text-xl font-bold bg-gradient-to-r from-[var(--primary)] to-emerald-400 bg-clip-text text-transparent">
-              TrueCode
-            </span>
+            <Image
+              src="/logo.png"
+              alt="TrueCode"
+              width={320}
+              height={56}
+              className="h-14 w-auto transition-transform duration-300 group-hover:scale-105"
+            />
           </Link>
 
           {/* Problem List Toggle + Navigation */}

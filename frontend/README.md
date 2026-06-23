@@ -19,8 +19,12 @@ Next.js 15 frontend for the TrueCode coding platform — problem solving, contes
 | Lucide React | Icons |
 | react-resizable-panels | Split-pane editor layout |
 | react-activity-heatmap | Submission heatmap on profiles |
-| canvas-confetti | Accepted submission celebration |
+| canvas-confetti / react-confetti | Accepted submission celebration |
 | next-themes | Dark/light mode |
+| react-syntax-highlighter | Code blocks in discussions, editorials, AI chat |
+| sonner | Toast notifications |
+| react-type-animation | Animated landing-page text |
+| shadcn/ui (Radix Slot, class-variance-authority, tailwind-merge, tailwindcss-animate) | Composable UI primitives layered on top of Tailwind |
 
 ---
 
@@ -72,6 +76,12 @@ src/
       page.tsx                     # /redeem — rewards catalog
     my-orders/
       page.tsx                     # /my-orders — redemption order tracking
+    my-transactions/
+      page.tsx                     # /my-transactions — Razorpay payment history
+    privacy/
+      page.tsx                     # /privacy — privacy policy
+    terms/
+      page.tsx                     # /terms — terms of service
     [username]/
       page.tsx                     # /:username — public profile
     admin/
@@ -81,7 +91,10 @@ src/
       create-problem/              # Create problem form
       contests/                    # Contests list + actions
         [contestId]/edit/          # Edit contest
+      create-contest/              # Create contest form
       redemptions/                 # Manage redemption orders
+      users/                       # Manage users (roles, activation, deletion)
+      feedback/                    # Review user feedback
   components/                      # Shared UI components
   slices/
     authSlice.ts                   # Redux slice: user, isAuthenticated, loading
@@ -130,8 +143,8 @@ Auth state lives in Redux (`authSlice`). On app boot, `checkAuth` dispatches aga
 
 **`NavbarWrapper`** (in root `layout.tsx`) reads `isAuthenticated` from Redux and conditionally renders the global navbar. The guest landing page (`HomeWithoutLogin`) has its own marketing header and does not use the global navbar.
 
-**Google OAuth flow:**
-1. User clicks "Continue with Google" → frontend links to `GET /api/auth/google`
+**Google / GitHub OAuth flow:**
+1. User clicks "Continue with Google" or "Continue with GitHub" → frontend links to `GET /api/auth/google` or `GET /api/auth/github`
 2. Passport handles the redirect and callback server-side
 3. On success, backend issues the JWT cookie and redirects to `/`
 4. `checkAuth` on the next render picks up the session
@@ -246,9 +259,15 @@ Global animation keyframes (`float`, `fade-in-down`, `shake`, etc.) are defined 
 | `/events` | Coding events calendar |
 | `/redeem` | Rewards catalog |
 | `/my-orders` | Redemption order tracking |
+| `/my-transactions` | Razorpay payment history |
+| `/privacy` | Privacy policy |
+| `/terms` | Terms of service |
 | `/admin/problems` | Admin: problem management |
 | `/admin/create-problem` | Admin: create problem |
 | `/admin/contests` | Admin: contest management |
 | `/admin/contests/[contestId]/edit` | Admin: edit contest |
+| `/admin/create-contest` | Admin: create contest |
 | `/admin/redemptions` | Admin: manage redemption orders |
 | `/admin/create-admins` | Admin: create admin accounts |
+| `/admin/users` | Admin: manage users |
+| `/admin/feedback` | Admin: review feedback |
