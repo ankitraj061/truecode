@@ -30,6 +30,7 @@ const loadDependencies = async () => {
 };
 
 const strategyRegistrationKey = Symbol.for('truecode.google.strategy.registered');
+const githubStrategyRegistrationKey = Symbol.for('truecode.github.strategy.registered');
 
 const getGoogleStrategyConfig = () => {
   const clientID = process.env.GOOGLE_CLIENT_ID?.trim();
@@ -140,6 +141,117 @@ const registerGoogleStrategy = async (): Promise<boolean> => {
     }
 };
 
+const getGithubStrategyConfig = () => {
+  const clientID = process.env.GITHUB_CLIENT_ID?.trim();
+  const clientSecret = process.env.GITHUB_CLIENT_SECRET?.trim();
+  const backendUrl = process.env.BACKEND_URL?.trim() || process.env.BACKEND_URL || 'http://localhost:8000';
+
+  console.log('GITHUB_CLIENT_ID =', clientID);
+  console.log('GITHUB_CLIENT_SECRET exists =', Boolean(clientSecret));
+
+  const config = {
+    clientID,
+    clientSecret,
+    callbackURL: `${backendUrl}/api/auth/github/callback`
+  };
+
+  if (!clientID || !clientSecret) {
+    throw new Error('GitHub OAuth configuration is incomplete. Check GITHUB_CLIENT_ID and GITHUB_CLIENT_SECRET.');
+  }
+
+  return config;
+};
+
+const verifyGithubUser = async (accessToken: string, refreshToken: string, profile: any, done: any) => {
+    try {
+        const { User, generateUsername } = await loadDependencies();
+
+        let existingUser = await User.findOne({ githubId: profile.id });
+
+        if (existingUser) {
+            existingUser.lastLoginAt = new Date();
+            existingUser.loginCount += 1;
+            await existingUser.save();
+            return done(null, existingUser);
+        }
+
+        const email = profile.emails?.[0]?.value;
+        if (!email) {
+            return done(new Error('Your GitHub account has no accessible email address. Please make an email public on GitHub or use another sign-in method.'), null);
+        }
+
+        // Check if user exists with same email (link accounts)
+        let existingEmailUser = await User.findOne({ emailId: email });
+
+        if (existingEmailUser) {
+            existingEmailUser.githubId = profile.id;
+            existingEmailUser.authProvider = 'github';
+            existingEmailUser.profilePicture = existingEmailUser.profilePicture || profile.photos?.[0]?.value;
+            existingEmailUser.isEmailVerified = true;
+            existingEmailUser.lastLoginAt = new Date();
+            existingEmailUser.loginCount += 1;
+            await existingEmailUser.save();
+            return done(null, existingEmailUser);
+        }
+
+        // Create new user with GitHub account
+        const displayName = profile.displayName || profile.username;
+        const [firstName, ...rest] = displayName.split(' ');
+        const username = await generateUsername(profile.username || firstName);
+
+        const newUser = await User.create({
+            githubId: profile.id,
+            firstName: firstName || profile.username,
+            lastName: rest.join(' ') || '',
+            emailId: email,
+            username: username,
+            profilePicture: profile.photos?.[0]?.value,
+            authProvider: 'github',
+            isEmailVerified: true,
+            role: 'user',
+            lastLoginAt: new Date(),
+            loginCount: 1
+            // Note: password not required for GitHub users
+        });
+
+        return done(null, newUser);
+    } catch (error) {
+        return done(error, null);
+    }
+};
+
+const registerGithubStrategy = async (): Promise<boolean> => {
+    if ((globalThis as any)[githubStrategyRegistrationKey]) {
+        return true;
+    }
+
+    try {
+        const { passport, User } = await loadDependencies();
+        const { Strategy: GitHubStrategy } = await import('passport-github2');
+        const config = getGithubStrategyConfig();
+        passport.use('github', new GitHubStrategy(config, verifyGithubUser));
+
+        passport.serializeUser((user: any, done: any) => {
+            done(null, user._id);
+        });
+
+        passport.deserializeUser(async (id: any, done: any) => {
+            try {
+                const user = await User.findById(id);
+                done(null, user);
+            } catch (error) {
+                done(error, null);
+            }
+        });
+
+        (globalThis as any)[githubStrategyRegistrationKey] = true;
+        return true;
+    } catch (error: any) {
+        console.error('Failed to initialize GitHub OAuth strategy:', error.message);
+        return false;
+    }
+};
+
 const passportProxy: any = new Proxy({}, {
     get(_target, prop) {
         if (!passportInstance) {
@@ -156,5 +268,5 @@ const passportProxy: any = new Proxy({}, {
     }
 });
 
-export { registerGoogleStrategy };
+export { registerGoogleStrategy, registerGithubStrategy };
 export default passportProxy;

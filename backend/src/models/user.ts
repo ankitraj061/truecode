@@ -50,9 +50,14 @@ const userSchema = new Schema({
         unique: true,
         sparse: true // Allows null values while maintaining uniqueness
     },
+    githubId: {
+        type: String,
+        unique: true,
+        sparse: true
+    },
     authProvider: {
         type: String,
-        enum: ['local', 'google'],
+        enum: ['local', 'google', 'github'],
         default: 'local'
     },
     

@@ -63,6 +63,10 @@ export default function SignupPageContent() {
     window.location.href = `${BACKEND_URL}/api/auth/google`;
   };
 
+  const handleGithubSignup = () => {
+    window.location.href = `${BACKEND_URL}/api/auth/github`;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -175,6 +179,19 @@ export default function SignupPageContent() {
               <path fill="#ea4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
             </svg>
             <span className="text-primary font-medium relative z-10">Continue with Google</span>
+          </button>
+
+          {/* GitHub Signup Button with enhanced hover */}
+          <button
+            onClick={handleGithubSignup}
+            className="w-full btn-secondary mb-6 flex items-center justify-center space-x-3 py-3 hover:shadow-lg transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] group relative overflow-hidden"
+            disabled={loading}
+          >
+            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000"></div>
+            <svg className="w-5 h-5 group-hover:rotate-[360deg] transition-transform duration-700" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M12 0C5.37 0 0 5.37 0 12c0 5.3 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.725-4.042-1.61-4.042-1.61-.546-1.385-1.333-1.755-1.333-1.755-1.087-.744.084-.729.084-.729 1.205.085 1.838 1.236 1.838 1.236 1.07 1.835 2.807 1.305 3.49.998.108-.776.417-1.305.76-1.605-2.665-.303-5.467-1.332-5.467-5.93 0-1.31.469-2.382 1.236-3.222-.124-.303-.536-1.524.117-3.176 0 0 1.008-.323 3.302 1.23.957-.266 1.983-.4 3.003-.405 1.02.005 2.047.139 3.005.405 2.293-1.553 3.3-1.23 3.3-1.23.654 1.652.242 2.873.118 3.176.77.84 1.235 1.912 1.235 3.222 0 4.61-2.807 5.625-5.479 5.92.43.372.814 1.103.814 2.222 0 1.606-.014 2.898-.014 3.293 0 .322.216.694.825.576C20.565 21.795 24 17.295 24 12c0-6.63-5.37-12-12-12z" />
+            </svg>
+            <span className="text-primary font-medium relative z-10">Continue with GitHub</span>
           </button>
 
           {/* Animated Divider */}

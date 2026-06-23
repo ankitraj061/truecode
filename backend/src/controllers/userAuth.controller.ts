@@ -11,17 +11,20 @@ dotenv.config();
 
 let passportInstance;
 let registerGoogleStrategyFn;
+let registerGithubStrategyFn;
 
 const loadPassportModule = async () => {
-    if (!passportInstance || !registerGoogleStrategyFn) {
+    if (!passportInstance || !registerGoogleStrategyFn || !registerGithubStrategyFn) {
         const passportModule = await import("../config/passport.js");
         passportInstance = passportModule.default;
         registerGoogleStrategyFn = passportModule.registerGoogleStrategy;
+        registerGithubStrategyFn = passportModule.registerGithubStrategy;
     }
 
     return {
         passport: passportInstance,
-        registerGoogleStrategy: registerGoogleStrategyFn
+        registerGoogleStrategy: registerGoogleStrategyFn,
+        registerGithubStrategy: registerGithubStrategyFn
     };
 };
 
@@ -110,6 +113,68 @@ export const googleCallback = async (req, res, next) => {
             res.cookie('token', token, AUTH_COOKIE_OPTIONS);
 
             // Redirect back to the page the user originated from, if any
+            res.redirect(`${frontendUrl}${destination}`);
+
+        } catch (error) {
+            res.redirect(`${frontendUrl}/login?error=server_error`);
+        }
+    })(req, res, next);
+};
+
+export const githubAuth = async (req, res, next) => {
+    const { passport, registerGithubStrategy } = await loadPassportModule();
+    const initialized = await registerGithubStrategy();
+
+    if (!initialized) {
+        return sendError(res, 503, 'GitHub OAuth is currently unavailable.');
+    }
+
+    const redirect = req.query.redirect;
+    const authOptions: { scope: string[]; state?: string } = {
+        scope: ['user:email']
+    };
+    if (isSafeRedirectPath(redirect)) {
+        authOptions.state = redirect;
+    }
+
+    passport.authenticate('github', authOptions)(req, res, next);
+};
+
+export const githubCallback = async (req, res, next) => {
+    const { passport, registerGithubStrategy } = await loadPassportModule();
+    const initialized = await registerGithubStrategy();
+    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+    const redirectState = req.query.state;
+    const destination = isSafeRedirectPath(redirectState) ? redirectState : '/';
+
+    if (!initialized) {
+        return res.redirect(`${frontendUrl}/login?error=oauth_unavailable`);
+    }
+
+    passport.authenticate('github', {
+        failureRedirect: `${frontendUrl}/`
+    }, async (err, user) => {
+        if (err) {
+            return res.redirect(`${frontendUrl}/login?error=${encodeURIComponent(err.message || 'oauth_failed')}`);
+        }
+
+        if (!user) {
+            return res.redirect(`${frontendUrl}/`);
+        }
+
+        try {
+            const token = jwt.sign(
+                {
+                    _id: user._id,
+                    emailId: user.emailId,
+                    role: user.role,
+                    username: user.username
+                },
+                process.env.JWT_SECRET_KEY,
+                { expiresIn: '7d' }
+            );
+
+            res.cookie('token', token, AUTH_COOKIE_OPTIONS);
             res.redirect(`${frontendUrl}${destination}`);
 
         } catch (error) {

@@ -1,5 +1,5 @@
 import express from "express";
-import { register, login, logout, adminRegister, deleteUserAccount, checkAuthFunction,googleAuth,googleCallback } from "../controllers/userAuth.controller.js";
+import { register, login, logout, adminRegister, deleteUserAccount, checkAuthFunction,googleAuth,googleCallback,githubAuth,githubCallback } from "../controllers/userAuth.controller.js";
 const authRouter = express.Router();
 import { userMiddleware } from "../middlewares/userMiddleware.js";
 import { adminMiddleware } from "../middlewares/adminMiddleware.js";
@@ -19,6 +19,9 @@ authRouter.delete('/user/profile',userMiddleware,deleteUserAccount);
 
 authRouter.get('/google',googleAuth);
 authRouter.get('/google/callback',googleCallback);
+
+authRouter.get('/github',githubAuth);
+authRouter.get('/github/callback',githubCallback);
 
 
 export default authRouter;
