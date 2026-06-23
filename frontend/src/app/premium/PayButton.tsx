@@ -1,6 +1,8 @@
 'use client';
 import { useEffect, useState } from 'react';
 import { useSelector } from 'react-redux';
+import { useRouter } from 'next/navigation';
+import { toast } from 'sonner';
 import { axiosClient } from '../utils/axiosClient';
 import { RootState } from '@/app/store/store';
 import { useDispatch } from 'react-redux';
@@ -11,8 +13,9 @@ import { loadRazorpayScript, openRazorpayCheckout, type RazorpayResponse } from 
 export default function PayButton({ plan = 'monthly' }: { plan?: 'monthly' | 'yearly' }) {
   const [loading, setLoading] = useState(false);
   const [paymentMessage, setPaymentMessage] = useState<string | null>(null);
-  const { user } = useSelector((s: RootState) => s.auth);
+  const { user, isAuthenticated } = useSelector((s: RootState) => s.auth);
   const dispatch = useDispatch<AppDispatch>();
+  const router = useRouter();
 
   useEffect(() => {
     loadRazorpayScript();
@@ -20,6 +23,11 @@ export default function PayButton({ plan = 'monthly' }: { plan?: 'monthly' | 'ye
 
   const handlePay = async () => {
     if (loading) return;
+    if (!isAuthenticated) {
+      toast.error('Please log in to subscribe to a plan.');
+      router.push('/accounts/login?redirect=/premium');
+      return;
+    }
     setLoading(true);
     setPaymentMessage(null);
     try {
