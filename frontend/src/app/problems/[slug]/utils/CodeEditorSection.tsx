@@ -26,6 +26,7 @@ export default function CodeEditorSection() {
   const [fontSize, setFontSize] = useState(14);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [theme, setTheme] = useState<'dark' | 'light'>('light');
+  const [confirmAction, setConfirmAction] = useState<'reset' | 'lastSubmission' | null>(null);
   
   const editorRef = useRef<editor.IStandaloneCodeEditor | null>(null);
   const monacoRef = useRef<Monaco | null>(null);
@@ -515,9 +516,14 @@ int* twoSum(int* nums, int numsSize, int target, int* returnSize){
   }, [theme, isEditorReady]);
 
   // Reset to starter code and delete draft
-  const handleReset = async () => {
+  const handleReset = () => {
     if (!problem?._id) return;
-    
+    setConfirmAction('reset');
+  };
+
+  const performReset = async () => {
+    if (!problem?._id) return;
+
     setIsResetting(true);
     
     try {
@@ -582,13 +588,19 @@ int* twoSum(int* nums, int numsSize, int target, int* returnSize){
   };
 
   // Get last submission
-  const handleGetLastSubmission = async () => {
+  const handleGetLastSubmission = () => {
     if (!problem?._id) return;
-    
+
     if (!userStatus?.isSubmittedByUser) {
       return;
     }
-    
+
+    setConfirmAction('lastSubmission');
+  };
+
+  const performGetLastSubmission = async () => {
+    if (!problem?._id) return;
+
     setIsLoadingSubmission(true);
     
     try {
@@ -954,6 +966,75 @@ int* twoSum(int* nums, int numsSize, int target, int* returnSize){
             </div>
           }
         />
+      </div>
+
+      {confirmAction && (
+        <ConfirmActionModal
+          title={confirmAction === 'reset' ? 'Reset code?' : 'Load last submission?'}
+          description={
+            confirmAction === 'reset'
+              ? 'This will discard your current code and replace it with the starter code. This cannot be undone.'
+              : 'This will replace your current code with your most recent submission. Unsaved changes will be lost.'
+          }
+          confirmLabel={confirmAction === 'reset' ? 'Yes, reset' : 'Yes, load it'}
+          onConfirm={() => {
+            setConfirmAction(null);
+            if (confirmAction === 'reset') {
+              performReset();
+            } else {
+              performGetLastSubmission();
+            }
+          }}
+          onClose={() => setConfirmAction(null)}
+        />
+      )}
+    </div>
+  );
+}
+
+function ConfirmActionModal({
+  title,
+  description,
+  confirmLabel,
+  onConfirm,
+  onClose,
+}: {
+  title: string;
+  description: string;
+  confirmLabel: string;
+  onConfirm: () => void;
+  onClose: () => void;
+}) {
+  useEffect(() => {
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    document.addEventListener('keydown', handleEscape);
+    return () => document.removeEventListener('keydown', handleEscape);
+  }, [onClose]);
+
+  return (
+    <div
+      className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in"
+      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
+    >
+      <div className="bg-elevated rounded-2xl border border-primary shadow-xl max-w-sm w-full p-6 animate-slide-up">
+        <h3 className="text-base font-bold text-primary mb-1.5">{title}</h3>
+        <p className="text-sm text-secondary mb-5">{description}</p>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={onClose}
+            className="flex-1 text-sm font-medium px-4 py-2.5 rounded-lg border border-primary text-primary hover:bg-tertiary transition-colors"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={onConfirm}
+            className="flex-1 text-sm font-semibold px-4 py-2.5 rounded-lg bg-error text-white hover:opacity-90 transition-opacity"
+          >
+            {confirmLabel}
+          </button>
+        </div>
       </div>
     </div>
   );

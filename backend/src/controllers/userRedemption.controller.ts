@@ -16,17 +16,20 @@ export const createRedemption = async (req, res) => {
             return sendError(res, 400, 'productId, productName, pointsSpent, and address are required');
         }
 
-        const user = await User.findById(userId).select('points');
+        if (!Number.isInteger(pointsSpent) || pointsSpent <= 0) {
+            return sendError(res, 400, 'pointsSpent must be a positive integer');
+        }
+
+        // Atomically check balance and deduct in one step to avoid double-spend races
+        const user = await User.findOneAndUpdate(
+            { _id: userId, points: { $gte: pointsSpent } },
+            { $inc: { points: -pointsSpent } }
+        );
+
         if (!user) {
-            return sendError(res, 404, 'User not found');
+            const exists = await User.exists({ _id: userId });
+            return sendError(res, exists ? 400 : 404, exists ? 'Insufficient points' : 'User not found');
         }
-
-        if (user.points < pointsSpent) {
-            return sendError(res, 400, 'Insufficient points');
-        }
-
-        // Deduct points atomically
-        await User.findByIdAndUpdate(userId, { $inc: { points: -pointsSpent } });
 
         const redemption = await Redemption.create({
             userId,

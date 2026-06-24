@@ -119,20 +119,29 @@ export const verifyPayment = async (req, res) => {
       return sendError(res, 400, 'Invalid signature');
     }
 
-    // update payment record
+    // Atomically transition created/failed/expired/cancelled -> paid; this both
+    // prevents a race between concurrent verify calls and guards against
+    // re-extending the subscription on a replayed/duplicate verify request.
     const payment = await Payment.findOneAndUpdate(
-      { razorpayOrderId: razorpay_order_id },
+      { razorpayOrderId: razorpay_order_id, status: { $ne: 'paid' } },
       { razorpayPaymentId: razorpay_payment_id, razorpaySignature: razorpay_signature, status: 'paid' },
       { new: true }
     );
 
     if (!payment) {
-    } else {
-      // Payment is settled — release the 10-minute resume reservation.
-      try {
-        await redisClient.del(reservationKey(payment._id.toString()));
-      } catch {}
+      const existingPayment = await Payment.findOne({ razorpayOrderId: razorpay_order_id });
+      if (!existingPayment) {
+        return sendError(res, 404, 'Order not found');
+      }
+      // Already verified previously — avoid re-extending the subscription.
+      const user = await User.findById(existingPayment.user);
+      return res.json({ success: true, message: 'Payment already verified', expiry: user?.subscriptionExpiry });
     }
+
+    // Payment is settled — release the 10-minute resume reservation.
+    try {
+      await redisClient.del(reservationKey(payment._id.toString()));
+    } catch {}
 
     // Update user's subscriptionExpiry intelligently:
     const user = await User.findById(payment.user);
@@ -179,8 +188,11 @@ export const webhookHandler = async (req, res) => {
       const orderId = paymentEntity.order_id;
       const paymentId = paymentEntity.id;
 
+      // Only transition created/failed/expired/cancelled -> paid. Razorpay fires both
+      // payment.authorized and payment.captured for two-stage captures, and may retry
+      // webhook delivery, so this guards against extending the subscription twice.
       const payment = await Payment.findOneAndUpdate(
-        { razorpayOrderId: orderId },
+        { razorpayOrderId: orderId, status: { $ne: 'paid' } },
         { razorpayPaymentId: paymentId, status: 'paid' },
         { new: true }
       );

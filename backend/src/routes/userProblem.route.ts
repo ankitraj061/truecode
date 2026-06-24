@@ -62,6 +62,7 @@ userProblemRouter.get('/all',
 userProblemRouter.get('/:problemSlug',
     ipRateLimitMiddleware,
     requestLoggingMiddleware,
+    optionalUserMiddleware,
     getProblemForUserBySlug
 );
 

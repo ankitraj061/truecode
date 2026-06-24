@@ -22,13 +22,16 @@ export const getPoints = async (req, res) => {
 
 /**
  * POST /api/user/points/add
- * Internal/admin endpoint — adds (or subtracts) points for the authenticated user.
- * Body: { amount: number, reason: string }
+ * Admin-only endpoint — adds (or subtracts) points for a target user.
+ * Body: { userId: string, amount: number, reason: string }
  */
 export const addPoints = async (req, res) => {
     try {
-        const userId = req.user._id;
-        const { amount, reason } = req.body;
+        const { userId, amount, reason } = req.body;
+
+        if (!userId) {
+            return sendError(res, 400, '`userId` is required');
+        }
 
         if (amount === undefined || typeof amount !== 'number') {
             return sendError(res, 400, '`amount` must be a number');

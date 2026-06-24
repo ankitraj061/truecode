@@ -369,7 +369,7 @@ export const followUser = async (req, res) => {
         const targetUserId = userToFollow._id;
 
         // Prevent following yourself
-        if (currentUserId === targetUserId.toString()) {
+        if (currentUserId.toString() === targetUserId.toString()) {
             return sendError(res, 400, 'You cannot follow yourself');
         }
 
@@ -420,7 +420,7 @@ export const unfollowUser = async (req, res) => {
         const targetUserId = userToUnfollow._id;
 
         // Prevent unfollowing yourself
-        if (currentUserId === targetUserId.toString()) {
+        if (currentUserId.toString() === targetUserId.toString()) {
             return sendError(res, 400, 'Invalid operation');
         }
 

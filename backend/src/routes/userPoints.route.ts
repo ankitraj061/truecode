@@ -1,6 +1,7 @@
 import express from 'express';
 import { getPoints, addPoints } from '../controllers/userPoints.controller.js';
 import { checkAuth as authMiddleware } from '../middlewares/checkAuthMiddleware.js';
+import { adminMiddleware } from '../middlewares/adminMiddleware.js';
 
 const router = express.Router();
 
@@ -11,7 +12,7 @@ const router = express.Router();
 // GET /api/user/points — returns current points balance
 router.get('/points', authMiddleware, getPoints);
 
-// POST /api/user/points/add — add/subtract points (internal/admin use)
-router.post('/points/add', authMiddleware, addPoints);
+// POST /api/user/points/add — admin-only manual points adjustment
+router.post('/points/add', adminMiddleware, addPoints);
 
 export default router;
