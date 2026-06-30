@@ -55,7 +55,7 @@ export const ipRateLimitMiddleware = async (req: Request, res: Response, next: N
 export const rateLimit = async (req: Request, res: Response, next: NextFunction) => {
   const key = `rate:${req.ip}`;
   const now = Date.now();
-  const windowMs = 3600 * 1000;
+  const windowMs = 3600 * 1000;// 1 hour
   const windowStart = now - windowMs;
   const maxRequests = 60;
 

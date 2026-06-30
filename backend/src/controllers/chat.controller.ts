@@ -1,13 +1,14 @@
 import chatService from '../services/chat.service.js';
+import ChatHistory from '../models/chatHistory.js';
 import { sendError } from '../contracts/apiResponse.js';
 
 class ChatController {
   // Handle chat message
-  async sendMessage(req, res, next) {
+  async sendMessage(req , res, next) {
     try {
       const { problemId } = req.params;
       const { message, conversationHistory = [] } = req.body;
-      const userId = req.user?.id; // From auth middleware
+      const userId = req.user?._id; // From optional auth middleware
 
       // Process chat
       const result = await chatService.processChat(
@@ -25,7 +26,8 @@ class ChatController {
         ];
         
         // Fire and forget - don't await
-        chatService.saveChatHistory(userId, problemId, updatedHistory)
+        const isPremium = req.user?.subscriptionType === 'premium';
+        chatService.saveChatHistory(userId, problemId, updatedHistory, isPremium)
           .catch(() => {});
       }
 
@@ -47,13 +49,12 @@ class ChatController {
   async getChatHistory(req, res, next) {
     try {
       const { problemId } = req.params;
-      const userId = req.user?.id;
+      const userId = req.user?._id;
 
       if (!userId) {
         return sendError(res, 401, 'Authentication required');
       }
 
-      const ChatHistory = require('../models/ChatHistory');
       const history = await ChatHistory.findOne({ userId, problemId })
         .select('messages createdAt updatedAt')
         .lean();
@@ -71,13 +72,12 @@ class ChatController {
   async clearChatHistory(req, res, next) {
     try {
       const { problemId } = req.params;
-      const userId = req.user?.id;
+      const userId = req.user?._id;
 
       if (!userId) {
         return sendError(res, 401, 'Authentication required');
       }
 
-      const ChatHistory = require('../models/ChatHistory');
       await ChatHistory.findOneAndDelete({ userId, problemId });
 
       res.json({

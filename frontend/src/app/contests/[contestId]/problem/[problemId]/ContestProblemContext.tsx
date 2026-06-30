@@ -38,6 +38,13 @@ type ContestProblemContextValue = {
 
 const ContestProblemContext = createContext<ContestProblemContextValue | null>(null);
 
+function computeLiveStatus(contest: { startTime: string; endTime: string }, now: Date): 'upcoming' | 'running' | 'ended' {
+  const t = now.getTime();
+  if (t < new Date(contest.startTime).getTime()) return 'upcoming';
+  if (t < new Date(contest.endTime).getTime()) return 'running';
+  return 'ended';
+}
+
 export function useContestProblem() {
   const ctx = useContext(ContestProblemContext);
   if (!ctx) throw new Error('useContestProblem must be used within ContestProblemProvider');
@@ -96,17 +103,22 @@ export function ContestProblemProvider({ children }: { children: React.ReactNode
     return () => clearInterval(interval);
   }, [data]);
 
+  const liveData = useMemo<ContestProblemData | null>(() => {
+    if (!data) return null;
+    return { ...data, contest: { ...data.contest, status: computeLiveStatus(data.contest, now) } };
+  }, [data, now]);
+
   const value = useMemo<ContestProblemContextValue>(
     () => ({
       contestId,
       problemId,
-      data,
+      data: liveData,
       loading,
       error,
       refresh: fetchData,
       now,
     }),
-    [contestId, problemId, data, loading, error, fetchData, now]
+    [contestId, problemId, liveData, loading, error, fetchData, now]
   );
 
   return (

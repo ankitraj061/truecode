@@ -193,7 +193,7 @@ export default function DiscussionSection({
     return (
       <div className={`border-t border-primary pt-8 ${className}`}>
         <div className="flex items-center justify-center py-12">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2" style={{ borderColor: "var(--primary-500)" }}></div>
           <span className="ml-3 text-secondary">Loading discussions...</span>
         </div>
       </div>
@@ -359,7 +359,11 @@ export default function DiscussionSection({
             <div className="text-center py-12">
               {searchQuery.trim() ? (
                 <div>
-                  <div className="text-4xl mb-4">🔍</div>
+                  <div className="w-14 h-14 mx-auto mb-4 rounded-full flex items-center justify-center" style={{ backgroundColor: "var(--bg-tertiary)" }}>
+                    <svg className="w-7 h-7 text-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
+                    </svg>
+                  </div>
                   <h4 className="text-lg font-medium text-primary mb-2">
                     No discussions found
                   </h4>
@@ -369,7 +373,11 @@ export default function DiscussionSection({
                 </div>
               ) : (
                 <div>
-                  <div className="text-4xl mb-4">💬</div>
+                  <div className="w-14 h-14 mx-auto mb-4 rounded-full flex items-center justify-center" style={{ backgroundColor: "var(--bg-tertiary)" }}>
+                    <svg className="w-7 h-7 text-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.86 9.86 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                    </svg>
+                  </div>
                   <h4 className="text-lg font-medium text-primary mb-2">
                     No discussions yet
                   </h4>
@@ -388,7 +396,10 @@ export default function DiscussionSection({
               )}
             </div>
           ) : (
-            <div className="space-y-4">
+            <div
+              className="rounded-2xl divide-y divide-primary overflow-hidden"
+              style={{ border: "1px solid var(--border-primary)", backgroundColor: "var(--bg-elevated)" }}
+            >
               {sortedDiscussions.map((discussion) => (
                 <DiscussionCard
                   key={discussion._id}
@@ -443,7 +454,7 @@ export default function DiscussionSection({
       {/* Loading indicator for additional actions */}
       {loading && discussions.length > 0 && (
         <div className="flex items-center justify-center py-4">
-          <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
+          <div className="animate-spin rounded-full h-6 w-6 border-b-2" style={{ borderColor: "var(--primary-500)" }}></div>
           <span className="ml-2 text-secondary">Loading...</span>
         </div>
       )}

@@ -1,7 +1,7 @@
 'use client'
 
-import { useState, useEffect } from 'react';
-import { discussionApi, handleApiError, DISCUSSION_TYPES, DiscussionType, Discussion } from './discussionApi';
+import { useState } from 'react';
+import { discussionApi, handleApiError, Discussion } from './discussionApi';
 
 interface DiscussionFormProps {
     problemId: string;
@@ -21,17 +21,20 @@ interface DiscussionFormProps {
 }
 
 interface FormData {
-    title: string;
     content: string;
-    type: DiscussionType;
     tags: string[];
 }
 
 interface FormErrors {
-    title?: string;
     content?: string;
-    type?: string;
     general?: string;
+}
+
+// Derive a short title from the message content so the backend (which still
+// stores a title) doesn't need a separate field from the user.
+function deriveTitle(content: string): string {
+    const trimmed = content.trim().replace(/\s+/g, ' ');
+    return trimmed.length > 60 ? `${trimmed.slice(0, 60)}…` : trimmed;
 }
 
 export default function DiscussionForm({
@@ -42,9 +45,7 @@ export default function DiscussionForm({
     className = ''
 }: DiscussionFormProps) {
     const [formData, setFormData] = useState<FormData>({
-        title: existingDiscussion?.title || '',
         content: existingDiscussion?.content || '',
-        type: (existingDiscussion?.type as DiscussionType) || 'general',
         tags: existingDiscussion?.tags || []
     });
 
@@ -54,29 +55,19 @@ export default function DiscussionForm({
     const [isAnimatingSuccess, setIsAnimatingSuccess] = useState(false);
 
     const isEditing = !!existingDiscussion;
+    // Type is always "general" for user-created discussions — no picker needed.
+    const discussionType = existingDiscussion?.type || 'general';
 
     // Validation
     const validateForm = (): boolean => {
         const newErrors: FormErrors = {};
 
-        if (!formData.title.trim()) {
-            newErrors.title = 'Title is required';
-        } else if (formData.title.trim().length < 5) {
-            newErrors.title = 'Title must be at least 5 characters';
-        } else if (formData.title.trim().length > 200) {
-            newErrors.title = 'Title must be less than 200 characters';
-        }
-
         if (!formData.content.trim()) {
-            newErrors.content = 'Content is required';
+            newErrors.content = 'Please write a message';
         } else if (formData.content.trim().length < 10) {
-            newErrors.content = 'Content must be at least 10 characters';
+            newErrors.content = 'Message must be at least 10 characters';
         } else if (formData.content.trim().length > 5000) {
-            newErrors.content = 'Content must be less than 5000 characters';
-        }
-
-        if (!formData.type) {
-            newErrors.type = 'Discussion type is required';
+            newErrors.content = 'Message must be less than 5000 characters';
         }
 
         setErrors(newErrors);
@@ -86,22 +77,23 @@ export default function DiscussionForm({
     // Handle form submission
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        
+
         if (!validateForm()) return;
-        
+
         setIsSubmitting(true);
         setErrors({});
 
         try {
+            const content = formData.content.trim();
             const submitData = {
-                title: formData.title.trim(),
-                content: formData.content.trim(),
-                type: formData.type,
+                title: deriveTitle(content),
+                content,
+                type: discussionType,
                 tags: formData.tags.filter(tag => tag.trim().length > 0)
             };
 
             let response;
-            
+
             if (isEditing) {
                 response = await discussionApi.updateDiscussion(existingDiscussion._id, submitData);
             } else {
@@ -114,18 +106,13 @@ export default function DiscussionForm({
             if (response.success) {
                 // Trigger success animation
                 setIsAnimatingSuccess(true);
-                
+
                 // Wait for animation before calling success callback
                 setTimeout(() => {
                     onSuccess(response.discussion);
                     // Reset form if creating new
                     if (!isEditing) {
-                        setFormData({
-                            title: '',
-                            content: '',
-                            type: 'general',
-                            tags: []
-                        });
+                        setFormData({ content: '', tags: [] });
                     }
                 }, 600);
             }
@@ -138,11 +125,10 @@ export default function DiscussionForm({
     };
 
     // Handle input changes
-    const handleInputChange = (field: keyof FormData, value: string | DiscussionType) => {
-        setFormData(prev => ({ ...prev, [field]: value }));
-        // Clear specific field error when user starts typing
-        if (errors[field as keyof FormErrors]) {
-            setErrors(prev => ({ ...prev, [field]: undefined }));
+    const handleContentChange = (value: string) => {
+        setFormData(prev => ({ ...prev, content: value }));
+        if (errors.content) {
+            setErrors(prev => ({ ...prev, content: undefined }));
         }
     };
 
@@ -172,44 +158,11 @@ export default function DiscussionForm({
         }
     };
 
-    // Get type icon and styles using CSS variables
-    const getTypeConfig = (type: string) => {
-        const configs = {
-            general: { 
-                icon: '💬', 
-                gradient: 'linear-gradient(135deg, var(--gray-500) 0%, var(--gray-600) 100%)',
-                bgLight: 'var(--gray-50)',
-                borderLight: 'var(--gray-200)'
-            },
-            solution: { 
-                icon: '💡', 
-                gradient: 'linear-gradient(135deg, var(--success-500) 0%, var(--success-600) 100%)',
-                bgLight: 'var(--success-50)',
-                borderLight: 'var(--success-100)'
-            },
-            hint: { 
-                icon: '💭', 
-                gradient: 'linear-gradient(135deg, var(--warning-500) 0%, var(--warning-600) 100%)',
-                bgLight: 'var(--warning-50)',
-                borderLight: 'var(--warning-100)'
-            },
-            question: { 
-                icon: '❓', 
-                gradient: 'linear-gradient(135deg, var(--primary-500) 0%, var(--primary-600) 100%)',
-                bgLight: 'var(--primary-50)',
-                borderLight: 'var(--primary-200)'
-            }
-        };
-        return configs[type as keyof typeof configs] || configs.general;
-    };
-
-    const typeConfig = getTypeConfig(formData.type);
-
     return (
         <div className={`relative ${className}`}>
             {/* Success Animation Overlay */}
             {isAnimatingSuccess && (
-                <div 
+                <div
                     className="absolute inset-0 z-50 flex items-center justify-center"
                     style={{
                         backgroundColor: 'var(--bg-modal)',
@@ -218,7 +171,7 @@ export default function DiscussionForm({
                     }}
                 >
                     <div className="text-center animate-slide-up">
-                        <div 
+                        <div
                             className="w-16 h-16 mx-auto mb-4 rounded-full flex items-center justify-center shadow-lg"
                             style={{
                                 background: 'linear-gradient(135deg, var(--success-500) 0%, var(--success-600) 100%)'
@@ -229,10 +182,10 @@ export default function DiscussionForm({
                             </svg>
                         </div>
                         <h3 className="text-lg font-bold text-primary mb-2">
-                            {isEditing ? 'Discussion Updated!' : 'Discussion Created!'}
+                            {isEditing ? 'Discussion Updated!' : 'Discussion Posted!'}
                         </h3>
                         <p className="text-secondary">
-                            {isEditing ? 'Your changes have been saved.' : 'Your discussion is now live.'}
+                            {isEditing ? 'Your changes have been saved.' : 'Your message is now live.'}
                         </p>
                     </div>
                 </div>
@@ -240,29 +193,31 @@ export default function DiscussionForm({
 
             <div className="card shadow-lg">
                 {/* Header */}
-                <div 
+                <div
                     className="px-8 py-6 -mx-6 -mt-6 mb-6"
                     style={{
-                        background: typeConfig.gradient,
+                        background: 'linear-gradient(135deg, var(--primary-600) 0%, var(--primary-700) 100%)',
                         borderRadius: 'var(--radius-xl) var(--radius-xl) 0 0'
                     }}
                 >
                     <div className="flex items-center space-x-4">
-                        <div 
+                        <div
                             className="w-12 h-12 rounded-xl flex items-center justify-center shadow-sm"
                             style={{
                                 backgroundColor: 'rgba(255, 255, 255, 0.2)',
                                 backdropFilter: 'blur(10px)'
                             }}
                         >
-                            <span className="text-2xl">{typeConfig.icon}</span>
+                            <svg className="w-6 h-6 text-inverse" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.86 9.86 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                            </svg>
                         </div>
                         <div>
                             <h3 className="text-xl font-bold text-inverse">
-                                {isEditing ? 'Edit Discussion' : 'Create New Discussion'}
+                                {isEditing ? 'Edit Message' : 'Start a Discussion'}
                             </h3>
                             <p className="text-inverse opacity-90 text-sm mt-1">
-                                {isEditing ? 'Update your discussion details' : 'Share your thoughts and engage with the community'}
+                                {isEditing ? 'Update your message' : 'Just write your message — that\'s it.'}
                             </p>
                         </div>
                     </div>
@@ -271,7 +226,7 @@ export default function DiscussionForm({
                 <form onSubmit={handleSubmit} className="space-y-6">
                     {/* General Error */}
                     {errors.general && (
-                        <div 
+                        <div
                             className="p-4 rounded-xl text-sm flex items-center space-x-3 animate-fade-in"
                             style={{
                                 backgroundColor: 'var(--error-50)',
@@ -280,7 +235,7 @@ export default function DiscussionForm({
                                 border: '1px solid'
                             }}
                         >
-                            <div 
+                            <div
                                 className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0"
                                 style={{ backgroundColor: 'var(--error-100)' }}
                             >
@@ -295,98 +250,21 @@ export default function DiscussionForm({
                         </div>
                     )}
 
-                    {/* Title */}
-                    <div className="space-y-2">
-                        <label htmlFor="title" className="flex items-center space-x-2 text-sm font-semibold text-secondary">
-                            <svg className="w-4 h-4 text-tertiary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z" />
-                            </svg>
-                            <span>Discussion Title *</span>
-                        </label>
-                        <div className="relative">
-                            <input
-                                id="title"
-                                type="text"
-                                value={formData.title}
-                                onChange={(e) => handleInputChange('title', e.target.value)}
-                                placeholder="What would you like to discuss?"
-                                className="input"
-                                style={{
-                                    ...(errors.title && {
-                                        borderColor: 'var(--error-500)',
-                                        backgroundColor: 'var(--error-50)'
-                                    })
-                                }}
-                                maxLength={200}
-                            />
-                            <div 
-                                className="absolute right-3 top-3 text-xs"
-                                style={{ color: 'var(--text-muted)' }}
-                            >
-                                {formData.title.length}/200
-                            </div>
-                        </div>
-                        {errors.title && (
-                            <p className="text-xs flex items-center space-x-1" style={{ color: 'var(--error-600)' }}>
-                                <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
-                                    <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-                                </svg>
-                                <span>{errors.title}</span>
-                            </p>
-                        )}
-                    </div>
-
-                    {/* Type */}
-                    <div className="space-y-2">
-                        <label htmlFor="type" className="flex items-center space-x-2 text-sm font-semibold text-secondary">
-                            <svg className="w-4 h-4 text-tertiary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
-                            </svg>
-                            <span>Discussion Type *</span>
-                        </label>
-                        <select
-                            id="type"
-                            value={formData.type}
-                            onChange={(e) => handleInputChange('type', e.target.value as DiscussionType)}
-                            className="input"
-                            style={{
-                                ...(errors.type && {
-                                    borderColor: 'var(--error-500)',
-                                    backgroundColor: 'var(--error-50)'
-                                })
-                            }}
-                        >
-                            {DISCUSSION_TYPES.map(type => (
-                                <option key={type.value} value={type.value}>
-                                    {getTypeConfig(type.value).icon} {type.label}
-                                </option>
-                            ))}
-                        </select>
-                        {errors.type && (
-                            <p className="text-xs flex items-center space-x-1" style={{ color: 'var(--error-600)' }}>
-                                <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
-                                    <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-                                </svg>
-                                <span>{errors.type}</span>
-                            </p>
-                        )}
-                    </div>
-
                     {/* Content */}
                     <div className="space-y-2">
                         <label htmlFor="content" className="flex items-center space-x-2 text-sm font-semibold text-secondary">
                             <svg className="w-4 h-4 text-tertiary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                             </svg>
-                            <span>Content *</span>
+                            <span>Your Message *</span>
                         </label>
                         <div className="relative">
                             <textarea
                                 id="content"
                                 value={formData.content}
-                                onChange={(e) => handleInputChange('content', e.target.value)}
-                                placeholder="Share your thoughts, questions, or solutions..."
-                                rows={8}
+                                onChange={(e) => handleContentChange(e.target.value)}
+                                placeholder="Ask a question, share an approach, or say something helpful..."
+                                rows={6}
                                 className="input resize-none"
                                 style={{
                                     ...(errors.content && {
@@ -395,10 +273,11 @@ export default function DiscussionForm({
                                     })
                                 }}
                                 maxLength={5000}
+                                autoFocus
                             />
-                            <div 
+                            <div
                                 className="absolute bottom-3 right-3 text-xs px-2 py-1 rounded-full shadow-xs"
-                                style={{ 
+                                style={{
                                     color: 'var(--text-muted)',
                                     backgroundColor: 'var(--bg-primary)'
                                 }}
@@ -451,7 +330,7 @@ export default function DiscussionForm({
                                 Add
                             </button>
                         </div>
-                        
+
                         {/* Tag Display */}
                         {formData.tags.length > 0 && (
                             <div className="flex flex-wrap gap-2 mb-3">
@@ -479,7 +358,7 @@ export default function DiscussionForm({
                                 ))}
                             </div>
                         )}
-                        
+
                         <p className="text-xs flex items-center space-x-1" style={{ color: 'var(--text-muted)' }}>
                             <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
                                 <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
@@ -492,35 +371,35 @@ export default function DiscussionForm({
                     <div className="flex gap-4 pt-6">
                         <button
                             type="submit"
-                            disabled={isSubmitting || !formData.title.trim() || !formData.content.trim()}
+                            disabled={isSubmitting || !formData.content.trim()}
                             className="flex-1 px-6 py-3 rounded-xl font-semibold shadow-sm transition-all duration-200"
                             style={{
-                                background: (!isSubmitting && formData.title.trim() && formData.content.trim()) 
-                                    ? 'linear-gradient(135deg, var(--primary-600) 0%, var(--primary-700) 100%)' 
+                                background: (!isSubmitting && formData.content.trim())
+                                    ? 'linear-gradient(135deg, var(--primary-600) 0%, var(--primary-700) 100%)'
                                     : 'var(--gray-300)',
-                                color: (!isSubmitting && formData.title.trim() && formData.content.trim()) 
-                                    ? 'var(--text-inverse)' 
+                                color: (!isSubmitting && formData.content.trim())
+                                    ? 'var(--text-inverse)'
                                     : 'var(--text-muted)',
-                                cursor: (!isSubmitting && formData.title.trim() && formData.content.trim()) 
-                                    ? 'pointer' 
+                                cursor: (!isSubmitting && formData.content.trim())
+                                    ? 'pointer'
                                     : 'not-allowed'
                             }}
                         >
                             {isSubmitting ? (
                                 <div className="flex items-center justify-center gap-2">
                                     <div className="animate-spin rounded-full h-5 w-5 border-2 border-current border-t-transparent"></div>
-                                    <span>{isEditing ? 'Updating...' : 'Creating...'}</span>
+                                    <span>{isEditing ? 'Updating...' : 'Posting...'}</span>
                                 </div>
                             ) : (
                                 <div className="flex items-center justify-center gap-2">
                                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
                                     </svg>
-                                    <span>{isEditing ? 'Update Discussion' : 'Create Discussion'}</span>
+                                    <span>{isEditing ? 'Update Message' : 'Post Message'}</span>
                                 </div>
                             )}
                         </button>
-                        
+
                         <button
                             type="button"
                             onClick={onCancel}

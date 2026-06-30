@@ -75,7 +75,7 @@ const featureCards = [
   },
   {
     title: "AI Assistant",
-    description: "Unlimited AI hints and solution explanations via our ChatAI",
+    description: "Unlimited AI hints, solution explanations, and 40 messages of saved chat history per problem (vs 20 for free)",
     gradient: "from-fuchsia-500/10 to-violet-500/5",
     borderColor: "border-fuchsia-500/20",
     icon: Bot,
@@ -98,6 +98,7 @@ const comparisonRows = [
   { feature: "Discussion / hour", free: "3", premium: "20" },
   { feature: "Points multiplier", free: "1×", premium: "1.5×" },
   { feature: "AI Hints", free: "Limited", premium: "Unlimited" },
+  { feature: "Saved Chat History", free: "20 messages", premium: "40 messages" },
   { feature: "Bonus Points", free: "—", premium: "+20 on signup" },
   { feature: "Support", free: "Community", premium: "Priority" },
 ];
@@ -110,6 +111,7 @@ const premiumBenefits = [
   "20 bonus points credited instantly to your account",
   "Post up to 20 discussions per hour (vs 3 for free users)",
   "Unlimited AI hints and solution explanations via ChatAI",
+  "40 messages of saved chat history per problem (vs 20 for free users)",
   "Priority support with faster response times from our team",
 ];
 

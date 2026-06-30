@@ -201,6 +201,11 @@
   --primary-100: oklch(0.22 0.050 148);
   --primary-200: oklch(0.27 0.065 148);
 
+  /* Accent tints — dark overrides so selected accent surfaces aren't light cream */
+  --accent-50:  oklch(0.18 0.040 85);
+  --accent-100: oklch(0.23 0.055 85);
+  --accent-200: oklch(0.28 0.070 85);
+
   /* Gray scale — dark overrides so --gray-* tokens adapt */
   --gray-50:  #1f2937;
   --gray-100: #374151;

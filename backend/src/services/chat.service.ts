@@ -2,6 +2,7 @@ import groqClient from '../utils/groqClient.js';
 import geminiClient from '../utils/geminiClient.js';
 import { promptGenerator } from '../utils/promtGenerator.js';
 import Problem from '../models/problem.js';
+import ChatHistory from '../models/chatHistory.js';
 import { NotFoundError, ForbiddenError, AppError } from '../contracts/apiResponse.js';
 
 
@@ -134,18 +135,14 @@ class ChatService {
 
 
   postProcessResponse(response: string, problem: any): string {
-    // Check if AI is going off-topic despite system prompt
+    // Check if AI is going truly off-topic despite system prompt
+    // (Note: identity statements like "I'm TrueCode's AI assistant" and platform
+    // discussion mentioning "other problems" are now allowed by the system prompt,
+    // so we only guard against genuinely unrelated content here.)
     const offTopicIndicators = [
-      'I am an AI assistant',
-      'I can help you with many things',
       'As an AI language model',
-      'I was created by',
-      'I was trained by',
       'tell you a joke',
-      'recommend a movie',
-      'nice to meet you',
-      'my name is',
-      'I don\'t have a name'
+      'recommend a movie'
     ];
 
 
@@ -155,15 +152,7 @@ class ChatService {
 
 
     if (isOffTopic) {
-      return `I can only discuss the problem: "${problem.title}". How can I help you solve it?`;
-    }
-
-
-    // Check if response is discussing other problems
-    if (response.toLowerCase().includes('other problem') ||
-        response.toLowerCase().includes('different problem') ||
-        response.toLowerCase().includes('another problem')) {
-      return `I'm focused solely on helping you with "${problem.title}". What specific aspect of this problem would you like to discuss?`;
+      return `I can only discuss the problem: "${problem.title}" or general TrueCode platform questions. How can I help?`;
     }
 
 
@@ -171,21 +160,14 @@ class ChatService {
   }
 
 
-  async saveChatHistory(userId: string, problemId: string, messages: any[]): Promise<void> {
-    // NOTE: src/models/ChatHistory.js does not exist — this was already
-    // broken/dead code before the TS migration. Left as-is (pre-existing
-    // behavior: the catch below silently swallows the failure) since
-    // fixing it is out of scope for this migration.
+  async saveChatHistory(userId: string, problemId: string, messages: any[], isPremium = false): Promise<void> {
     try {
-      // @ts-expect-error - ChatHistory model does not exist (pre-existing issue)
-      const { default: ChatHistory } = await import('../models/ChatHistory.js');
-
+      const limit = isPremium ? 40 : 20;
       await ChatHistory.findOneAndUpdate(
         { userId, problemId },
         {
           $set: {
-            messages: messages.slice(-20), // Keep last 20 messages only
-            updatedAt: new Date()
+            messages: messages.slice(-limit) // Keep last N messages only (premium gets a longer window)
           }
         },
         { upsert: true, new: true }

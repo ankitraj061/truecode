@@ -9,7 +9,7 @@ import { registerUser, checkAuth } from '@/app/slices/authSlice';
 import { RootState, AppDispatch } from '@/app/store/store';
 import { BorderBeam } from '@/components/ui/border-beam';
 import Footer from '@/app/components/Footer';
-const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000';
+const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL ;
 
 interface SignupFormData {
   firstName: string;
