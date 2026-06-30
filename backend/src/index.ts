@@ -4,28 +4,29 @@ import cors from 'cors';
 const app = express();
 import main from './config/db.js'
 import cookieParser from 'cookie-parser';
-import userAuth from './routes/userAuth.route.js';
+import userAuth from './modules/auth/routes/userAuth.route.js';
 import {redisClient, connectRedis} from './config/redis.js';
-import problemCreatorRouter from './routes/problemCreator.route.js';
-import submitRouter from './routes/submit.route.js';
-import userDiscussionRouter from './routes/userDiscussion.route.js';
-import adminDiscussionRouter from './routes/adminDiscussion.route.js';
-import userProblemRouter from './routes/userProblem.route.js';
-import themeRouter from './routes/theme.route.js';
-import paymentRouter from './routes/payment.route.js';
-import SubmissionRrouter from './routes/submission.route.js';
-import draftRouter from './routes/draft.route.js';
-import feedbackRouter from './routes/feedback.route.js';
-import chatRouter from './routes/chat.route.js';
-import profileRouter from './routes/profile.route.js';
-import adminUserRouter from './routes/adminUser.route.js';
-import adminProblemRouter from './routes/adminProblem.route.js';
-import adminContestRouter from './routes/adminContest.route.js';
-import userContestRouter from './routes/userContest.route.js';
-import userPointsRouter from './routes/userPoints.route.js';
-import userRedemptionRouter from './routes/userRedemption.route.js';
-import adminRedemptionRouter from './routes/adminRedemption.route.js';
-import adminFeedbackRouter from './routes/adminFeedback.route.js';
+import problemCreatorRouter from './modules/problem/routes/problemCreator.route.js';
+import submitRouter from './modules/problem/routes/submit.route.js';
+import userDiscussionRouter from './modules/discussion/routes/userDiscussion.route.js';
+import adminDiscussionRouter from './modules/discussion/routes/adminDiscussion.route.js';
+import userProblemRouter from './modules/problem/routes/userProblem.route.js';
+import themeRouter from './modules/user/routes/theme.route.js';
+import codeRouter from './modules/problem/routes/code.route.js';
+import paymentRouter from './modules/payment/routes/payment.route.js';
+import SubmissionRrouter from './modules/problem/routes/submission.route.js';
+import draftRouter from './modules/problem/routes/draft.route.js';
+import feedbackRouter from './modules/feedback/routes/feedback.route.js';
+import chatRouter from './modules/chat/routes/chat.route.js';
+import profileRouter from './modules/user/routes/profile.route.js';
+import adminUserRouter from './modules/admin/routes/adminUser.route.js';
+import adminProblemRouter from './modules/problem/routes/adminProblem.route.js';
+import adminContestRouter from './modules/contest/routes/adminContest.route.js';
+import userContestRouter from './modules/contest/routes/userContest.route.js';
+import userPointsRouter from './modules/user/routes/userPoints.route.js';
+import userRedemptionRouter from './modules/redeem/routes/userRedemption.route.js';
+import adminRedemptionRouter from './modules/redeem/routes/adminRedemption.route.js';
+import adminFeedbackRouter from './modules/feedback/routes/adminFeedback.route.js';
 import { sendErrorFromException, AppError } from './contracts/apiResponse.js';
 
 
@@ -39,8 +40,8 @@ app.use(cors({
     credentials: true, // Allow cookies and credentials
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
     allowedHeaders: [
-        'Content-Type', 
-        'Authorization', 
+        'Content-Type',
+        'Authorization',
         'Cookie',
         'Set-Cookie',
         'Access-Control-Allow-Credentials'
@@ -65,6 +66,7 @@ app.use('/api/user/discussion',userDiscussionRouter);
 app.use('/api/admin/discussion',adminDiscussionRouter);
 app.use('/api',submitRouter);
 app.use('/api',themeRouter);
+app.use('/api',codeRouter);
 app.use('/api/payments', paymentRouter);
 app.use('/api',SubmissionRrouter);
 app.use('/api',draftRouter);
@@ -111,4 +113,3 @@ const InitializeConnection = async()=>{
 }
 
 InitializeConnection();
-

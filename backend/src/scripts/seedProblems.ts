@@ -1,9 +1,9 @@
 import dotenv from "dotenv";
 import mongoose from "mongoose";
 import main from "../config/db.js";
-import Problem from "../models/problem.js";
-import User from "../models/user.js";
-import { generateSlug } from "../utils/slugify.js";
+import Problem from "../modules/problem/models/problem.js";
+import User from "../modules/user/models/user.js";
+import { generateSlug } from "../modules/problem/utils/slugify.js";
 
 dotenv.config();
 

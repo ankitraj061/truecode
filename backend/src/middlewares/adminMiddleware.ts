@@ -1,6 +1,6 @@
 import type { Request, Response, NextFunction } from "express";
 import { redisClient } from "../config/redis.js";
-import User from "../models/user.js";
+import User from "../modules/user/models/user.js";
 import jwt from "jsonwebtoken";
 
 export const adminMiddleware = async (req: Request, res: Response, next: NextFunction) => {

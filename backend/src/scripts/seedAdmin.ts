@@ -2,7 +2,7 @@ import dotenv from "dotenv";
 import mongoose from "mongoose";
 import bcrypt from "bcrypt";
 import main from "../config/db.js";
-import User from "../models/user.js";
+import User from "../modules/user/models/user.js";
 import { generateUsername } from "../utils/validator.js";
 
 dotenv.config();

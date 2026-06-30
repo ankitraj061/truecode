@@ -223,7 +223,7 @@ export default function SignupPageContent() {
                     value={formData.firstName}
                     onChange={handleInputChange}
                     className="input transition-all duration-300 focus:scale-[1.01] focus:shadow-lg focus:shadow-brand/10 peer"
-                    placeholder="John"
+                    placeholder="Ankit"
                     disabled={loading}
                   />
                   <div className="absolute bottom-0 left-0 h-[2px] w-0 bg-gradient-to-r from-brand to-brand-hover peer-focus:w-full transition-all duration-500"></div>
@@ -242,7 +242,7 @@ export default function SignupPageContent() {
                     value={formData.lastName}
                     onChange={handleInputChange}
                     className="input transition-all duration-300 focus:scale-[1.01] focus:shadow-lg focus:shadow-brand/10 peer"
-                    placeholder="Doe"
+                    placeholder="Raj"
                     disabled={loading}
                   />
                   <div className="absolute bottom-0 left-0 h-[2px] w-0 bg-gradient-to-r from-brand to-brand-hover peer-focus:w-full transition-all duration-500"></div>
@@ -263,7 +263,7 @@ export default function SignupPageContent() {
                   value={formData.emailId}
                   onChange={handleInputChange}
                   className="input transition-all duration-300 focus:scale-[1.01] focus:shadow-lg focus:shadow-brand/10 peer"
-                  placeholder="john@example.com"
+                  placeholder="ankit@gmail.com"
                   disabled={loading}
                 />
                 <div className="absolute bottom-0 left-0 h-[2px] w-0 bg-gradient-to-r from-brand to-brand-hover peer-focus:w-full transition-all duration-500"></div>

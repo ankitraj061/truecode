@@ -1,0 +1,712 @@
+import User from "../../user/models/user.js";
+import Problem from "../models/problem.js";
+import Submission from "../models/submission.js";
+import mongoose from "mongoose";
+import SolutionDraft from "../models/solutionDraft.js";
+import Discussion from "../../discussion/models/discussion.js";
+import { sendError } from '../../../contracts/apiResponse.js';
+
+export const toggleSaveProblem = async (req, res) => {
+  try {
+    const { problemId } = req.params;
+    const userId = req.user._id;
+
+    // Validate problem exists and is active
+    const problem = await Problem.findOne({ _id: problemId, isActive: true });
+    if (!problem) {
+      return sendError(res, 404, "Problem not found or inactive");
+    }
+
+    // REMOVED: Premium access check - users can save any problem
+
+    // Find user and check if problem is already saved
+    const user = await User.findById(userId);
+    if (!user) {
+      return sendError(res, 404, "User not found");
+    }
+
+    const isAlreadySaved = user.savedProblems.includes(problemId);
+    let message;
+    let isSaved;
+
+    if (isAlreadySaved) {
+      // Remove from saved problems (unsave)
+      await User.findByIdAndUpdate(userId, {
+        $pull: { savedProblems: problemId },
+      });
+      message = "Problem removed from saved list";
+      isSaved = false;
+    } else {
+      // Add to saved problems (save) - $addToSet ensures uniqueness
+      await User.findByIdAndUpdate(userId, {
+        $addToSet: { savedProblems: problemId },
+      });
+      message = "Problem saved successfully";
+      isSaved = true;
+    }
+
+    res.json({
+      success: true,
+      message,
+      isSaved,
+      problem: {
+        id: problem._id,
+        title: problem.title,
+        difficulty: problem.difficulty,
+        isPremium: problem.isPremium, // Include premium status for UI
+      },
+    });
+  } catch (error) {
+    if (error.name === "CastError") {
+      return sendError(res, 400, "Invalid problem ID format");
+    }
+    sendError(res, 500, "Failed to toggle saved problem");
+  }
+};
+
+export const getAllProblemsForUser = async (req, res) => {
+  try {
+    const {
+      page = 1,
+      limit = 20,
+      difficulty,
+      status, // 'solved', 'unsolved', 'attempted'
+      type, // 'saved', 'premium', 'free'
+      search,
+      company,
+      topic,
+      sortBy = "title", // 'title', 'difficulty', 'acceptance', 'created'
+      order = "asc",
+    } = req.query;
+
+    const userId = req.user?._id || null;
+
+    // Build match stage for initial filtering
+    const matchStage: Record<string, any> = {
+      isActive: true,
+      ...(difficulty && { difficulty }),
+      ...(type === "premium" && { isPremium: true }),
+      ...(type === "free" && { isPremium: false }),
+      ...(company && { companies: { $in: [company] } }),
+      ...(topic && { tags: { $in: [topic] } }),
+    };
+
+    // ✅ Search only by title with regex
+    if (search) {
+      const searchTerm = search.trim();
+      matchStage.title = { 
+        $regex: searchTerm, 
+        $options: 'i' 
+      };
+    }
+
+    const pipeline = [
+      { $match: matchStage },
+
+      // For saved problems
+      ...(type === "saved"
+        ? [
+            {
+              $lookup: {
+                from: "users",
+                let: { problemId: "$_id" },
+                pipeline: [
+                  { $match: { _id: userId } },
+                  {
+                    $project: {
+                      hasSaved: { $in: ["$$problemId", "$savedProblems"] },
+                    },
+                  },
+                ],
+                as: "savedCheck",
+              },
+            },
+            {
+              $match: { "savedCheck.hasSaved": true },
+            },
+          ]
+        : []),
+
+      // Lookup user data (saved + solved)
+      {
+        $lookup: {
+          from: "users",
+          let: { problemId: "$_id" },
+          pipeline: [
+            { $match: { _id: userId } },
+            {
+              $project: {
+                isSaved: { $in: ["$$problemId", "$savedProblems"] },
+                isSolved: { $in: ["$$problemId", "$problemsSolved.problemId"] },
+              },
+            },
+          ],
+          as: "userStatus",
+        },
+      },
+
+      // Lookup drafts (for attempted)
+      {
+        $lookup: {
+          from: "solutiondrafts",
+          let: { problemId: "$_id" },
+          pipeline: [
+            {
+              $match: {
+                $expr: {
+                  $and: [
+                    { $eq: ["$problemId", "$$problemId"] },
+                    { $eq: ["$userId", userId] },
+                  ],
+                },
+              },
+            },
+            { $project: { _id: 1 } },
+          ],
+          as: "draftStatus",
+        },
+      },
+
+      // Lookup submissions (for attempted but not accepted)
+      {
+        $lookup: {
+          from: "submissions",
+          let: { problemId: "$_id" },
+          pipeline: [
+            {
+              $match: {
+                $expr: {
+                  $and: [
+                    { $eq: ["$problemId", "$$problemId"] },
+                    { $eq: ["$userId", userId] },
+                    { $ne: ["$status", "accepted"] },
+                  ],
+                },
+              },
+            },
+            { $limit: 1 },
+            { $project: { _id: 1 } },
+          ],
+          as: "attemptedSubmissions",
+        },
+      },
+
+      // Lookup acceptance rate
+      {
+        $lookup: {
+          from: "submissions",
+          let: { problemId: "$_id" },
+          pipeline: [
+            { $match: { $expr: { $eq: ["$problemId", "$$problemId"] } } },
+            {
+              $group: {
+                _id: null,
+                totalSubmissions: { $sum: 1 },
+                acceptedSubmissions: {
+                  $sum: { $cond: [{ $eq: ["$status", "accepted"] }, 1, 0] },
+                },
+              },
+            },
+            {
+              $project: {
+                acceptanceRate: {
+                  $cond: [
+                    { $eq: ["$totalSubmissions", 0] },
+                    0,
+                    {
+                      $round: [
+                        {
+                          $multiply: [
+                            {
+                              $divide: [
+                                "$acceptedSubmissions",
+                                "$totalSubmissions",
+                              ],
+                            },
+                            100,
+                          ],
+                        },
+                        2,
+                      ],
+                    },
+                  ],
+                },
+              },
+            },
+          ],
+          as: "submissionStats",
+        },
+      },
+
+      // ✅ FIXED: Project fields (removed textScore reference)
+      {
+        $project: {
+          _id: 1,
+          title: 1,
+          slug: 1,
+          difficulty: 1,
+          isPremiumProblem: "$isPremium",
+          isSavedProblem: {
+            $ifNull: [{ $arrayElemAt: ["$userStatus.isSaved", 0] }, false],
+          },
+          isSolvedByUser: {
+            $ifNull: [{ $arrayElemAt: ["$userStatus.isSolved", 0] }, false],
+          },
+          isAttemptedByUser: {
+            $and: [
+              {
+                $or: [
+                  { $gt: [{ $size: "$draftStatus" }, 0] },
+                  { $gt: [{ $size: "$attemptedSubmissions" }, 0] },
+                ],
+              },
+              {
+                $not: {
+                  $ifNull: [
+                    { $arrayElemAt: ["$userStatus.isSolved", 0] },
+                    false,
+                  ],
+                },
+              },
+            ],
+          },
+          acceptanceRate: {
+            $ifNull: [
+              { $arrayElemAt: ["$submissionStats.acceptanceRate", 0] },
+              0,
+            ],
+          },
+          createdAt: 1
+          // ✅ REMOVED: ...(search && { score: { $meta: "textScore" } }),
+        },
+      },
+
+      // Status filter
+      ...(status === "solved" ? [{ $match: { isSolvedByUser: true } }] : []),
+      ...(status === "unsolved" ? [{ $match: { isSolvedByUser: false } }] : []),
+      ...(status === "attempted"
+        ? [{ $match: { isAttemptedByUser: true } }]
+        : []),
+
+      // ✅ Sort (already fixed)
+      {
+        $sort: {
+          ...(sortBy === "difficulty" && {
+            difficulty: order === "desc" ? -1 : 1,
+          }),
+          ...(sortBy === "acceptance" && {
+            acceptanceRate: order === "desc" ? -1 : 1,
+          }),
+          ...(sortBy === "created" && { createdAt: order === "desc" ? -1 : 1 }),
+          ...(sortBy === "title" && { title: order === "desc" ? -1 : 1 }),
+          _id: 1,
+        },
+      },
+
+      // Pagination
+      {
+        $facet: {
+          problems: [
+            { $skip: (page - 1) * parseInt(limit) },
+            { $limit: parseInt(limit) },
+          ],
+          totalCount: [{ $count: "count" }],
+        },
+      },
+    ];
+
+    const [result] = await Problem.aggregate(pipeline);
+    const problems = result.problems || [];
+    const totalCount = result.totalCount[0]?.count || 0;
+
+    res.json({
+      success: true,
+      problems,
+      pagination: {
+        currentPage: parseInt(page),
+        totalPages: Math.ceil(totalCount / limit),
+        totalProblems: totalCount,
+        hasNext: page * limit < totalCount,
+        hasPrev: page > 1,
+      },
+    });
+  } catch (error) {
+
+    if (error.name === "MongoError") {
+      if (error.code === 16389) {
+        return res
+          .status(400)
+          .json({ error: "Query too complex, please refine your filters" });
+      }
+      if (error.code === 16552) {
+        return sendError(res, 400, "Invalid search query");
+      }
+    }
+
+    sendError(res, 500, "Failed to fetch problems");
+  }
+};
+
+
+export const getProblemForUserBySlug = async (req, res) => {
+  try {
+    const { problemSlug } = req.params;
+    const userId = req.user?._id || null;
+
+    if (
+      !problemSlug ||
+      typeof problemSlug !== "string" ||
+      problemSlug.trim() === ""
+    ) {
+      return sendError(res, 400, "Invalid problem slug format");
+    }
+
+    const aggregatePipeline = [
+      { $match: { slug: problemSlug, isActive: true } },
+      ...(userId ? [{
+        $lookup: {
+          from: "users",
+          let: { problemId: "$_id" },
+          pipeline: [
+            { $match: { _id: new mongoose.Types.ObjectId(userId) } },
+            {
+              $project: {
+                isSaved: { $in: ["$$problemId", "$savedProblems"] },
+                isSolved: { $in: ["$$problemId", "$problemsSolved.problemId"] },
+                subscriptionType: 1,
+                preferredLanguage: "$preferences.preferredLanguage",
+              },
+            },
+          ],
+          as: "userStatus",
+        },
+      }] : []),
+      {
+        $project: {
+          title: 1,
+          slug: 1,
+          description: 1,
+          difficulty: 1,
+          constraints: 1,
+          visibleTestCases: 1,
+          startCode: 1,
+          hints: 1,
+          companies: 1,
+          tags: 1,
+          isPremium: 1,
+          createdAt: 1,
+          userStatus: { $arrayElemAt: ["$userStatus", 0] },
+        },
+      },
+    ];
+
+    const [problemData] = await Problem.aggregate(aggregatePipeline);
+
+    if (!problemData) {
+      return sendError(res, 404, "Problem not found");
+    }
+
+    const userStatus = problemData.userStatus || {};
+
+    // Premium access check - unauthenticated users cannot access premium problems
+    if (problemData.isPremium && userStatus.subscriptionType !== "premium") {
+      return sendError(res, 403, "Please subscribe to unlock this problem", {
+        isPremium: true,
+        requiresSubscription: true,
+        problem: {
+          _id: problemData._id,
+          slug: problemData.slug,
+          title: problemData.title,
+          difficulty: problemData.difficulty,
+          isPremium: true,
+        },
+      });
+    }
+
+    const problemObjectId = new mongoose.Types.ObjectId(problemData._id);
+
+    // Global stats (not user-specific)
+    const [submissionStats, discussionStats] = await Promise.all([
+      Submission.aggregate([
+        { $match: { problemId: problemObjectId } },
+        {
+          $group: {
+            _id: "$problemId",
+            totalSubmissions: { $sum: 1 },
+            totalAccepted: {
+              $sum: { $cond: [{ $eq: ["$status", "accepted"] }, 1, 0] },
+            },
+          },
+        },
+      ]),
+      Discussion.aggregate([
+        { $match: { problemId: problemObjectId } },
+        {
+          $group: {
+            _id: "$problemId",
+            totalDiscussions: { $sum: 1 },
+            totalReplies: {
+              $sum: { $cond: [{ $isArray: "$replies" }, { $size: "$replies" }, 0] },
+            },
+          },
+        },
+        {
+          $project: {
+            _id: 1,
+            totalDiscussions: 1,
+            totalReplies: 1,
+            totalDiscussionCount: { $add: ["$totalDiscussions", "$totalReplies"] },
+          },
+        },
+      ]),
+    ]);
+
+    // User-specific stats
+    let isSolvedByUser = false;
+    let isAttemptedByUser = false;
+    let isSubmittedByUser = false;
+
+    if (userId) {
+      const [userSolvedProblem, userSubmission, userDraft] = await Promise.all([
+        User.findOne({ _id: userId, "problemsSolved.problemId": problemObjectId }),
+        Submission.findOne({ userId, problemId: problemObjectId }),
+        SolutionDraft.findOne({ userId, problemId: problemObjectId }),
+      ]);
+      isSolvedByUser = !!userSolvedProblem;
+      isAttemptedByUser = !!(userSubmission || userDraft);
+      isSubmittedByUser = !!userSubmission;
+    }
+
+    const totalSubmissions =
+      submissionStats.length > 0 ? submissionStats[0].totalSubmissions : 0;
+    const totalAcceptedSubmissions =
+      submissionStats.length > 0 ? submissionStats[0].totalAccepted : 0;
+
+    const discussionData = discussionStats.length > 0 ? discussionStats[0] : {};
+    const totalDiscussions = discussionData.totalDiscussions || 0;
+    const totalReplies = discussionData.totalReplies || 0;
+    const totalDiscussionCount = discussionData.totalDiscussionCount || 0;
+
+    const problem = {
+      _id: problemData._id,
+      slug: problemData.slug,
+      title: problemData.title,
+      description: problemData.description,
+      difficulty: problemData.difficulty,
+      constraints: problemData.constraints,
+      visibleTestCases: problemData.visibleTestCases,
+      startCode: problemData.startCode,
+      hints: problemData.hints,
+      companies: problemData.companies,
+      tags: problemData.tags,
+      isPremium: problemData.isPremium,
+      createdAt: problemData.createdAt,
+      totalSubmissions,
+      totalAcceptedSubmissions,
+      totalDiscussions,
+      totalReplies,
+      totalDiscussionCount,
+    };
+
+    const userData = {
+      preferredLanguage: userStatus.preferredLanguage || "javascript",
+      isSavedProblem: userStatus.isSaved || false,
+      isSolvedByUser,
+      isAttemptedByUser,
+      isSubmittedByUser,
+      subscriptionType: userStatus.subscriptionType || "free",
+    };
+
+    res.json({
+      success: true,
+      problem,
+      userStatus: userData,
+    });
+  } catch (error) {
+    sendError(res, 500, "Failed to fetch problem details");
+  }
+};
+
+export const getAllCompaniesWithCount = async (req, res) => {
+  try {
+    const pipeline = [
+      // Match only active problems
+      { $match: { isActive: true } },
+
+      // Unwind the companies array to create separate documents for each company
+      { $unwind: "$companies" },
+
+      // Group by company and count problems
+      {
+        $group: {
+          _id: "$companies",
+          count: { $sum: 1 },
+          difficulties: {
+            $push: "$difficulty",
+          },
+        },
+      },
+
+      // Add difficulty breakdown counts
+      {
+        $addFields: {
+          difficultyBreakdown: {
+            easy: {
+              $size: {
+                $filter: {
+                  input: "$difficulties",
+                  cond: { $eq: ["$$this", "easy"] },
+                },
+              },
+            },
+            medium: {
+              $size: {
+                $filter: {
+                  input: "$difficulties",
+                  cond: { $eq: ["$$this", "medium"] },
+                },
+              },
+            },
+            hard: {
+              $size: {
+                $filter: {
+                  input: "$difficulties",
+                  cond: { $eq: ["$$this", "hard"] },
+                },
+              },
+            },
+          },
+        },
+      },
+
+      // Project final structure
+      {
+        $project: {
+          _id: 0,
+          company: "$_id",
+          count: 1,
+          difficultyBreakdown: 1,
+        },
+      },
+
+      // Sort by count (highest first) then by company name
+      { $sort: { count: -1, company: 1 } },
+    ];
+
+    const companies = await Problem.aggregate(pipeline);
+
+    res.json({
+      success: true,
+      companies,
+      totalCompanies: companies.length,
+    });
+  } catch (error) {
+    sendError(res, 500, "Failed to fetch companies");
+  }
+};
+
+export const getAllTopicsWithCount = async (req, res) => {
+  try {
+    const pipeline = [
+      // Match only active problems
+      { $match: { isActive: true } },
+
+      // Unwind the tags array to create separate documents for each tag
+      { $unwind: "$tags" },
+
+      // Group by tag and count problems
+      {
+        $group: {
+          _id: "$tags",
+          count: { $sum: 1 },
+        },
+      },
+
+      // Project final structure
+      {
+        $project: {
+          _id: 0,
+          topic: "$_id",
+          count: 1,
+        },
+      },
+
+      // Sort by count (highest first) then by topic name
+      { $sort: { count: -1, topic: 1 } },
+    ];
+
+    const topics = await Problem.aggregate(pipeline);
+
+    res.json({
+      success: true,
+      topics,
+      totalTopics: topics.length,
+    });
+  } catch (error) {
+    sendError(res, 500, "Failed to fetch topics");
+  }
+};
+
+export const getSolutionByProblemId = async (req, res) => {
+  try {
+    const { problemId } = req.params;
+
+    if (!mongoose.Types.ObjectId.isValid(problemId)) {
+      return sendError(res, 400, "Invalid problem ID format");
+    }
+
+    const problem = await Problem.findById(problemId)
+      .select("referenceSolution")
+      .lean();
+    if (!problem) {
+      return sendError(res, 404, "Problem not found");
+    }
+
+    res.json({
+      success: true,
+      referenceSolution: problem.referenceSolution || [],
+    });
+  } catch (error) {
+    sendError(res, 500, "Failed to fetch reference solution");
+  }
+};
+
+
+
+
+export const getEditorialByProblemId = async (req, res) => {
+  try {
+    const { problemId } = req.params;
+
+    // Validate ObjectId
+    if (!problemId.match(/^[0-9a-fA-F]{24}$/)) {
+      return sendError(res, 400, 'Invalid problem ID format');
+    }
+
+    // Find problem and select only editorialContent field
+    const problem = await Problem.findById(problemId)
+      .select('editorialContent title slug');
+
+    if (!problem) {
+      return sendError(res, 404, 'Problem not found');
+    }
+
+    // Check if editorial content exists
+    if (!problem.editorialContent) {
+      return sendError(res, 404, 'Editorial content not available for this problem');
+    }
+
+    res.status(200).json({
+      success: true,
+      data: {
+        problemId: problem._id,
+        title: problem.title,
+        slug: problem.slug,
+        editorialContent: problem.editorialContent
+      }
+    });
+  } catch (error) {
+    sendError(res, 500, 'Server error while fetching editorial content');
+  }
+};
+

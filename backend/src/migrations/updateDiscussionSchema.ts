@@ -1,5 +1,5 @@
 // src/migrations/updateDiscussionSchema.js
-import Discussion from "../models/discussion.js";
+import Discussion from "../modules/discussion/models/discussion.js";
 import mongoose from 'mongoose';
 import dotenv from 'dotenv';
 
