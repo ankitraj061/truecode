@@ -24,58 +24,51 @@ Express 5 + MongoDB REST API powering the TrueCode coding platform. Handles auth
 
 ## Project Structure
 
+The backend is organized by feature domain under `src/modules/`. Each module owns its own `controllers/`, `routes/`, and (where applicable) `models/`, `services/`, `middlewares/`, `validators/`, `config/`. Infrastructure used by 3+ modules stays shared at the top level.
+
 ```
 src/
+  modules/
+    auth/         # userAuth.controller/route, passport.ts (Google + GitHub OAuth), emailVerificationMiddleware.ts
+    admin/        # adminUser.controller/route — user administration (ban/list/promote)
+    user/         # profile, userPoints, theme settings + models/user.ts
+    problem/      # problemCreator, userProblem, submission, submit, draft, code controllers/routes
+                  #   models/{problem,submission,solutionDraft,company}.ts
+                  #   services/{compiler,user}.service.ts, utils/{problemUtility,slugify}.ts
+                  #   middlewares/{submitCodeWaitingTimeMiddleware,problemAccessMiddleware}.ts
+    contest/      # admin + user contest controllers/routes, models/contest.ts
+    discussion/   # admin + user discussion controllers/routes, models/discussion.ts
+                  #   validators/discussionSchemas.ts (Joi), middlewares/discussionRateLimitMiddleware.ts
+    payment/      # Razorpay order/verify/webhook, models/payment.ts, middlewares/premiumMiddleware.ts
+    redeem/       # admin + user points-redemption controllers/routes, models/redemption.ts
+    feedback/     # admin + user feedback controllers/routes, models/feedback.ts
+    chat/         # AI chat controller/route/service, models/chatHistory.ts, validators/chatValidator.ts
+                  #   utils/{groqClient,geminiClient,promtGenerator}.ts, config/{groq,gemini}.config.ts
+
+  # Shared across 3+ modules — not owned by any single domain
   config/
     db.ts                # Mongoose connection
     redis.ts             # Dual-mode: Upstash REST or self-hosted Redis client
-    passport.ts          # Google + GitHub OAuth strategies
-    groq.config.ts       # Groq client initialization (primary AI provider)
-    gemini.config.ts     # Gemini client initialization (fallback AI provider)
-  controllers/           # Route handler logic
   middlewares/
     checkAuthMiddleware.ts          # Decodes JWT, attaches req.user
     userMiddleware.ts                # Auth + role === 'user' check
     adminMiddleware.ts               # Auth + role === 'admin' check
     optionalUserMiddleware.ts        # Attaches req.user if logged in, otherwise continues anonymously
     activeAccountMiddleware.ts       # Blocks deactivated accounts
-    emailVerificationMiddleware.ts   # Gates actions on verified email
-    premiumMiddleware.ts             # Checks subscriptionType + subscriptionExpiry
-    problemAccessMiddleware.ts       # isPremium check + isActive check per problem
-    submitCodeWaitingTimeMiddleware.ts  # 10s Redis cooldown between submits
     ipRateLimitMiddleware.ts         # 1000 req/hour per IP
-    discussionRateLimitMiddleware.ts # 5/hr free, 20/hr premium per user
     inputValidationMiddleware.ts     # express-validator/Joi error handler
-    chatValidator.ts                 # Chat input sanitization
     requestLoggingMiddleware.ts      # Dev request logging
-  models/
-    user.ts         # User schema (auth, stats, subscription, points)
-    problem.ts      # Problem schema (test cases, starter code, hints)
-    submission.ts   # Submission result + runtime/memory
-    contest.ts      # Contest schema with participants + scoring
-    discussion.ts   # Discussion threads + replies + votes
-    payment.ts       # Razorpay order + verification records
-    redemption.ts    # Points redemption orders + delivery status
-    solutionDraft.ts # Auto-saved code drafts per problem-language
-    feedback.ts      # User feedback
-    company.ts       # Company metadata for problem tags
-  routes/            # Express routers, one per domain (admin*.route.ts + user*.route.ts pairs)
-  validations/
-    discussionSchemas.ts  # Joi schemas for discussion create/update/reply/vote/bulk
-  services/
-    compiler.service.ts  # Local pre-compile via child_process (gcc/g++/javac)
-    chat.service.ts       # AI chat logic — Groq primary, Gemini fallback, hint handling, solution detection
-    user.service.ts       # Post-solve user stat updates (points, streaks, rating)
   utils/
     validator.ts        # Language ID mapping for Judge0
-    problemUtility.ts   # Judge0 batch submit + token polling
-    groqClient.ts        # Singleton Groq client
-    geminiClient.ts       # Singleton Gemini client (fallback), normalizes response to Groq's shape
-    promtGenerator.ts    # Prompt building + relevance validation for AI chat
-    slugify.ts            # Problem title → URL slug generation
+  contracts/
+    apiResponse.ts      # Shared success/error response contract + AppError hierarchy
   scripts/
     seedAdmin.ts          # One-time admin user seeding
-  index.ts               # App bootstrap, middleware wiring, error handler
+    seedProblems.ts        # Problem bank seeding
+    migrate.ts              # One-off data migrations
+  migrations/
+    updateDiscussionSchema.ts  # One-off backfill for discussion schema fields
+  index.ts               # App bootstrap, middleware wiring, route mounting, error handler
 ```
 
 ---

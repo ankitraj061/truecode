@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { FiZap, FiTarget, FiTrendingUp } from 'react-icons/fi';
+import { Zap, Target, TrendingUp, X } from 'lucide-react';
 
 interface ShowcaseModalProps {
   isOpen: boolean;
@@ -12,7 +12,12 @@ export default function ShowcaseModal({ isOpen, onClose }: ShowcaseModalProps) {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+    <div
+      className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+      role="dialog"
+      aria-modal="true"
+      aria-label="How TrueCode helps you level up"
+    >
       <div className="relative max-w-2xl w-full bg-primary border-[5px] border-border-primary rounded-2xl shadow-[0_20px_60px_rgba(0,0,0,0.6)] overflow-hidden">
         {/* Accent corner */}
         <div className="absolute -top-10 -right-10 w-32 h-32 bg-gradient-to-br from-brand to-purple-500 rotate-45 opacity-60 pointer-events-none" />
@@ -28,9 +33,10 @@ export default function ShowcaseModal({ isOpen, onClose }: ShowcaseModalProps) {
           <button
             type="button"
             onClick={onClose}
+            aria-label="Close dialog"
             className="text-secondary hover:text-primary text-sm font-semibold"
           >
-            ✕
+            <X className="w-4 h-4" />
           </button>
         </div>
 
@@ -48,7 +54,7 @@ export default function ShowcaseModal({ isOpen, onClose }: ShowcaseModalProps) {
           <div className="grid gap-4 md:grid-cols-3 mt-4">
             <div className="rounded-xl border border-border-primary bg-elevated p-4 flex flex-col gap-2">
               <div className="w-8 h-8 rounded-lg bg-brand/15 flex items-center justify-center text-brand">
-                <FiTarget size={18} />
+                <Target size={18} />
               </div>
               <h3 className="text-sm font-semibold text-primary">Guided practice</h3>
               <p className="text-xs text-secondary">
@@ -58,7 +64,7 @@ export default function ShowcaseModal({ isOpen, onClose }: ShowcaseModalProps) {
 
             <div className="rounded-xl border border-border-primary bg-elevated p-4 flex flex-col gap-2">
               <div className="w-8 h-8 rounded-lg bg-purple-500/15 flex items-center justify-center text-purple-300">
-                <FiZap size={18} />
+                <Zap size={18} />
               </div>
               <h3 className="text-sm font-semibold text-primary">Contest pressure</h3>
               <p className="text-xs text-secondary">
@@ -68,7 +74,7 @@ export default function ShowcaseModal({ isOpen, onClose }: ShowcaseModalProps) {
 
             <div className="rounded-xl border border-border-primary bg-elevated p-4 flex flex-col gap-2">
               <div className="w-8 h-8 rounded-lg bg-success/15 flex items-center justify-center text-success">
-                <FiTrendingUp size={18} />
+                <TrendingUp size={18} />
               </div>
               <h3 className="text-sm font-semibold text-primary">Progress you can see</h3>
               <p className="text-xs text-secondary">

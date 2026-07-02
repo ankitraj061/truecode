@@ -10,7 +10,7 @@ import { useRunCode } from "@/app/problems/[slug]/utils/useRunCode";
 import { axiosClient } from "@/app/utils/axiosClient";
 import { ThemeToggle } from "@/app/components/themeToggle";
 import ProblemListSidebar from "./ProblemListSidebar";
-import { FiClock, FiPause, FiPlay, FiRotateCcw } from "react-icons/fi";
+import { Clock, Pause, Play, RotateCcw } from "lucide-react";
 import type { 
   Problem, 
   TestCase, 
@@ -18,7 +18,6 @@ import type {
   CodeEditorData,
   TestResultsDetail,
   WindowWithCustomProperties,
-  TimerProps,
   RunCodeResult,
   ApiError
 } from "./types";
@@ -27,7 +26,7 @@ import type {
 
 
 
-export default function Navbar({ onTimerUpdate, onTimerReset }: TimerProps = {}) {
+export default function Navbar() {
   const { isAuthenticated, user } = useSelector((state: RootState) => state.auth);
   const { problem } = useSelector((state: RootState) => state.problem);
   const router = useRouter();
@@ -139,11 +138,7 @@ export default function Navbar({ onTimerUpdate, onTimerReset }: TimerProps = {})
   useEffect(() => {
     if (isTimerRunning) {
       timerIntervalRef.current = setInterval(() => {
-        setTimerSeconds(prev => {
-          const newTime = prev + 1;
-          onTimerUpdate?.(newTime);
-          return newTime;
-        });
+        setTimerSeconds(prev => prev + 1);
       }, 1000);
     } else {
       if (timerIntervalRef.current) {
@@ -157,7 +152,7 @@ export default function Navbar({ onTimerUpdate, onTimerReset }: TimerProps = {})
         clearInterval(timerIntervalRef.current);
       }
     };
-  }, [isTimerRunning, onTimerUpdate]);
+  }, [isTimerRunning]);
 
   useEffect(() => {
     if (testResults.length > 0) {
@@ -195,7 +190,6 @@ export default function Navbar({ onTimerUpdate, onTimerReset }: TimerProps = {})
   const resetTimer = () => {
     setIsTimerRunning(false);
     setTimerSeconds(0);
-    onTimerReset?.();
   };
 
   const formatTime = (seconds: number) => {
@@ -627,7 +621,7 @@ export default function Navbar({ onTimerUpdate, onTimerReset }: TimerProps = {})
             }}
           >
             <div className="flex items-center space-x-2 px-2 py-1 rounded-lg" style={{ backgroundColor: 'var(--bg-secondary)' }}>
-              <FiClock
+              <Clock
                 className={`w-4 h-4 ${isTimerRunning ? 'animate-pulse' : ''}`}
                 style={{
                   color: isTimerRunning ? 'var(--success-500)' : 'var(--text-muted)'
@@ -650,8 +644,9 @@ export default function Navbar({ onTimerUpdate, onTimerReset }: TimerProps = {})
                   className="p-2 rounded-lg transition-colors hover:bg-success-light"
                   style={{ color: 'var(--success-500)', backgroundColor: 'var(--bg-secondary)' }}
                   title="Start Timer"
+                  aria-label="Start timer"
                 >
-                  <FiPlay className="w-3.5 h-3.5" />
+                  <Play className="w-3.5 h-3.5" />
                 </button>
               ) : (
                 <button
@@ -659,19 +654,21 @@ export default function Navbar({ onTimerUpdate, onTimerReset }: TimerProps = {})
                   className="p-2 rounded-lg transition-colors hover:bg-error-light"
                   style={{ color: 'var(--error-500)', backgroundColor: 'var(--bg-secondary)' }}
                   title="Stop Timer"
+                  aria-label="Stop timer"
                 >
-                  <FiPause className="w-3.5 h-3.5" />
+                  <Pause className="w-3.5 h-3.5" />
                 </button>
               )}
-              
+
               {timerSeconds > 0 && (
                 <button
                   onClick={resetTimer}
                   className="p-2 rounded-lg transition-colors hover:bg-secondary"
                   style={{ color: 'var(--text-secondary)', backgroundColor: 'var(--bg-secondary)' }}
                   title="Reset Timer"
+                  aria-label="Reset timer"
                 >
-                  <FiRotateCcw className="w-3.5 h-3.5" />
+                  <RotateCcw className="w-3.5 h-3.5" />
                 </button>
               )}
             </div>

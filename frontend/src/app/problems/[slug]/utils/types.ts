@@ -112,11 +112,6 @@ export interface WindowWithCustomProperties extends Window {
   };
 }
 
-export interface TimerProps {
-  onTimerUpdate?: (time: number) => void;
-  onTimerReset?: () => void;
-}
-
 export interface RunCodeResult {
   success: boolean;
   summary: {

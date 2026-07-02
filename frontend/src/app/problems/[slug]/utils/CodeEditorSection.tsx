@@ -674,20 +674,25 @@ int* twoSum(int* nums, int numsSize, int target, int* returnSize){
       );
     }
 
-    // if (saveStatus === 'saving' || isSavingDraft) {
-    //   return (
-    //     <div className="flex items-center space-x-2 bg-elevated px-3 py-1.5 rounded-lg border border-brand/20 shadow-xs">
-    //       <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-brand"></div>
-    //       <span className="text-xs text-brand font-medium">Auto-saving...</span>
-    //     </div>
-    //   );
-    // }
+    if (saveStatus === 'saving') {
+      return (
+        <div className="flex items-center space-x-2 bg-elevated px-3 py-1.5 rounded-lg border border-brand/20 shadow-xs">
+          <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-brand"></div>
+          <span className="text-xs text-brand font-medium">Auto-saving...</span>
+        </div>
+      );
+    }
 
-    // return (
-    //   <div className="bg-tertiary px-3 py-1.5 rounded-lg border border-primary shadow-xs">
-    //     <span className="text-xs text-muted">Auto-save enabled</span>
-    //   </div>
-    // );
+    if (saveStatus === 'saved') {
+      return (
+        <div className="flex items-center space-x-2 bg-elevated px-3 py-1.5 rounded-lg border border-success/20 shadow-xs">
+          <div className="w-2 h-2 rounded-full bg-success"></div>
+          <span className="text-xs text-success font-medium">Saved</span>
+        </div>
+      );
+    }
+
+    return null;
   };
 
   return (

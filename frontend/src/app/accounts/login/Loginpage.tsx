@@ -27,7 +27,12 @@ export default function LoginPageContent() {
   const getRedirectTarget = (role?: string) => {
     if (role === 'admin') return '/admin';
     const redirect = searchParams.get('redirect');
-    if (redirect && redirect.startsWith('/') && !redirect.startsWith('//')) {
+    if (
+      redirect &&
+      redirect.startsWith('/') &&
+      !redirect.startsWith('//') &&
+      !redirect.startsWith('/accounts/')
+    ) {
       return redirect;
     }
     return '/';
@@ -49,7 +54,7 @@ export default function LoginPageContent() {
 
   const handleGoogleLogin = () => {
     const redirect = searchParams.get('redirect');
-    const query = redirect && redirect.startsWith('/') && !redirect.startsWith('//')
+    const query = redirect && redirect.startsWith('/') && !redirect.startsWith('//') && !redirect.startsWith('/accounts/')
       ? `?redirect=${encodeURIComponent(redirect)}`
       : '';
     window.location.href = `${BACKEND_URL}/api/auth/google${query}`;
@@ -57,7 +62,7 @@ export default function LoginPageContent() {
 
   const handleGithubLogin = () => {
     const redirect = searchParams.get('redirect');
-    const query = redirect && redirect.startsWith('/') && !redirect.startsWith('//')
+    const query = redirect && redirect.startsWith('/') && !redirect.startsWith('//') && !redirect.startsWith('/accounts/')
       ? `?redirect=${encodeURIComponent(redirect)}`
       : '';
     window.location.href = `${BACKEND_URL}/api/auth/github${query}`;
@@ -77,6 +82,7 @@ export default function LoginPageContent() {
 
       if (loginUser.fulfilled.match(result)) {
         const loggedInUser = result.payload as RootState['auth']['user'];
+        setIsSubmitting(false);
         router.push(getRedirectTarget(loggedInUser?.role));
       } else if (loginUser.rejected.match(result)) {
         const message =

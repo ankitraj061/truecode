@@ -172,7 +172,7 @@ export default function AdminProblemsPage() {
       </div>
 
       {editingProblem && (
-        <div className="rounded-2xl border border-border-primary bg-primary/50 p-6">
+        <div className="rounded-2xl border border-border-primary bg-elevated/50 p-6">
           <ProblemForm
             editProblem={editingProblem}
             onSuccess={() => {
@@ -237,10 +237,10 @@ export default function AdminProblemsPage() {
                       <span
                         className={`px-2 py-0.5 rounded-full text-xs font-medium ${
                           p.difficulty === 'easy'
-                            ? 'bg-emerald-500/10 text-emerald-400'
+                            ? 'bg-difficulty-easy/10 text-difficulty-easy'
                             : p.difficulty === 'medium'
-                            ? 'bg-amber-500/10 text-amber-400'
-                            : 'bg-rose-500/10 text-rose-400'
+                            ? 'bg-difficulty-medium/10 text-difficulty-medium'
+                            : 'bg-difficulty-hard/10 text-difficulty-hard'
                         }`}
                       >
                         {p.difficulty}
@@ -250,7 +250,7 @@ export default function AdminProblemsPage() {
                       <span
                         className={`px-2 py-0.5 rounded-full text-xs font-medium ${
                           p.isActive
-                            ? 'bg-emerald-500/10 text-emerald-400'
+                            ? 'bg-success/10 text-success'
                             : 'bg-slate-500/10 text-slate-400'
                         }`}
                       >
@@ -293,7 +293,7 @@ export default function AdminProblemsPage() {
                             </button>
                             <button
                               type="button"
-                              className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-xs text-amber-400 hover:bg-secondary/60"
+                              className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-xs text-warning hover:bg-secondary/60"
                               onClick={() => void handleToggleActive(p._id)}
                             >
                               <Power className="h-3.5 w-3.5 shrink-0" aria-hidden />

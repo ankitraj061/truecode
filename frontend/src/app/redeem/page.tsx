@@ -129,6 +129,15 @@ export default function RedeemProducts(): ReactNode {
     setAddressEditable(true);
   };
 
+  useEffect(() => {
+    if (!selectedProduct) return;
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') closeModal();
+    };
+    document.addEventListener('keydown', handleEscape);
+    return () => document.removeEventListener('keydown', handleEscape);
+  }, [selectedProduct]);
+
   const handleConfirmClick = async () => {
     if (!selectedProduct || !canRedeem(selectedProduct.points) || isRedeemed(selectedProduct.id)) return;
     setAddressLoading(true);

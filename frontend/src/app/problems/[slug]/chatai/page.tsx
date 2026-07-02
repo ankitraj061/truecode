@@ -261,6 +261,8 @@ function parseMessageContent(content: string) {
     return parts.length > 0 ? parts : [{ type: 'text' as const, content }];
 }
 
+const EMPTY_MESSAGES: Message[] = [];
+
 const QUICK_REPLIES = [
     { label: "💡 Give me a hint", icon: "💡" },
     { label: "⏱️ Time complexity?", icon: "⏱️" },
@@ -274,21 +276,25 @@ export default function ProblemChatAIPage() {
     const { user } = useSelector((state: RootState) => state.auth);
 
     const messages = useSelector((state: RootState) =>
-        problem?._id ? state.chat[problem._id] || [] : []
+        problem?._id ? state.chat[problem._id] ?? EMPTY_MESSAGES : EMPTY_MESSAGES
     );
 
     const [input, setInput] = useState('');
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [isTyping, setIsTyping] = useState(false);
-    const [streamingMessage, setStreamingMessage] = useState<{ content: string; displayedLength: number } | null>(null);
+    // Purely cosmetic reveal-in-progress state. The message itself is already
+    // committed to Redux (see sendMessage) as soon as the response arrives, so
+    // losing/overwriting this state can never lose or misorder a reply — it
+    // only cuts a reveal animation short.
+    const [typewriter, setTypewriter] = useState<{ key: string; content: string; length: number } | null>(null);
 
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const inputRef = useRef<HTMLTextAreaElement>(null);
 
     const scrollToBottom = () => messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
 
-    useEffect(() => { scrollToBottom(); }, [messages, isTyping, streamingMessage]);
+    useEffect(() => { scrollToBottom(); }, [messages, isTyping, typewriter]);
     useEffect(() => { inputRef.current?.focus(); }, []);
 
     // Auto-resize textarea
@@ -299,29 +305,17 @@ export default function ProblemChatAIPage() {
         el.style.height = `${Math.min(el.scrollHeight, 128)}px`;
     }, [input]);
 
-    // Typewriter effect
+    // Typewriter reveal effect — advances displayed length only, no dispatch
     useEffect(() => {
-        if (!streamingMessage) return;
-        if (streamingMessage.displayedLength >= streamingMessage.content.length) {
-            dispatch(addMessage({
-                problemId: problem!._id,
-                message: {
-                    role: 'assistant',
-                    content: streamingMessage.content,
-                    timestamp: new Date().toISOString(),
-                },
-            }));
-            setStreamingMessage(null);
-            return;
-        }
+        if (!typewriter || typewriter.length >= typewriter.content.length) return;
         const timer = setTimeout(() => {
-            setStreamingMessage(prev => {
+            setTypewriter(prev => {
                 if (!prev) return null;
-                return { ...prev, displayedLength: Math.min(prev.displayedLength + 3, prev.content.length) };
+                return { ...prev, length: Math.min(prev.length + 3, prev.content.length) };
             });
         }, 12);
         return () => clearTimeout(timer);
-    }, [streamingMessage, dispatch, problem?._id]);
+    }, [typewriter]);
 
     useEffect(() => {
         if (problem?._id && messages.length === 0) loadChatHistory();
@@ -344,6 +338,9 @@ export default function ProblemChatAIPage() {
             setError('Problem not loaded. Please refresh.');
             return;
         }
+        // Captured now so a later navigation to a different problem can't
+        // misattribute this reply once the response comes back.
+        const problemId = problem._id;
 
         const userMessage: Message = {
             role: 'user',
@@ -351,7 +348,7 @@ export default function ProblemChatAIPage() {
             timestamp: new Date().toISOString(),
         };
 
-        dispatch(addMessage({ problemId: problem._id, message: userMessage }));
+        dispatch(addMessage({ problemId, message: userMessage }));
         setInput('');
         setLoading(true);
         setIsTyping(true);
@@ -359,12 +356,20 @@ export default function ProblemChatAIPage() {
 
         try {
             const response = await axiosClient.post<ChatResponse>(
-                `/api/chat/problem/${problem._id}`,
+                `/api/chat/problem/${problemId}`,
                 { message: userMessage.content, conversationHistory: messages }
             );
             setIsTyping(false);
             if (response.data.success) {
-                setStreamingMessage({ content: response.data.data.response, displayedLength: 0 });
+                const assistantMessage: Message = {
+                    role: 'assistant',
+                    content: response.data.data.response,
+                    timestamp: new Date().toISOString(),
+                };
+                // Commit immediately — a reveal animation is cosmetic and must
+                // never gate whether/when the reply lands in history.
+                dispatch(addMessage({ problemId, message: assistantMessage }));
+                setTypewriter({ key: assistantMessage.timestamp, content: assistantMessage.content, length: 0 });
             } else {
                 setError('Failed to get a response. Please try again.');
             }
@@ -435,7 +440,7 @@ export default function ProblemChatAIPage() {
             {/* ── Messages ── */}
             <div className="flex-1 overflow-y-auto bg-secondary">
                 <div className="max-w-3xl mx-auto px-4 py-6 space-y-5">
-                    {messages.length === 0 && !isTyping && !streamingMessage ? (
+                    {messages.length === 0 && !isTyping ? (
                         /* Empty state */
                         <div className="flex flex-col items-center justify-center py-16 space-y-6 text-center">
                             <div className="w-20 h-20 rounded-full bg-brand/10 border-2 border-brand/30 flex items-center justify-center">
@@ -488,15 +493,26 @@ export default function ProblemChatAIPage() {
                                 <div className={`flex flex-col max-w-[82%] ${message.role === 'user' ? 'items-end' : 'items-start'}`}>
                                     {message.role === 'assistant' ? (
                                         <div className="space-y-1.5">
-                                            {parseMessageContent(message.content).map((part, idx) =>
-                                                part.type === 'code' ? (
-                                                    <CodeBlock key={idx} code={part.content} language={part.language || 'text'} />
-                                                ) : (
-                                                    <div key={idx} className="bg-elevated border border-border-primary rounded-2xl rounded-tl-sm px-4 py-3 shadow-sm">
-                                                        <MarkdownRenderer content={part.content} />
-                                                    </div>
-                                                )
-                                            )}
+                                            {(() => {
+                                                const isRevealing = typewriter?.key === message.timestamp;
+                                                const displayContent = isRevealing
+                                                    ? typewriter!.content.slice(0, typewriter!.length)
+                                                    : message.content;
+                                                const isActive = isRevealing && typewriter!.length < typewriter!.content.length;
+                                                const parts = parseMessageContent(displayContent);
+                                                return parts.map((part, idx) =>
+                                                    part.type === 'code' ? (
+                                                        <CodeBlock key={idx} code={part.content} language={part.language || 'text'} />
+                                                    ) : (
+                                                        <div key={idx} className="bg-elevated border border-border-primary rounded-2xl rounded-tl-sm px-4 py-3 shadow-sm">
+                                                            <MarkdownRenderer
+                                                                content={part.content}
+                                                                streaming={isActive && idx === parts.length - 1}
+                                                            />
+                                                        </div>
+                                                    )
+                                                );
+                                            })()}
                                         </div>
                                     ) : (
                                         <div className="bg-brand rounded-2xl rounded-tr-sm px-4 py-3 shadow-sm">
@@ -513,38 +529,8 @@ export default function ProblemChatAIPage() {
                         ))
                     )}
 
-                    {/* Streaming AI response */}
-                    {streamingMessage && (
-                        <div className="flex gap-2.5">
-                            <div className="w-7 h-7 rounded-full bg-brand flex-shrink-0 flex items-center justify-center shadow-sm mt-1">
-                                <svg className="w-3.5 h-3.5 text-inverse" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
-                                </svg>
-                            </div>
-                            <div className="flex flex-col max-w-[82%] items-start space-y-1.5">
-                                {(() => {
-                                    const sliced = streamingMessage.content.slice(0, streamingMessage.displayedLength);
-                                    const parts = parseMessageContent(sliced);
-                                    const isActive = streamingMessage.displayedLength < streamingMessage.content.length;
-                                    return parts.map((part, idx) =>
-                                        part.type === 'code' ? (
-                                            <CodeBlock key={idx} code={part.content} language={part.language || 'text'} />
-                                        ) : (
-                                            <div key={idx} className="bg-elevated border border-border-primary rounded-2xl rounded-tl-sm px-4 py-3 shadow-sm">
-                                                <MarkdownRenderer
-                                                    content={part.content}
-                                                    streaming={isActive && idx === parts.length - 1}
-                                                />
-                                            </div>
-                                        )
-                                    );
-                                })()}
-                            </div>
-                        </div>
-                    )}
-
                     {/* Typing indicator */}
-                    {isTyping && !streamingMessage && (
+                    {isTyping && (
                         <div className="flex gap-2.5">
                             <div className="w-7 h-7 rounded-full bg-brand flex-shrink-0 flex items-center justify-center shadow-sm">
                                 <svg className="w-3.5 h-3.5 text-inverse" fill="none" stroke="currentColor" viewBox="0 0 24 24">

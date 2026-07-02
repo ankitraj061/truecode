@@ -180,7 +180,7 @@ export default function PremiumContent({ standalone = true }: PremiumContentProp
                     variants={fadeUp}
                     className="flex items-start gap-3 bg-[var(--secondary)] rounded-xl p-4 border border-[var(--border)] hover:border-[var(--primary)]/40 transition-colors duration-200"
                   >
-                    <Check className="w-4 h-4 text-emerald-500 flex-shrink-0 mt-0.5" />
+                    <Check className="w-4 h-4 text-success flex-shrink-0 mt-0.5" />
                     <span className="text-[var(--foreground)] text-sm leading-relaxed">{benefit}</span>
                   </motion.div>
                 ))}
@@ -304,7 +304,7 @@ export default function PremiumContent({ standalone = true }: PremiumContentProp
               <ul className="space-y-3 mb-8 flex-1">
                 {["All 8 premium features", "500+ problems including exclusives", "20 bonus points on activation", "1.5× points multiplier"].map((item, i) => (
                   <li key={i} className="flex items-center gap-2.5 text-sm text-[var(--foreground)]">
-                    <Check className="w-4 h-4 text-emerald-500 flex-shrink-0" />
+                    <Check className="w-4 h-4 text-success flex-shrink-0" />
                     {item}
                   </li>
                 ))}
@@ -333,14 +333,14 @@ export default function PremiumContent({ standalone = true }: PremiumContentProp
               </div>
               <div className="flex items-center gap-2 mb-6">
                 <span className="text-sm text-[var(--muted-foreground)] line-through">₹12</span>
-                <span className="text-xs font-semibold text-emerald-600 bg-emerald-500/10 border border-emerald-500/20 rounded-full px-2 py-0.5">
+                <span className="text-xs font-semibold text-success bg-success/10 border border-success/20 rounded-full px-2 py-0.5">
                   Save 50%
                 </span>
               </div>
               <ul className="space-y-3 mb-8 flex-1">
                 {["Everything in Monthly", "Locked-in yearly rate", "Extra savings vs monthly billing", "Priority support included"].map((item, i) => (
                   <li key={i} className="flex items-center gap-2.5 text-sm text-[var(--foreground)]">
-                    <Check className="w-4 h-4 text-emerald-500 flex-shrink-0" />
+                    <Check className="w-4 h-4 text-success flex-shrink-0" />
                     {item}
                   </li>
                 ))}
@@ -387,7 +387,7 @@ export default function PremiumContent({ standalone = true }: PremiumContentProp
               <div className="px-6 py-4 flex items-center justify-center border-l border-[var(--border)]">
                 {typeof row.free === "boolean" ? (
                   row.free
-                    ? <Check className="w-4 h-4 text-emerald-500" />
+                    ? <Check className="w-4 h-4 text-success" />
                     : <X className="w-4 h-4 text-[var(--muted-foreground)]" />
                 ) : (
                   <span className="text-sm text-[var(--muted-foreground)]">{row.free}</span>
@@ -396,7 +396,7 @@ export default function PremiumContent({ standalone = true }: PremiumContentProp
               <div className="px-6 py-4 flex items-center justify-center border-l border-[var(--border)]">
                 {typeof row.premium === "boolean" ? (
                   row.premium
-                    ? <Check className="w-4 h-4 text-emerald-500" />
+                    ? <Check className="w-4 h-4 text-success" />
                     : <X className="w-4 h-4 text-[var(--muted-foreground)]" />
                 ) : (
                   <span className="text-sm font-semibold text-[var(--primary)]">{row.premium}</span>
@@ -416,8 +416,8 @@ export default function PremiumContent({ standalone = true }: PremiumContentProp
           viewport={{ once: true }}
           transition={{ duration: 0.5 }}
         >
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-emerald-500/10 border border-emerald-500/20 mb-6">
-            <ShieldCheck className="w-8 h-8 text-emerald-500" />
+          <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-success/10 border border-success/20 mb-6">
+            <ShieldCheck className="w-8 h-8 text-success" />
           </div>
           <h3 className="text-2xl font-bold text-[var(--foreground)] mb-3">
             30-Day Money-Back Guarantee

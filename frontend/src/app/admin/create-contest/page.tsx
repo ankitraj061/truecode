@@ -91,7 +91,7 @@ export default function CreateContestPage() {
         </div>
       )}
 
-      <form onSubmit={handleSubmit} className="space-y-6 rounded-2xl border border-border-primary bg-primary/50 p-6">
+      <form onSubmit={handleSubmit} className="space-y-6 rounded-2xl border border-border-primary bg-elevated/50 p-6">
         <div className="grid gap-4 sm:grid-cols-2">
           <div className="sm:col-span-2">
             <label className="mb-1 block text-sm font-medium text-primary">Title</label>

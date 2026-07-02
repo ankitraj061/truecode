@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { AdminAPI, type ContestAvailableProblem } from '@/app/admin/utils/adminAPI';
@@ -35,6 +35,10 @@ export default function AdminEditContestPage() {
   const [type, setType] = useState<'public' | 'private' | 'educational'>('public');
   const [maxParticipants, setMaxParticipants] = useState<string>('');
   const [selectedProblemIds, setSelectedProblemIds] = useState<string[]>([]);
+  // The order the contest was saved with, so unchecking then rechecking a
+  // problem restores its original slot instead of silently moving it to the
+  // end of an already-scheduled contest's problem order.
+  const initialOrderRef = useRef<string[]>([]);
 
   useEffect(() => {
     if (!contestId) return;
@@ -62,7 +66,9 @@ export default function AdminEditContestPage() {
         setEndTime(c.endTime ? new Date(c.endTime).toISOString().slice(0, 16) : '');
         setType((c.type as 'public' | 'private' | 'educational') ?? 'public');
         setMaxParticipants(c.maxParticipants != null ? String(c.maxParticipants) : '');
-        setSelectedProblemIds((c.problems ?? []).map((p) => p._id));
+        const originalOrder = (c.problems ?? []).map((p) => p._id);
+        setSelectedProblemIds(originalOrder);
+        initialOrderRef.current = originalOrder;
         setAvailableProblems(availRes.problems ?? []);
       })
       .catch((err) => setError((err as { response?: { data?: { error?: string } } })?.response?.data?.error ?? 'Failed to load'))
@@ -70,9 +76,24 @@ export default function AdminEditContestPage() {
   }, [contestId]);
 
   const toggleProblem = (id: string) => {
-    setSelectedProblemIds((prev) =>
-      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
-    );
+    setSelectedProblemIds((prev) => {
+      if (prev.includes(id)) {
+        return prev.filter((x) => x !== id);
+      }
+      const next = [...prev, id];
+      const originalIndex = initialOrderRef.current.indexOf(id);
+      if (originalIndex === -1) {
+        // Never part of this contest before — append at the end as usual.
+        return next;
+      }
+      // Was part of the saved order — restore its original slot instead of
+      // leaving it appended at the end.
+      return next.sort((a, b) => {
+        const ia = initialOrderRef.current.indexOf(a);
+        const ib = initialOrderRef.current.indexOf(b);
+        return (ia === -1 ? Infinity : ia) - (ib === -1 ? Infinity : ib);
+      });
+    });
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -151,7 +172,7 @@ export default function AdminEditContestPage() {
         </div>
       )}
 
-      <form onSubmit={handleSubmit} className="space-y-6 rounded-2xl border border-border-primary bg-primary/50 p-6">
+      <form onSubmit={handleSubmit} className="space-y-6 rounded-2xl border border-border-primary bg-elevated/50 p-6">
         <div className="grid gap-4 sm:grid-cols-2">
           <div className="sm:col-span-2">
             <label className="mb-1 block text-sm font-medium text-primary">Title</label>

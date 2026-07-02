@@ -297,9 +297,10 @@ body {
 /* Backgrounds */
 .bg-primary { background-color: var(--bg-primary); }
 .bg-secondary { background-color: var(--bg-secondary); }
-.bg-tertiary { background-color: var(--bg-tertiary); }
-.bg-elevated { 
-  background-color: var(--bg-elevated); 
+/* bg-tertiary (bare + opacity-suffixed) is generated from --color-tertiary in @theme inline above. */
+.bg-elevated {
+  /* background-color also generated from --color-elevated above; box-shadow kept here since @theme can't express it. */
+  background-color: var(--bg-elevated);
   box-shadow: var(--shadow-sm);
 }
 .bg-overlay { background-color: var(--bg-overlay); }
@@ -312,24 +313,19 @@ body {
 .text-muted { color: var(--text-muted); }
 .text-inverse { color: var(--text-inverse); }
 
-/* Brand Colors */
-.bg-brand { background-color: var(--primary-500); }
-.bg-brand-hover { background-color: var(--primary-600); }
-.text-brand { color: var(--primary-500); }
+/* Brand Colors — bg-brand/text-brand/bg-brand-hover, bg-success/text-warning/etc.
+   (including opacity-suffixed forms like bg-success/10) are now generated
+   automatically from the --color-brand/--color-success/... tokens in the
+   @theme inline block above. Keep bg-accent* here since --color-accent is
+   already registered to a different (non-amber) value for shadcn-style UI. */
 .bg-accent { background-color: var(--accent-500); }
 .bg-accent-hover { background-color: var(--accent-600); }
 .text-accent { color: var(--accent-500); }
 
 /* Status Colors */
-.bg-success { background-color: var(--success-500); }
 .bg-success-light { background-color: var(--success-100); }
-.text-success { color: var(--success-500); }
-.bg-warning { background-color: var(--warning-500); }
 .bg-warning-light { background-color: var(--warning-100); }
-.text-warning { color: var(--warning-500); }
-.bg-error { background-color: var(--error-500); }
 .bg-error-light { background-color: var(--error-100); }
-.text-error { color: var(--error-500); }
 
 /* Borders */
 .border-primary { border-color: var(--border-primary); }
@@ -347,8 +343,6 @@ body {
 .hover\:bg-primary:hover { background-color: var(--bg-primary); }
 .hover\:bg-secondary:hover { background-color: var(--bg-secondary); }
 .hover\:bg-tertiary:hover { background-color: var(--bg-tertiary); }
-.hover\:bg-brand:hover { background-color: var(--primary-500); }
-.hover\:bg-brand-hover:hover { background-color: var(--primary-600); }
 .hover\:shadow-md:hover { box-shadow: var(--shadow-md); }
 .hover\:shadow-lg:hover { box-shadow: var(--shadow-lg); }
 
@@ -561,6 +555,17 @@ body {
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
+  --color-brand: var(--primary-500);
+  --color-brand-hover: var(--primary-600);
+  --color-success: var(--success-500);
+  --color-warning: var(--warning-500);
+  --color-error: var(--error-500);
+  --color-difficulty-easy: var(--success-500);
+  --color-difficulty-medium: var(--warning-500);
+  --color-difficulty-hard: var(--error-500);
+  --color-border-primary: var(--border-primary);
+  --color-elevated: var(--bg-elevated);
+  --color-tertiary: var(--bg-tertiary);
   --font-sans: var(--font-sans);
   --font-mono: var(--font-mono);
   --font-serif: var(--font-serif);

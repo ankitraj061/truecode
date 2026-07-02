@@ -1,6 +1,6 @@
 'use client';
 
-import { FiAward } from 'react-icons/fi';
+import { Award } from 'lucide-react';
 
 const BADGES = [
   {
@@ -53,7 +53,7 @@ export function AchievementBadgesStrip() {
       <div className="flex items-center justify-between gap-3 mb-4">
         <div className="flex items-center gap-3">
           <div className="flex h-9 w-9 items-center justify-center rounded-full bg-brand/10">
-            <FiAward className="h-5 w-5 text-brand" />
+            <Award className="h-5 w-5 text-brand" />
           </div>
           <div>
             <p className="text-sm font-semibold text-primary">Achievement badges</p>
@@ -79,7 +79,7 @@ export function AchievementBadgesStrip() {
                 />
               ) : (
                 <div className="flex h-full w-full items-center justify-center">
-                  <FiAward className="h-16 w-16 text-tertiary" />
+                  <Award className="h-16 w-16 text-tertiary" />
                 </div>
               )}
             </div>

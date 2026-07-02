@@ -3,7 +3,7 @@
 
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import Link from 'next/link';
-import { ChevronLeft, ChevronRight, Calendar, Clock, ExternalLink, Loader2, Trophy, Users, Sparkles } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Calendar, Clock, ExternalLink, Loader2, Trophy, Users, Sparkles, Info } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Footer from '../components/Footer';
 import { contestAPI, type ContestListItem } from '@/app/utils/contestAPI';
@@ -1051,7 +1051,56 @@ export default function EventTrackerPage() {
           </motion.div>
         )}
       </div>
-      
+
+      {/* About Section */}
+      <motion.section
+        className="max-w-7xl mx-auto px-6 pb-12"
+        initial={{ opacity: 0, y: 20 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true, margin: '-100px' }}
+        transition={{ duration: 0.5 }}
+      >
+        <div
+          className="rounded-xl p-6 md:p-8"
+          style={{ backgroundColor: 'var(--bg-elevated)', border: '1px solid var(--border-primary)' }}
+        >
+          <div className="flex items-center gap-3 mb-3">
+            <Info className="w-6 h-6" style={{ color: 'var(--primary-500)' }} />
+            <h2 className="text-xl font-bold" style={{ color: 'var(--text-primary)' }}>
+              About this page
+            </h2>
+          </div>
+          <p className="text-sm leading-relaxed mb-6 max-w-3xl" style={{ color: 'var(--text-secondary)' }}>
+            The Contest Calendar brings together upcoming, running and past competitive
+            programming contests from across the web into a single view, so you don&apos;t
+            have to check multiple sites to plan your practice. Click any date or contest
+            card for details, or jump straight to the host platform to register.
+          </p>
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+            {[
+              { name: 'LeetCode', desc: 'Weekly & biweekly contests' },
+              { name: 'Codeforces', desc: 'Div. 1–4 rounds & educational rounds' },
+              { name: 'CodeChef', desc: 'Long Challenge, Cook-Off & Starters' },
+              { name: 'AtCoder', desc: 'ABC, ARC & AGC contests' },
+              { name: 'TrueCode', desc: 'Contests hosted on this platform' },
+            ].map((platform) => (
+              <div
+                key={platform.name}
+                className="rounded-lg p-3 flex flex-col gap-1"
+                style={{ backgroundColor: 'var(--bg-secondary)', border: '1px solid var(--border-primary)' }}
+              >
+                <span className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>
+                  {platform.name}
+                </span>
+                <span className="text-xs leading-snug" style={{ color: 'var(--text-tertiary)' }}>
+                  {platform.desc}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </motion.section>
+
       {renderHoverTooltip()}
 
       <Footer />

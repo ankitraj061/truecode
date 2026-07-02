@@ -139,6 +139,14 @@ function EditAdminModal({
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  useEffect(() => {
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    document.addEventListener('keydown', handleEscape);
+    return () => document.removeEventListener('keydown', handleEscape);
+  }, [onClose]);
+
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
@@ -172,6 +180,7 @@ function EditAdminModal({
     <div
       className="fixed inset-0 z-50 flex items-center justify-center p-4"
       style={{ backgroundColor: 'var(--bg-modal)' }}
+      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
     >
       <div className="card bg-elevated border border-border-primary w-full max-w-md space-y-4">
         <div className="flex items-center justify-between">

@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { Star, CheckCircle2, Flame, Trophy, ArrowRight } from 'lucide-react';
 
 interface UserStatsCardProps {
   totalPoints?: number;
@@ -39,7 +40,7 @@ export default function UserStatsCard({
           <div className="bg-secondary rounded-lg p-4 border border-primary hover:border-brand/30 transition-all">
             <div className="flex items-center justify-between mb-2">
               <span className="text-secondary text-sm font-medium">Total Points</span>
-              <span className="text-xl">⭐</span>
+              <Star className="w-5 h-5 text-brand" />
             </div>
             <div className="text-3xl font-bold text-brand">{totalPoints.toLocaleString()}</div>
             <div className="text-xs text-tertiary mt-1">From contests & problems</div>
@@ -49,7 +50,7 @@ export default function UserStatsCard({
           <div className="bg-secondary rounded-lg p-4 border border-primary hover:border-brand/30 transition-all">
             <div className="flex items-center justify-between mb-2">
               <span className="text-secondary text-sm font-medium">Problems Solved</span>
-              <span className="text-xl">✓</span>
+              <CheckCircle2 className="w-5 h-5 text-success" />
             </div>
             <div className="text-3xl font-bold text-success">{solvedProblems}</div>
             <div className="text-xs text-tertiary mt-1">Across all categories</div>
@@ -59,7 +60,7 @@ export default function UserStatsCard({
           <div className="bg-secondary rounded-lg p-4 border border-primary hover:border-brand/30 transition-all">
             <div className="flex items-center justify-between mb-2">
               <span className="text-secondary text-sm font-medium">Current Streak</span>
-              <span className="text-xl">🔥</span>
+              <Flame className="w-5 h-5 text-warning" />
             </div>
             <div className="text-3xl font-bold text-warning">{currentStreak} days</div>
             <div className="text-xs text-tertiary mt-1">Keep it going!</div>
@@ -69,7 +70,7 @@ export default function UserStatsCard({
           <div className="bg-secondary rounded-lg p-4 border border-primary hover:border-brand/30 transition-all">
             <div className="flex items-center justify-between mb-2">
               <span className="text-secondary text-sm font-medium">Contests</span>
-              <span className="text-xl">🏆</span>
+              <Trophy className="w-5 h-5 text-purple-400" />
             </div>
             <div className="text-3xl font-bold text-purple-400">{contestsParticipated}</div>
             <div className="text-xs text-tertiary mt-1">Participated in</div>
@@ -101,9 +102,7 @@ export default function UserStatsCard({
             className="w-full flex items-center justify-center px-4 py-3 bg-brand text-white rounded-lg font-semibold hover:bg-brand/90 transition-colors"
           >
             Continue Solving
-            <svg className="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
-            </svg>
+            <ArrowRight className="w-4 h-4 ml-2" />
           </Link>
 
           <Link

@@ -110,17 +110,17 @@ const FilterSidebar: React.FC<FilterSidebarProps> = ({ filters, onFilterChange }
             {
               value: 'easy',
               label: 'Easy',
-              activeClass: 'bg-emerald-500/15 text-emerald-600 border-emerald-500/40 dark:text-emerald-400',
+              activeClass: 'bg-difficulty-easy/15 text-difficulty-easy border-difficulty-easy/40',
             },
             {
               value: 'medium',
               label: 'Medium',
-              activeClass: 'bg-amber-500/15 text-amber-600 border-amber-500/40 dark:text-amber-400',
+              activeClass: 'bg-difficulty-medium/15 text-difficulty-medium border-difficulty-medium/40',
             },
             {
               value: 'hard',
               label: 'Hard',
-              activeClass: 'bg-rose-500/15 text-rose-600 border-rose-500/40 dark:text-rose-400',
+              activeClass: 'bg-difficulty-hard/15 text-difficulty-hard border-difficulty-hard/40',
             },
           ]}
         />
@@ -136,7 +136,7 @@ const FilterSidebar: React.FC<FilterSidebarProps> = ({ filters, onFilterChange }
               value: 'solved',
               label: 'Solved',
               icon: CheckCircle2,
-              activeClass: 'bg-emerald-500/15 text-emerald-600 border-emerald-500/40 dark:text-emerald-400',
+              activeClass: 'bg-success/15 text-success border-success/40',
             },
             {
               value: 'unsolved',
@@ -148,7 +148,7 @@ const FilterSidebar: React.FC<FilterSidebarProps> = ({ filters, onFilterChange }
               value: 'attempted',
               label: 'Attempted',
               icon: RefreshCw,
-              activeClass: 'bg-amber-500/15 text-amber-600 border-amber-500/40 dark:text-amber-400',
+              activeClass: 'bg-warning/15 text-warning border-warning/40',
             },
           ]}
         />
@@ -170,7 +170,7 @@ const FilterSidebar: React.FC<FilterSidebarProps> = ({ filters, onFilterChange }
               value: 'premium',
               label: 'Premium',
               icon: Lock,
-              activeClass: 'bg-amber-500/15 text-amber-600 border-amber-500/40 dark:text-amber-400',
+              activeClass: 'bg-warning/15 text-warning border-warning/40',
             },
             {
               value: 'saved',

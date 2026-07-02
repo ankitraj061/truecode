@@ -23,7 +23,7 @@ export default function AdminCreateProblemPage() {
         </div>
       </div>
 
-      <div className="rounded-2xl border border-border-primary bg-primary/50 p-6">
+      <div className="rounded-2xl border border-border-primary bg-elevated/50 p-6">
         <ProblemForm
           editProblem={null}
           onSuccess={() => router.push('/admin/problems')}

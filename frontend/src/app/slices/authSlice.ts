@@ -147,10 +147,11 @@ const authSlice = createSlice({
         state.error = null;
       })
       .addCase(logoutUser.rejected, (state, action) => {
+        // Server-side logout failed, so the session cookie is likely still
+        // valid — don't clear local auth state or the UI will flash "logged
+        // out" and then silently re-authenticate on the next checkAuth().
         state.loading = false;
         state.error = (action.payload as string) ?? "Something went wrong";
-        state.isAuthenticated = false;
-        state.user = null;
       });
   },
 });

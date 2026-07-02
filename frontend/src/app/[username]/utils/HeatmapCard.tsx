@@ -2,7 +2,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { FiChevronLeft, FiChevronRight } from 'react-icons/fi';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { ActivityHeatmapMonth } from 'react-activity-heatmap';
 import { axiosClient } from '@/app/utils/axiosClient';
 import { AxiosError } from 'axios';
@@ -188,6 +188,7 @@ export default function HeatmapCard({ username }: HeatmapCardProps) {
           <motion.button
             onClick={handlePreviousYear}
             disabled={selectedYear <= availableYears[availableYears.length - 1]}
+            aria-label="Previous year"
             className="p-2 rounded-lg transition-all disabled:opacity-30 disabled:cursor-not-allowed"
             style={{
               color: 'var(--text-secondary)',
@@ -200,7 +201,7 @@ export default function HeatmapCard({ username }: HeatmapCardProps) {
             }}
             whileTap={{ scale: 0.95 }}
           >
-            <FiChevronLeft size={20} />
+            <ChevronLeft size={20} />
           </motion.button>
 
           <span
@@ -213,6 +214,7 @@ export default function HeatmapCard({ username }: HeatmapCardProps) {
           <motion.button
             onClick={handleNextYear}
             disabled={selectedYear >= currentYear}
+            aria-label="Next year"
             className="p-2 rounded-lg transition-all disabled:opacity-30 disabled:cursor-not-allowed"
             style={{
               color: 'var(--text-secondary)',
@@ -225,7 +227,7 @@ export default function HeatmapCard({ username }: HeatmapCardProps) {
             }}
             whileTap={{ scale: 0.95 }}
           >
-            <FiChevronRight size={20} />
+            <ChevronRight size={20} />
           </motion.button>
         </div>
       </div>

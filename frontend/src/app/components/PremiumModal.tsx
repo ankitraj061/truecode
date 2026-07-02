@@ -2,6 +2,7 @@ import React, { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSelector } from 'react-redux';
 import { RootState } from '../problems/utils/types';
+import { X } from 'lucide-react';
 
 interface PremiumModalProps {
   isOpen: boolean;
@@ -62,21 +63,23 @@ const PremiumModal: React.FC<PremiumModalProps> = ({ isOpen, onClose, problemTit
   };
 
   return (
-    <div 
+    <div
       className="fixed inset-0 bg-modal backdrop-blur-sm flex items-center justify-center z-50 animate-fade-in"
       onClick={handleBackdropClick}
+      role="dialog"
+      aria-modal="true"
+      aria-label="Premium upgrade required"
     >
       <div className="bg-elevated rounded-3xl shadow-xl max-w-md w-full mx-4 overflow-hidden animate-slide-up border border-primary">
         {/* Header */}
         <div className="relative bg-gradient-to-r from-warning/20 via-accent/20 to-warning/20 p-8 border-b border-primary">
           {/* Close Button */}
-          <button 
+          <button
             onClick={onClose}
+            aria-label="Close dialog"
             className="absolute top-4 right-4 w-10 h-10 rounded-full bg-primary/80 hover:bg-primary border border-primary hover:border-tertiary text-secondary hover:text-primary transition-all duration-300 hover:scale-110 active:scale-95 flex items-center justify-center group"
           >
-            <svg className="w-5 h-5 group-hover:rotate-90 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-            </svg>
+            <X className="w-5 h-5 group-hover:rotate-90 transition-transform duration-300" />
           </button>
 
           {/* Lock Icon */}

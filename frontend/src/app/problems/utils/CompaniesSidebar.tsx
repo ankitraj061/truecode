@@ -63,8 +63,8 @@ const CompaniesSidebar: React.FC<CompaniesSidebarProps> = ({
       {/* Premium gate */}
       {!hasPremiumAccess && (
         <div className="absolute inset-0 z-10 flex flex-col items-center justify-center p-6 text-center bg-[var(--card)]/95 backdrop-blur-sm">
-          <div className="w-12 h-12 rounded-xl bg-amber-500/10 flex items-center justify-center mb-4">
-            <Crown className="w-6 h-6 text-amber-500" />
+          <div className="w-12 h-12 rounded-xl bg-warning/10 flex items-center justify-center mb-4">
+            <Crown className="w-6 h-6 text-warning" />
           </div>
           <h3 className="text-sm font-bold text-[var(--foreground)] mb-1.5">Company Filter</h3>
           <p className="text-xs text-[var(--muted-foreground)] mb-5 leading-relaxed max-w-[200px]">
@@ -173,17 +173,17 @@ const CompaniesSidebar: React.FC<CompaniesSidebarProps> = ({
 
                   <div className="flex items-center gap-1.5 shrink-0">
                     {company.difficultyBreakdown.easy > 0 && (
-                      <span className="text-[10px] font-semibold text-emerald-600 dark:text-emerald-400">
+                      <span className="text-[10px] font-semibold text-difficulty-easy">
                         {company.difficultyBreakdown.easy}
                       </span>
                     )}
                     {company.difficultyBreakdown.medium > 0 && (
-                      <span className="text-[10px] font-semibold text-amber-600 dark:text-amber-400">
+                      <span className="text-[10px] font-semibold text-difficulty-medium">
                         {company.difficultyBreakdown.medium}
                       </span>
                     )}
                     {company.difficultyBreakdown.hard > 0 && (
-                      <span className="text-[10px] font-semibold text-rose-600 dark:text-rose-400">
+                      <span className="text-[10px] font-semibold text-difficulty-hard">
                         {company.difficultyBreakdown.hard}
                       </span>
                     )}

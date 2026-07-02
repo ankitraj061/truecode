@@ -2,7 +2,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { FiX, FiCheck, FiAlertCircle, FiLoader } from 'react-icons/fi';
+import { X, Check, AlertCircle, Loader2 } from 'lucide-react';
 import { axiosClient } from '@/app/utils/axiosClient';
 import { AxiosError } from 'axios';
 import { createPortal } from 'react-dom';
@@ -252,28 +252,28 @@ export default function EditProfileModal({ profileData, onClose, onUpdate }: Edi
       case 'checking':
         return (
           <div className="flex items-center gap-2 text-blue-400 text-sm mt-1">
-            <FiLoader className="animate-spin" />
+            <Loader2 className="animate-spin" />
             <span>Checking availability...</span>
           </div>
         );
       case 'available':
         return (
           <div className="flex items-center gap-2 text-green-400 text-sm mt-1">
-            <FiCheck />
+            <Check />
             <span>Username is available</span>
           </div>
         );
       case 'unavailable':
         return (
           <div className="flex items-center gap-2 text-error text-sm mt-1">
-            <FiAlertCircle />
+            <AlertCircle />
             <span>Username is already taken</span>
           </div>
         );
       case 'invalid':
         return (
           <div className="flex items-center gap-2 text-error text-sm mt-1">
-            <FiAlertCircle />
+            <AlertCircle />
             <span>Invalid username format</span>
           </div>
         );
@@ -296,8 +296,9 @@ export default function EditProfileModal({ profileData, onClose, onUpdate }: Edi
             onClick={onClose}
             className="text-muted hover:text-primary transition-colors"
             disabled={isSubmitting}
+            aria-label="Close dialog"
           >
-            <FiX size={24} />
+            <X size={24} />
           </button>
         </div>
 
@@ -306,7 +307,7 @@ export default function EditProfileModal({ profileData, onClose, onUpdate }: Edi
           {/* Error Alert */}
           {submitError && (
             <div className="bg-error-light border border-error rounded-lg p-4 flex items-start gap-3">
-              <FiAlertCircle className="text-error flex-shrink-0 mt-0.5" />
+              <AlertCircle className="text-error flex-shrink-0 mt-0.5" />
               <p className="text-error text-sm">{submitError}</p>
             </div>
           )}
@@ -501,7 +502,7 @@ export default function EditProfileModal({ profileData, onClose, onUpdate }: Edi
             >
               {isSubmitting ? (
                 <>
-                  <FiLoader className="animate-spin" />
+                  <Loader2 className="animate-spin" />
                   <span>Saving...</span>
                 </>
               ) : (
