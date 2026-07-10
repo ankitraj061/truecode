@@ -208,7 +208,7 @@ function UserProfileDropdown({ user }: { user: User }) {
           </div>
 
           <Link
-            href={`/${user.username}`}
+            href={`/user/${user.username}`}
             className="flex items-center gap-3 px-4 py-2.5 text-sm text-[var(--foreground)] hover:bg-[var(--muted)] transition-colors duration-150"
             onClick={() => setIsOpen(false)}
           >
@@ -279,7 +279,7 @@ function MobileNavDrawer({
     { href: '/problems', label: 'Problems', icon: BookOpen },
     { href: '/contests', label: 'Contest', icon: Trophy },
     { href: '/redeem', label: 'Redeem', icon: Gift },
-    { href: '/events', label: 'Calendar', icon: Calendar },
+    { href: '/calendar', label: 'Calendar', icon: Calendar },
   ];
 
   return (
@@ -400,7 +400,7 @@ export default function Navbar() {
     { href: '/problems', label: 'Problems', icon: BookOpen },
     { href: '/contests', label: 'Contest', icon: Trophy },
     { href: '/redeem', label: 'Redeem', icon: Gift },
-    { href: '/events', label: 'Calendar', icon: Calendar },
+    { href: '/calendar', label: 'Calendar', icon: Calendar },
   ];
 
   const isActive = (href: string) => pathname === href || pathname.startsWith(href + '/');

@@ -30,8 +30,8 @@ const Footer = () => {
     {
       title: 'Events',
       links: [
-        { label: 'Event Tracker', href: '/events' },
-        { label: 'Calendar', href: '/events' },
+        { label: 'Event Tracker', href: '/calendar' },
+        { label: 'Calendar', href: '/calendar' },
       ],
       description: 'Track events from LeetCode, Codeforces, CodeChef & AtCoder',
     },

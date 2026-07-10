@@ -9,7 +9,10 @@ export default function NavbarWrapper() {
 
   const hideNavbar =
     pathname?.startsWith('/problems/') ||
-    pathname?.startsWith('/contests/') ||
+    // Only the in-contest problem-solving view has its own ContestNavbar;
+    // the plain contest detail page (/contests/[contestId]) relies on this
+    // shared Navbar and must not be hidden here.
+    (pathname?.startsWith('/contests/') && pathname?.includes('/problem/')) ||
     pathname?.startsWith('/admin') ||
     pathname === '/editor';
 

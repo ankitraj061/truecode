@@ -214,12 +214,12 @@ export default function ContestNavbar() {
         </div>
         <ThemeToggle />
         {user?.profilePicture ? (
-          <div onClick={() => user?.username && router.push(`/${user.username}`)} className="relative w-8 h-8 rounded-full overflow-hidden cursor-pointer interactive">
+          <div onClick={() => user?.username && router.push(`/user/${user.username}`)} className="relative w-8 h-8 rounded-full overflow-hidden cursor-pointer interactive">
             <Image src={user.profilePicture} alt="Profile" fill style={{ objectFit: 'cover' }} />
           </div>
         ) : user?.firstName && user?.lastName ? (
           <div
-            onClick={() => user?.username && router.push(`/${user.username}`)}
+            onClick={() => user?.username && router.push(`/user/${user.username}`)}
             className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold cursor-pointer interactive"
             style={{ backgroundColor: 'var(--text-secondary)', color: 'var(--text-inverse)' }}
           >

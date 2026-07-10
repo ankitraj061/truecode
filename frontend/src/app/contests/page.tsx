@@ -12,18 +12,16 @@ import {
   Target,
   CalendarDays,
   Sparkles,
-  ChevronDown,
-  ChevronUp,
-  Crown,
-  Medal,
-  Award,
   Radio,
   BookOpen,
   AlertCircle,
+  ArrowRight,
 } from 'lucide-react';
 import type { RootState } from '@/app/store/store';
 import { contestAPI, type ContestListItem, type LeaderboardEntry } from '@/app/utils/contestAPI';
 import Footer from '@/app/components/Footer';
+import { FlickeringGrid } from '@/components/ui/flickering-grid';
+import { useNow, formatCountdown, getInitials, PodiumRow } from './_shared';
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
@@ -39,72 +37,109 @@ function formatDuration(mins: number) {
   return m ? `${h}h ${m}m` : `${h}h`;
 }
 
-function formatCountdown(startTime: string): string {
-  const diff = new Date(startTime).getTime() - Date.now();
-  if (diff <= 0) return 'Starting soon';
-  const totalMins = Math.floor(diff / 60000);
-  const days = Math.floor(totalMins / 1440);
-  const hours = Math.floor((totalMins % 1440) / 60);
-  const mins = totalMins % 60;
-  if (days > 0) return `Starts in ${days}d ${hours}h`;
-  if (hours > 0) return `Starts in ${hours}h ${mins}m`;
-  return `Starts in ${mins}m`;
-}
+// ─── Motion variants ──────────────────────────────────────────────────────────
 
-function getInitials(entry: LeaderboardEntry): string {
-  return entry.username.slice(0, 2).toUpperCase();
-}
+const staggerContainer = {
+  hidden: {},
+  visible: { transition: { staggerChildren: 0.08 } },
+};
+
+const fadeUpItem = {
+  hidden: { opacity: 0, y: 16 },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.4, ease: 'easeOut' as const } },
+};
 
 // ─── Sub-components ──────────────────────────────────────────────────────────
 
 function LiveBadge() {
   return (
-    <span className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[11px] font-bold tracking-wider"
-      style={{ background: 'var(--success-bg, rgba(34,197,94,0.15))', color: 'var(--success, #22c55e)' }}>
-      <span
-        className="h-1.5 w-1.5 rounded-full animate-pulse"
-        style={{ background: 'var(--success, #22c55e)' }}
-      />
+    <span className="inline-flex items-center gap-1.5 rounded-full bg-success/15 px-2.5 py-0.5 text-[11px] font-bold tracking-wider text-success">
+      <span className="h-1.5 w-1.5 rounded-full bg-success animate-pulse" />
       LIVE
     </span>
   );
 }
 
-function RunningContestCard({ c }: { c: ContestListItem }) {
+function HeroStat({ icon, value, label }: { icon: React.ReactNode; value: React.ReactNode; label: string }) {
   return (
-    <div
-      className="relative rounded-2xl p-5 shadow-md hover:shadow-lg transition-all duration-200 overflow-hidden"
-      style={{
-        background: 'var(--bg-elevated)',
-        border: '1px solid rgba(34,197,94,0.35)',
-        boxShadow: '0 0 0 1px rgba(34,197,94,0.12), 0 4px 24px rgba(34,197,94,0.06)',
-      }}
-    >
-      {/* subtle green glow strip at top */}
-      <div
-        className="absolute inset-x-0 top-0 h-0.5 rounded-t-2xl"
-        style={{ background: 'linear-gradient(90deg, transparent, var(--success, #22c55e), transparent)' }}
-      />
+    <div className="flex items-center gap-3 rounded-2xl border border-border-primary bg-elevated/60 backdrop-blur-sm px-4 py-3">
+      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-brand/10 text-brand">
+        {icon}
+      </div>
+      <div>
+        <div className="text-lg font-bold leading-none text-primary">{value}</div>
+        <div className="mt-0.5 text-xs text-tertiary">{label}</div>
+      </div>
+    </div>
+  );
+}
 
+function SpotlightCard({ contest, mode, now }: { contest: ContestListItem; mode: 'running' | 'upcoming'; now: Date }) {
+  const isRunning = mode === 'running';
+  const countdown = formatCountdown(isRunning ? contest.endTime : contest.startTime, now, isRunning ? 'end' : 'start');
+
+  return (
+    <div className="relative max-w-2xl overflow-hidden rounded-2xl border border-border-primary bg-elevated p-6">
+      {isRunning && (
+        <div className="absolute inset-x-0 top-0 h-0.5 bg-gradient-to-r from-transparent via-success to-transparent" />
+      )}
       <div className="flex flex-wrap items-start justify-between gap-4">
-        <div className="flex-1 min-w-0">
-          <div className="flex flex-wrap items-center gap-2 mb-1.5">
-            <LiveBadge />
-            <span className="text-xs" style={{ color: 'var(--text-tertiary)' }}>
-              Ends {formatDate(c.endTime)}
-            </span>
+        <div className="min-w-0 flex-1">
+          <div className="mb-2 flex items-center gap-2">
+            {isRunning ? (
+              <LiveBadge />
+            ) : (
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-secondary px-2.5 py-0.5 text-[11px] font-bold tracking-wider text-primary">
+                <CalendarDays className="h-3 w-3" /> UPCOMING
+              </span>
+            )}
+            <span className="text-xs text-tertiary">{contest.participantCount} registered</span>
           </div>
-          <Link
-            href={`/contests/${c._id}`}
-            className="text-lg font-bold hover:underline truncate block"
-            style={{ color: 'var(--text-primary)' }}
-          >
+          <Link href={`/contests/${contest._id}`} className="block truncate text-xl font-bold text-primary hover:underline">
+            {contest.title}
+          </Link>
+          <p className="mt-1 line-clamp-2 text-sm text-secondary">{contest.description}</p>
+        </div>
+        <div className="flex shrink-0 flex-col items-end gap-1">
+          <div className={`text-2xl font-bold tabular-nums ${isRunning ? 'text-success' : 'text-brand'}`}>
+            {countdown}
+          </div>
+          <div className="text-[11px] text-tertiary">{isRunning ? 'remaining' : 'until start'}</div>
+        </div>
+      </div>
+      <div className="mt-4 flex items-center justify-between gap-3">
+        <span className="flex items-center gap-1 text-xs text-tertiary">
+          <Clock className="h-3.5 w-3.5" /> {formatDuration(contest.duration)}
+        </span>
+        <Link
+          href={`/contests/${contest._id}`}
+          className={`inline-flex items-center gap-1.5 rounded-lg px-4 py-2 text-sm font-semibold text-inverse transition-opacity hover:opacity-90 ${
+            isRunning ? 'bg-success' : 'bg-brand'
+          }`}
+        >
+          {isRunning ? 'Enter Now' : contest.registered ? 'View' : 'Register'}
+          <ArrowRight className="h-3.5 w-3.5" />
+        </Link>
+      </div>
+    </div>
+  );
+}
+
+function RunningContestCard({ c, now }: { c: ContestListItem; now: Date }) {
+  return (
+    <div className="relative overflow-hidden rounded-2xl border border-success/35 bg-elevated p-5 shadow-md transition-all duration-200 hover:shadow-lg">
+      <div className="absolute inset-x-0 top-0 h-0.5 rounded-t-2xl bg-gradient-to-r from-transparent via-success to-transparent" />
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <div className="min-w-0 flex-1">
+          <div className="mb-1.5 flex flex-wrap items-center gap-2">
+            <LiveBadge />
+            <span className="text-xs text-tertiary">Ends in {formatCountdown(c.endTime, now, 'end')}</span>
+          </div>
+          <Link href={`/contests/${c._id}`} className="block truncate text-lg font-bold text-primary hover:underline">
             {c.title}
           </Link>
-          <p className="text-sm mt-1 line-clamp-2" style={{ color: 'var(--text-secondary)' }}>
-            {c.description}
-          </p>
-          <div className="mt-3 flex flex-wrap gap-4 text-xs" style={{ color: 'var(--text-tertiary)' }}>
+          <p className="mt-1 line-clamp-2 text-sm text-secondary">{c.description}</p>
+          <div className="mt-3 flex flex-wrap gap-4 text-xs text-tertiary">
             <span className="flex items-center gap-1">
               <Users className="h-3.5 w-3.5" />
               {c.participantCount} participants
@@ -115,20 +150,13 @@ function RunningContestCard({ c }: { c: ContestListItem }) {
             </span>
           </div>
         </div>
-
-        <div className="flex flex-col items-end gap-2 shrink-0">
+        <div className="flex shrink-0 flex-col items-end gap-2">
           {c.registered && (
-            <span
-              className="rounded-full px-2 py-1 text-[11px] font-medium"
-              style={{ background: 'rgba(34,197,94,0.12)', color: 'var(--success, #22c55e)' }}
-            >
-              Registered
-            </span>
+            <span className="rounded-full bg-success/15 px-2 py-1 text-[11px] font-medium text-success">Registered</span>
           )}
           <Link
             href={`/contests/${c._id}`}
-            className="rounded-xl px-4 py-2 text-sm font-semibold transition-opacity hover:opacity-90"
-            style={{ background: 'var(--success, #22c55e)', color: '#fff' }}
+            className="rounded-xl bg-success px-4 py-2 text-sm font-semibold text-inverse transition-opacity hover:opacity-90"
           >
             Enter Now
           </Link>
@@ -138,55 +166,35 @@ function RunningContestCard({ c }: { c: ContestListItem }) {
   );
 }
 
-function UpcomingContestCard({ c }: { c: ContestListItem }) {
+function UpcomingContestCard({ c, now }: { c: ContestListItem; now: Date }) {
   return (
-    <div
-      className="rounded-2xl p-4 hover:shadow-md transition-all duration-200 hover:border-brand/50"
-      style={{ background: 'var(--bg-elevated)', border: '1px solid var(--border-primary)' }}
-    >
+    <div className="rounded-2xl border border-border-primary bg-elevated p-4 transition-all duration-200 hover:border-brand/50 hover:shadow-md">
       <div className="flex flex-wrap items-start justify-between gap-3">
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 mb-1">
-            <span
-              className="rounded-full px-2 py-0.5 text-[11px] font-medium"
-              style={{ background: 'var(--bg-secondary)', color: 'var(--text-secondary)' }}
-            >
-              Upcoming
-            </span>
+        <div className="min-w-0 flex-1">
+          <div className="mb-1 flex items-center gap-2">
+            <span className="rounded-full bg-secondary px-2 py-0.5 text-[11px] font-medium text-primary">Upcoming</span>
           </div>
-          <Link
-            href={`/contests/${c._id}`}
-            className="text-base font-semibold hover:underline truncate block"
-            style={{ color: 'var(--text-primary)' }}
-          >
+          <Link href={`/contests/${c._id}`} className="block truncate text-base font-semibold text-primary hover:underline">
             {c.title}
           </Link>
-          <p className="text-sm mt-0.5 line-clamp-2" style={{ color: 'var(--text-secondary)' }}>
-            {c.description}
-          </p>
-          <div className="mt-2 flex flex-wrap gap-4 text-xs" style={{ color: 'var(--text-tertiary)' }}>
-            <span className="flex items-center gap-1 font-medium" style={{ color: 'var(--primary)' }}>
+          <p className="mt-0.5 line-clamp-2 text-sm text-secondary">{c.description}</p>
+          <div className="mt-2 flex flex-wrap gap-4 text-xs text-tertiary">
+            <span className="flex items-center gap-1 font-medium text-brand">
               <CalendarDays className="h-3.5 w-3.5" />
-              {formatCountdown(c.startTime)}
+              {formatCountdown(c.startTime, now, 'start')}
             </span>
             <span>{formatDate(c.startTime)}</span>
             <span>{formatDuration(c.duration)}</span>
             <span>{c.participantCount} registered</span>
           </div>
         </div>
-        <div className="flex flex-col items-end gap-2 shrink-0">
+        <div className="flex shrink-0 flex-col items-end gap-2">
           {c.registered && (
-            <span
-              className="rounded-full px-2 py-1 text-[11px] font-medium"
-              style={{ background: 'rgba(34,197,94,0.12)', color: 'var(--success, #22c55e)' }}
-            >
-              Registered
-            </span>
+            <span className="rounded-full bg-success/15 px-2 py-1 text-[11px] font-medium text-success">Registered</span>
           )}
           <Link
             href={`/contests/${c._id}`}
-            className="rounded-xl px-3 py-1.5 text-sm font-medium transition-opacity hover:opacity-80"
-            style={{ background: 'var(--primary)', color: '#fff' }}
+            className="rounded-xl bg-brand px-3 py-1.5 text-sm font-medium text-inverse transition-opacity hover:opacity-80"
           >
             {c.registered ? 'View' : 'Register'}
           </Link>
@@ -198,19 +206,13 @@ function UpcomingContestCard({ c }: { c: ContestListItem }) {
 
 function PastContestRow({ c }: { c: ContestListItem }) {
   return (
-    <div
-      className="flex flex-wrap items-center justify-between gap-3 px-4 py-3 rounded-xl hover:border-brand/40 transition-all"
-      style={{ background: 'var(--bg-elevated)', border: '1px solid var(--border-primary)' }}
-    >
-      <div className="flex-1 min-w-0">
-        <Link
-          href={`/contests/${c._id}`}
-          className="text-sm font-semibold hover:underline truncate block"
-          style={{ color: 'var(--text-primary)' }}
-        >
+    <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border-primary bg-elevated px-4 py-3 transition-all hover:border-brand/40">
+      <div className="min-w-0 flex-1">
+        <Link href={`/contests/${c._id}`} className="block truncate text-sm font-semibold text-primary hover:underline">
           {c.title}
         </Link>
-        <div className="flex flex-wrap gap-3 mt-0.5 text-xs" style={{ color: 'var(--text-tertiary)' }}>
+        <div className="mt-0.5 flex flex-wrap items-center gap-3 text-xs text-tertiary">
+          <span className="rounded-full bg-tertiary px-2 py-0.5 text-[11px] font-medium capitalize text-secondary">Ended</span>
           <span>{formatDate(c.startTime)}</span>
           <span>{formatDuration(c.duration)}</span>
           <span>{c.participantCount} participants</span>
@@ -218,8 +220,7 @@ function PastContestRow({ c }: { c: ContestListItem }) {
       </div>
       <Link
         href={`/contests/${c._id}`}
-        className="text-xs font-medium rounded-lg px-3 py-1.5 transition-opacity hover:opacity-80 shrink-0"
-        style={{ background: 'var(--bg-secondary)', color: 'var(--text-secondary)', border: '1px solid var(--border-primary)' }}
+        className="shrink-0 rounded-lg border border-border-primary bg-secondary px-3 py-1.5 text-xs font-medium text-secondary transition-opacity hover:opacity-80"
       >
         View Results
       </Link>
@@ -227,77 +228,49 @@ function PastContestRow({ c }: { c: ContestListItem }) {
   );
 }
 
-// ─── Podium Card ────────────────────────────────────────────────────────────
+// ─── Tab bar ──────────────────────────────────────────────────────────────────
 
-function PodiumCard({
-  entry,
-  position,
+type TabKey = 'leaderboard' | 'mine' | 'past';
+
+function TabBar({
+  active,
+  onChange,
+  tabs,
 }: {
-  entry: LeaderboardEntry;
-  position: 1 | 2 | 3;
+  active: TabKey;
+  onChange: (key: TabKey) => void;
+  tabs: { key: TabKey; label: string; icon: React.ReactNode; badge?: number }[];
 }) {
-  const isFirst = position === 1;
-
-  const podiumColors: Record<number, { bg: string; border: string; label: string; labelColor: string }> = {
-    1: { bg: 'rgba(250,204,21,0.08)', border: 'rgba(250,204,21,0.4)', label: 'bg-yellow-400/20', labelColor: '#f59e0b' },
-    2: { bg: 'rgba(148,163,184,0.08)', border: 'rgba(148,163,184,0.35)', label: 'bg-slate-400/20', labelColor: '#94a3b8' },
-    3: { bg: 'rgba(180,120,60,0.08)', border: 'rgba(180,120,60,0.35)', label: 'bg-orange-400/20', labelColor: '#cd7c3a' },
-  };
-
-  const colors = podiumColors[position];
-
   return (
-    <Link
-      href={`/${entry.username}`}
-      className={`flex flex-col items-center rounded-2xl p-4 text-center hover:shadow-lg transition-all duration-200 hover:scale-105 ${isFirst ? 'py-6' : 'py-4'}`}
-      style={{
-        background: isFirst
-          ? `linear-gradient(160deg, ${colors.bg}, var(--bg-elevated))`
-          : `var(--bg-elevated)`,
-        border: `1px solid ${colors.border}`,
-        minWidth: isFirst ? 160 : 130,
-      }}
-    >
-      {isFirst && (
-        <Crown className="mb-2 h-6 w-6" style={{ color: '#f59e0b' }} />
-      )}
-      {position === 2 && <Medal className="mb-2 h-5 w-5" style={{ color: '#94a3b8' }} />}
-      {position === 3 && <Award className="mb-2 h-5 w-5" style={{ color: '#cd7c3a' }} />}
-
-      {/* Avatar */}
-      <div
-        className={`flex items-center justify-center rounded-full font-bold ${isFirst ? 'h-14 w-14 text-base mb-2' : 'h-11 w-11 text-sm mb-1.5'}`}
-        style={{
-          background: colors.bg,
-          border: `2px solid ${colors.border}`,
-          color: colors.labelColor,
-        }}
-      >
-        {getInitials(entry)}
-      </div>
-
-      <span
-        className={`font-semibold truncate max-w-[120px] ${isFirst ? 'text-base' : 'text-sm'}`}
-        style={{ color: 'var(--text-primary)' }}
-      >
-        {entry.username}
-      </span>
-
-      <span
-        className="mt-0.5 text-xs font-medium"
-        style={{ color: colors.labelColor }}
-      >
-        #{position}
-      </span>
-
-      <div className="mt-2 text-xs" style={{ color: 'var(--text-secondary)' }}>
-        <span className="font-semibold" style={{ color: 'var(--text-primary)' }}>{entry.score}</span>
-        {' pts'}
-      </div>
-      <div className="text-[11px]" style={{ color: 'var(--text-tertiary)' }}>
-        {entry.solvedProblems.length} solved
-      </div>
-    </Link>
+    <div className="flex flex-wrap gap-2 border-b border-border-primary pb-3">
+      {tabs.map((tab) => {
+        const isActive = tab.key === active;
+        return (
+          <button
+            key={tab.key}
+            type="button"
+            onClick={() => onChange(tab.key)}
+            className={`inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium transition-colors ${
+              isActive
+                ? 'bg-brand text-inverse'
+                : 'border border-border-primary bg-elevated text-secondary hover:border-brand/40'
+            }`}
+          >
+            {tab.icon}
+            {tab.label}
+            {tab.badge !== undefined && tab.badge > 0 && (
+              <span
+                className={`rounded-full px-1.5 py-0.5 text-[10px] font-bold ${
+                  isActive ? 'bg-white/20' : 'bg-secondary text-secondary'
+                }`}
+              >
+                {tab.badge}
+              </span>
+            )}
+          </button>
+        );
+      })}
+    </div>
   );
 }
 
@@ -305,40 +278,32 @@ function PodiumCard({
 
 function SectionHeader({ icon, title, count }: { icon: React.ReactNode; title: string; count?: number }) {
   return (
-    <div className="flex items-center gap-2 mb-4">
-      <span style={{ color: 'var(--primary)' }}>{icon}</span>
-      <h2 className="text-lg font-bold" style={{ color: 'var(--text-primary)' }}>{title}</h2>
+    <div className="mb-4 flex items-center gap-2">
+      <span className="text-brand">{icon}</span>
+      <h2 className="text-lg font-bold text-primary">{title}</h2>
       {count !== undefined && (
-        <span
-          className="ml-1 rounded-full px-2 py-0.5 text-[11px] font-medium"
-          style={{ background: 'var(--bg-secondary)', color: 'var(--text-secondary)' }}
-        >
-          {count}
-        </span>
+        <span className="ml-1 rounded-full bg-secondary px-2 py-0.5 text-[11px] font-medium text-secondary">{count}</span>
       )}
     </div>
   );
 }
 
-function EmptyState({ icon, title, message, action }: {
+function EmptyState({
+  icon,
+  title,
+  message,
+  action,
+}: {
   icon: React.ReactNode;
   title: string;
   message: string;
   action?: React.ReactNode;
 }) {
   return (
-    <div
-      className="flex flex-col items-center justify-center rounded-2xl px-6 py-10 text-center"
-      style={{ border: '1.5px dashed var(--border-primary)', background: 'var(--bg-elevated)' }}
-    >
-      <div
-        className="mb-3 flex h-12 w-12 items-center justify-center rounded-2xl"
-        style={{ background: 'var(--bg-secondary)', color: 'var(--text-tertiary)' }}
-      >
-        {icon}
-      </div>
-      <p className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>{title}</p>
-      <p className="mt-1 text-xs max-w-sm" style={{ color: 'var(--text-secondary)' }}>{message}</p>
+    <div className="flex flex-col items-center justify-center rounded-2xl border-[1.5px] border-dashed border-border-primary bg-elevated px-6 py-10 text-center">
+      <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-secondary text-tertiary">{icon}</div>
+      <p className="text-sm font-semibold text-primary">{title}</p>
+      <p className="mt-1 max-w-sm text-xs text-secondary">{message}</p>
       {action && <div className="mt-4">{action}</div>}
     </div>
   );
@@ -346,10 +311,7 @@ function EmptyState({ icon, title, message, action }: {
 
 function ErrorBanner({ message }: { message: string }) {
   return (
-    <div
-      className="flex items-center gap-2 rounded-lg px-4 py-3 text-sm mb-4"
-      style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.35)', color: '#ef4444' }}
-    >
+    <div className="mb-4 flex items-center gap-2 rounded-lg border border-error/35 bg-error/10 px-4 py-3 text-sm text-error">
       <AlertCircle className="h-4 w-4 shrink-0" />
       {message}
     </div>
@@ -364,7 +326,7 @@ function Sk({ className }: { className?: string }) {
 
 function RunningContestSkeleton() {
   return (
-    <div className="rounded-2xl p-5" style={{ background: 'var(--bg-elevated)', border: '1px solid var(--border-primary)' }}>
+    <div className="rounded-2xl border border-border-primary bg-elevated p-5">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div className="flex-1 space-y-2">
           <div className="flex gap-2">
@@ -374,7 +336,7 @@ function RunningContestSkeleton() {
           <Sk className="h-6 w-3/4" />
           <Sk className="h-4 w-full" />
           <Sk className="h-4 w-2/3" />
-          <div className="flex gap-4 mt-3">
+          <div className="mt-3 flex gap-4">
             <Sk className="h-4 w-24" />
             <Sk className="h-4 w-20" />
           </div>
@@ -387,13 +349,13 @@ function RunningContestSkeleton() {
 
 function UpcomingContestSkeleton() {
   return (
-    <div className="rounded-2xl p-4" style={{ background: 'var(--bg-elevated)', border: '1px solid var(--border-primary)' }}>
+    <div className="rounded-2xl border border-border-primary bg-elevated p-4">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="flex-1 space-y-2">
           <Sk className="h-4 w-20" />
           <Sk className="h-5 w-3/4" />
           <Sk className="h-4 w-full" />
-          <div className="flex gap-3 mt-2">
+          <div className="mt-2 flex gap-3">
             <Sk className="h-3 w-28" />
             <Sk className="h-3 w-24" />
             <Sk className="h-3 w-16" />
@@ -407,8 +369,7 @@ function UpcomingContestSkeleton() {
 
 function MyContestSkeleton() {
   return (
-    <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl px-4 py-3"
-      style={{ background: 'var(--bg-elevated)', border: '1px solid var(--border-primary)' }}>
+    <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border-primary bg-elevated px-4 py-3">
       <div className="flex-1 space-y-1.5">
         <Sk className="h-4 w-2/3" />
         <div className="flex gap-3">
@@ -424,7 +385,7 @@ function MyContestSkeleton() {
 function LeaderboardSkeleton() {
   return (
     <>
-      <div className="flex items-end justify-center gap-3 mb-4">
+      <div className="mb-4 flex items-end justify-center gap-3">
         {([130, 160, 130] as const).map((minW, i) => (
           <div key={i} className="flex flex-col items-center" style={{ minWidth: minW }}>
             <Sk className={`w-full rounded-2xl ${i === 1 ? 'h-44' : 'h-36'}`} />
@@ -432,14 +393,13 @@ function LeaderboardSkeleton() {
           </div>
         ))}
       </div>
-      <div className="space-y-1.5 mt-2">
+      <div className="mt-2 space-y-1.5">
         {Array.from({ length: 5 }).map((_, i) => (
-          <div key={i} className="flex items-center gap-3 rounded-xl px-3 py-2.5"
-            style={{ background: 'var(--bg-elevated)', border: '1px solid var(--border-primary)' }}>
+          <div key={i} className="flex items-center gap-3 rounded-xl border border-border-primary bg-elevated px-3 py-2.5">
             <Sk className="h-4 w-6" />
             <Sk className="h-7 w-7 rounded-full" />
             <Sk className="h-4 w-28" />
-            <div className="flex gap-3 ml-auto">
+            <div className="ml-auto flex gap-3">
               <Sk className="h-3 w-16" />
               <Sk className="h-3 w-14" />
             </div>
@@ -452,8 +412,7 @@ function LeaderboardSkeleton() {
 
 function PastContestSkeleton() {
   return (
-    <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-3 rounded-xl"
-      style={{ background: 'var(--bg-elevated)', border: '1px solid var(--border-primary)' }}>
+    <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border-primary bg-elevated px-4 py-3">
       <div className="flex-1 space-y-1.5">
         <Sk className="h-4 w-1/2" />
         <div className="flex gap-3">
@@ -467,45 +426,70 @@ function PastContestSkeleton() {
   );
 }
 
+function SpotlightSkeleton() {
+  return (
+    <div className="max-w-2xl rounded-2xl border border-border-primary bg-elevated p-6">
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <div className="flex-1 space-y-2">
+          <Sk className="h-5 w-24" />
+          <Sk className="h-6 w-2/3" />
+          <Sk className="h-4 w-full" />
+        </div>
+        <Sk className="h-8 w-24" />
+      </div>
+      <div className="mt-4 flex items-center justify-between gap-3">
+        <Sk className="h-4 w-16" />
+        <Sk className="h-9 w-28 rounded-lg" />
+      </div>
+    </div>
+  );
+}
+
 function ContestsPageSkeleton() {
   return (
-    <div className="min-h-screen flex flex-col" style={{ background: 'var(--bg-primary)' }}>
-      <div style={{ background: 'var(--bg-elevated)', borderBottom: '1px solid var(--border-primary)' }}>
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-10">
-          <div className="flex items-center gap-4">
-            <Sk className="h-12 w-12 rounded-xl" />
+    <div className="flex min-h-screen flex-col bg-primary">
+      <div className="border-b border-border-primary bg-elevated">
+        <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:py-16">
+          <div className="flex items-center gap-3">
+            <Sk className="h-11 w-11 rounded-xl" />
             <div className="space-y-2">
               <Sk className="h-8 w-48" />
               <Sk className="h-4 w-80" />
             </div>
           </div>
+          <div className="mt-6 flex flex-wrap gap-3">
+            <Sk className="h-14 w-40 rounded-2xl" />
+            <Sk className="h-14 w-40 rounded-2xl" />
+          </div>
+          <div className="mt-6">
+            <SpotlightSkeleton />
+          </div>
         </div>
       </div>
-      <div className="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 py-8 space-y-10">
+      <div className="mx-auto w-full max-w-7xl flex-1 space-y-10 px-4 py-8 sm:px-6">
         <section>
-          <Sk className="h-6 w-28 mb-4" />
+          <Sk className="mb-4 h-6 w-28" />
           <div className="grid gap-4 md:grid-cols-2">
-            <RunningContestSkeleton /><RunningContestSkeleton />
+            <RunningContestSkeleton />
+            <RunningContestSkeleton />
           </div>
         </section>
         <section>
-          <Sk className="h-6 w-28 mb-4" />
+          <Sk className="mb-4 h-6 w-28" />
           <div className="grid gap-3 md:grid-cols-2">
-            {Array.from({ length: 4 }).map((_, i) => <UpcomingContestSkeleton key={i} />)}
+            {Array.from({ length: 4 }).map((_, i) => (
+              <UpcomingContestSkeleton key={i} />
+            ))}
           </div>
         </section>
-        <div className="grid gap-8 lg:grid-cols-2">
-          <section>
-            <Sk className="h-6 w-28 mb-4" />
-            <div className="space-y-2">
-              {Array.from({ length: 3 }).map((_, i) => <MyContestSkeleton key={i} />)}
-            </div>
-          </section>
-          <section>
-            <Sk className="h-6 w-28 mb-4" />
-            <LeaderboardSkeleton />
-          </section>
-        </div>
+        <section>
+          <div className="mb-4 flex gap-2">
+            <Sk className="h-9 w-28 rounded-full" />
+            <Sk className="h-9 w-28 rounded-full" />
+            <Sk className="h-9 w-28 rounded-full" />
+          </div>
+          <LeaderboardSkeleton />
+        </section>
       </div>
     </div>
   );
@@ -515,6 +499,7 @@ function ContestsPageSkeleton() {
 
 export default function ContestsPage() {
   const { isAuthenticated, isInitialized } = useSelector((state: RootState) => state.auth);
+  const now = useNow();
 
   // Active contests (running + upcoming loaded together)
   const [runningContests, setRunningContests] = useState<ContestListItem[]>([]);
@@ -522,9 +507,8 @@ export default function ContestsPage() {
   const [activeLoading, setActiveLoading] = useState(true);
   const [activeError, setActiveError] = useState<string | null>(null);
 
-  // Past contests — collapsible, lazy-loaded
+  // Past contests — lazy-loaded on first tab visit
   const [pastContests, setPastContests] = useState<ContestListItem[]>([]);
-  const [pastExpanded, setPastExpanded] = useState(false);
   const [pastLoading, setPastLoading] = useState(false);
   const [pastLoaded, setPastLoaded] = useState(false);
   const [pastError, setPastError] = useState<string | null>(null);
@@ -541,18 +525,26 @@ export default function ContestsPage() {
   const [lbLoading, setLbLoading] = useState(true);
   const [lbError, setLbError] = useState<string | null>(null);
 
+  // Secondary-content tabs
+  const [activeTab, setActiveTab] = useState<TabKey>('leaderboard');
+
   // ── Load active contests ──────────────────────────────────────────────────
   useEffect(() => {
     if (!isInitialized) return;
 
-    // Running + upcoming in parallel
     Promise.all([
       contestAPI.list({ status: 'running', page: 1, limit: 20 }),
       contestAPI.list({ status: 'upcoming', page: 1, limit: 20 }),
     ])
       .then(([r, u]) => {
-        setRunningContests(r.contests || []);
-        setUpcomingContests(u.contests || []);
+        // Backend sorts by startTime desc; re-sort ascending so index 0 is the
+        // soonest-relevant contest (used for both the grid order and the spotlight).
+        setRunningContests(
+          (r.contests || []).slice().sort((a, b) => new Date(a.endTime).getTime() - new Date(b.endTime).getTime())
+        );
+        setUpcomingContests(
+          (u.contests || []).slice().sort((a, b) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime())
+        );
       })
       .catch((err) => setActiveError(err.response?.data?.error || 'Failed to load contests'))
       .finally(() => setActiveLoading(false));
@@ -609,9 +601,9 @@ export default function ContestsPage() {
       .finally(() => setPastLoading(false));
   }, [pastLoaded, pastLoading]);
 
-  const handlePastToggle = () => {
-    if (!pastExpanded && !pastLoaded) loadPastContests();
-    setPastExpanded((v) => !v);
+  const handleTabChange = (tab: TabKey) => {
+    setActiveTab(tab);
+    if (tab === 'past') loadPastContests();
   };
 
   // ── Auth guards ───────────────────────────────────────────────────────────
@@ -622,47 +614,79 @@ export default function ContestsPage() {
   const podium = leaderboard.slice(0, 3) as LeaderboardEntry[];
   const rest = leaderboard.slice(3);
 
+  const spotlight = runningContests[0] ?? upcomingContests[0] ?? null;
+  const spotlightMode: 'running' | 'upcoming' = runningContests[0] ? 'running' : 'upcoming';
+
   return (
-    <div className="min-h-screen flex flex-col bg-[var(--background)]">
-      {/* ── Page Hero ─────────────────────────────────────────────────────── */}
-      <div className="bg-[var(--card)] border-b border-[var(--border)]">
+    <div className="flex min-h-screen flex-col bg-primary">
+      {/* ── Hero ─────────────────────────────────────────────────────────── */}
+      <div className="relative overflow-hidden border-b border-border-primary bg-elevated">
+        <div className="absolute inset-0 z-0">
+          <FlickeringGrid
+            className="absolute inset-0 [mask-image:radial-gradient(480px_circle_at_center,white,transparent)]"
+            squareSize={4}
+            gridGap={6}
+            color="#4ade80"
+            maxOpacity={0.25}
+            flickerChance={0.1}
+          />
+        </div>
+        <div className="absolute inset-0 z-[1] animate-gradient-shift bg-gradient-to-br from-brand/6 via-transparent to-emerald-500/6" />
+
         <motion.div
-          className="max-w-7xl mx-auto px-4 sm:px-6 py-10"
+          className="relative z-10 mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:py-16"
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4, ease: 'easeOut' }}
         >
-          <div className="flex flex-wrap items-center justify-between gap-4">
-            <div className="flex items-center gap-4">
-              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-[var(--primary)]/10">
-                <Trophy className="h-6 w-6 text-[var(--primary)]" />
-              </div>
-              <div>
-                <h1 className="text-3xl font-bold text-[var(--foreground)]">Contests</h1>
-                <p className="text-sm text-[var(--muted-foreground)] mt-0.5">
-                  Compete in timed rounds, climb the leaderboard, and unlock problems after each contest.
-                </p>
-              </div>
+          <div className="flex items-center gap-3">
+            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-brand/10">
+              <Trophy className="h-5 w-5 text-brand" />
             </div>
-            <div className="flex items-center gap-2 text-sm text-[var(--muted-foreground)] bg-[var(--muted)]/60 px-3 py-1.5 rounded-full border border-[var(--border)]">
-              <Users className="h-4 w-4" />
-              <span className="hidden sm:inline">Join live rounds · Grow your TrueCode rating</span>
+            <div>
+              <h1 className="text-3xl font-bold text-primary lg:text-4xl">Contests</h1>
+              <p className="mt-0.5 text-sm text-secondary">
+                Compete in timed rounds, climb the leaderboard, and unlock problems after each contest.
+              </p>
             </div>
+          </div>
+
+          <div className="mt-6 flex flex-wrap gap-3">
+            <HeroStat
+              icon={<Radio className="h-4 w-4" />}
+              value={activeLoading ? '—' : runningContests.length}
+              label="Live Now"
+            />
+            <HeroStat
+              icon={<CalendarDays className="h-4 w-4" />}
+              value={activeLoading ? '—' : upcomingContests.length}
+              label="Upcoming"
+            />
+            {isAuthenticated && (
+              <HeroStat
+                icon={<BookOpen className="h-4 w-4" />}
+                value={myLoading ? '—' : myContests.length}
+                label="My Registrations"
+              />
+            )}
+          </div>
+
+          <div className="mt-6">
+            {activeLoading ? (
+              <SpotlightSkeleton />
+            ) : (
+              spotlight && <SpotlightCard contest={spotlight} mode={spotlightMode} now={now} />
+            )}
           </div>
         </motion.div>
       </div>
 
-      <div className="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 py-8 space-y-10">
-
+      <div className="mx-auto w-full max-w-7xl flex-1 space-y-10 px-4 py-8 sm:px-6">
         {activeError && <ErrorBanner message={activeError} />}
 
-        {/* ── Running Contests ──────────────────────────────────────────────── */}
+        {/* ── Live Now ───────────────────────────────────────────────────── */}
         {(activeLoading || runningContests.length > 0) && (
-          <motion.section
-            initial={{ opacity: 0, y: 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4, delay: 0.05 }}
-          >
+          <section>
             <SectionHeader
               icon={<Radio className="h-5 w-5" />}
               title="Live Now"
@@ -670,25 +694,29 @@ export default function ContestsPage() {
             />
             {activeLoading ? (
               <div className="grid gap-4 md:grid-cols-2">
-                <RunningContestSkeleton /><RunningContestSkeleton />
+                <RunningContestSkeleton />
+                <RunningContestSkeleton />
               </div>
             ) : (
-              <div className="grid gap-4 md:grid-cols-2">
+              <motion.div
+                className="grid gap-4 md:grid-cols-2"
+                variants={staggerContainer}
+                initial="hidden"
+                whileInView="visible"
+                viewport={{ once: true, margin: '-40px' }}
+              >
                 {runningContests.map((c) => (
-                  <RunningContestCard key={c._id} c={c} />
+                  <motion.div key={c._id} variants={fadeUpItem}>
+                    <RunningContestCard c={c} now={now} />
+                  </motion.div>
                 ))}
-              </div>
+              </motion.div>
             )}
-          </motion.section>
+          </section>
         )}
 
-        {/* ── Upcoming Contests ─────────────────────────────────────────────── */}
-        <motion.section
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, margin: '-40px' }}
-          transition={{ duration: 0.4 }}
-        >
+        {/* ── Upcoming ───────────────────────────────────────────────────── */}
+        <section>
           <SectionHeader
             icon={<CalendarDays className="h-5 w-5" />}
             title="Upcoming"
@@ -696,7 +724,9 @@ export default function ContestsPage() {
           />
           {activeLoading ? (
             <div className="grid gap-3 md:grid-cols-2">
-              {Array.from({ length: 4 }).map((_, i) => <UpcomingContestSkeleton key={i} />)}
+              {Array.from({ length: 4 }).map((_, i) => (
+                <UpcomingContestSkeleton key={i} />
+              ))}
             </div>
           ) : upcomingContests.length === 0 ? (
             <EmptyState
@@ -706,8 +736,7 @@ export default function ContestsPage() {
               action={
                 <Link
                   href="/problems"
-                  className="inline-flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-semibold hover:opacity-90"
-                  style={{ background: 'var(--primary)', color: '#fff' }}
+                  className="inline-flex items-center gap-2 rounded-xl bg-brand px-4 py-2 text-xs font-semibold text-inverse hover:opacity-90"
                 >
                   <Target className="h-4 w-4" />
                   Practice problems
@@ -715,281 +744,207 @@ export default function ContestsPage() {
               }
             />
           ) : (
-            <div className="grid gap-3 md:grid-cols-2">
+            <motion.div
+              className="grid gap-3 md:grid-cols-2"
+              variants={staggerContainer}
+              initial="hidden"
+              whileInView="visible"
+              viewport={{ once: true, margin: '-40px' }}
+            >
               {upcomingContests.map((c) => (
-                <UpcomingContestCard key={c._id} c={c} />
+                <motion.div key={c._id} variants={fadeUpItem}>
+                  <UpcomingContestCard c={c} now={now} />
+                </motion.div>
               ))}
-            </div>
+            </motion.div>
           )}
-        </motion.section>
+        </section>
 
-        {/* ── Two-column: My Contests + Leaderboard ────────────────────────── */}
-        <motion.div
-          className="grid gap-8 lg:grid-cols-2"
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, margin: '-40px' }}
-          transition={{ duration: 0.4 }}
-        >
-
-          {/* My Contests */}
-          <section>
-            <SectionHeader
-              icon={<BookOpen className="h-5 w-5" />}
-              title="My Contests"
-              count={myLoading ? undefined : myContests.length}
-            />
-            {myError && <ErrorBanner message={myError} />}
-            {!isAuthenticated ? (
-              <EmptyState
-                icon={<Users className="h-6 w-6" />}
-                title="Log in to see your contests"
-                message="Track your registrations and contest history once you're signed in."
-                action={
-                  <Link
-                    href={`/accounts/login?redirect=${encodeURIComponent('/contests')}`}
-                    className="inline-flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-semibold hover:opacity-90"
-                    style={{ background: 'var(--primary)', color: '#fff' }}
-                  >
-                    <Sparkles className="h-4 w-4" />
-                    Log in
-                  </Link>
-                }
-              />
-            ) : myLoading ? (
-              <div className="space-y-2">
-                {Array.from({ length: 3 }).map((_, i) => <MyContestSkeleton key={i} />)}
-              </div>
-            ) : myContests.length === 0 ? (
-              <EmptyState
-                icon={<Users className="h-6 w-6" />}
-                title="You haven't participated yet"
-                message="Register for an upcoming contest or join a live one above to see your history here."
-              />
-            ) : (
-              <div className="space-y-2">
-                {myContests.map((c) => (
-                  <div
-                    key={c._id}
-                    className="flex flex-wrap items-center justify-between gap-3 rounded-xl px-4 py-3 hover:border-brand/40 transition-all"
-                    style={{ background: 'var(--bg-elevated)', border: '1px solid var(--border-primary)' }}
-                  >
-                    <div className="flex-1 min-w-0">
-                      <Link
-                        href={`/contests/${c._id}`}
-                        className="text-sm font-semibold hover:underline truncate block"
-                        style={{ color: 'var(--text-primary)' }}
-                      >
-                        {c.title}
-                      </Link>
-                      <div className="flex flex-wrap gap-3 mt-0.5 text-xs" style={{ color: 'var(--text-tertiary)' }}>
-                        <span>{formatDate(c.startTime)}</span>
-                        <span
-                          className="capitalize font-medium"
-                          style={{
-                            color:
-                              c.status === 'running'
-                                ? 'var(--success, #22c55e)'
-                                : c.status === 'upcoming'
-                                  ? 'var(--primary)'
-                                  : 'var(--text-tertiary)',
-                          }}
-                        >
-                          {c.status === 'running' ? '● Live' : c.status}
-                        </span>
-                      </div>
-                    </div>
-                    <Link
-                      href={`/contests/${c._id}`}
-                      className="text-xs font-medium rounded-lg px-3 py-1.5 shrink-0 hover:opacity-80 transition-opacity"
-                      style={{
-                        background: 'var(--bg-secondary)',
-                        color: 'var(--text-secondary)',
-                        border: '1px solid var(--border-primary)',
-                      }}
-                    >
-                      {c.status === 'running' ? 'Enter' : c.status === 'upcoming' ? 'View' : 'Results'}
-                    </Link>
-                  </div>
-                ))}
-              </div>
-            )}
-          </section>
-
-          {/* Leaderboard */}
-          <section>
-            <SectionHeader
-              icon={<Trophy className="h-5 w-5" />}
-              title="Top Performers"
-            />
-            {leaderboardContestTitle && (
-              <p className="text-xs mb-3 -mt-2 truncate" style={{ color: 'var(--text-tertiary)' }}>
-                From: <span style={{ color: 'var(--text-secondary)' }}>{leaderboardContestTitle}</span>
-              </p>
-            )}
-            {lbError && <ErrorBanner message={lbError} />}
-            {lbLoading ? (
-              <LeaderboardSkeleton />
-            ) : leaderboard.length === 0 ? (
-              <EmptyState
-                icon={<Trophy className="h-6 w-6" />}
-                title="No leaderboard data yet"
-                message="Once a contest ends, the top performers will appear here. Be the first to claim the crown!"
-              />
-            ) : (
-              <>
-                {/* Podium — 2nd | 1st | 3rd */}
-                {podium.length >= 1 && (
-                  <div className="flex items-end justify-center gap-3 mb-4">
-                    {podium[1] && (
-                      <div className="flex flex-col items-center">
-                        <PodiumCard entry={podium[1]} position={2} />
-                        <div
-                          className="w-full h-8 rounded-b-lg mt-0"
-                          style={{ background: 'rgba(148,163,184,0.15)', minWidth: 110 }}
-                        />
-                      </div>
-                    )}
-                    {podium[0] && (
-                      <div className="flex flex-col items-center">
-                        <PodiumCard entry={podium[0]} position={1} />
-                        <div
-                          className="w-full h-12 rounded-b-lg"
-                          style={{ background: 'rgba(250,204,21,0.12)', minWidth: 130 }}
-                        />
-                      </div>
-                    )}
-                    {podium[2] && (
-                      <div className="flex flex-col items-center">
-                        <PodiumCard entry={podium[2]} position={3} />
-                        <div
-                          className="w-full h-5 rounded-b-lg"
-                          style={{ background: 'rgba(180,120,60,0.12)', minWidth: 110 }}
-                        />
-                      </div>
-                    )}
-                  </div>
-                )}
-
-                {/* Ranks 4–10 */}
-                {rest.length > 0 && (
-                  <div className="space-y-1.5 mt-2">
-                    {rest.map((entry) => (
-                      <Link
-                        key={entry.username}
-                        href={`/${entry.username}`}
-                        className="flex items-center gap-3 rounded-xl px-3 py-2.5 hover:border-brand/40 transition-all group"
-                        style={{ background: 'var(--bg-elevated)', border: '1px solid var(--border-primary)' }}
-                      >
-                        <span
-                          className="w-6 text-xs font-bold text-right shrink-0"
-                          style={{ color: 'var(--text-tertiary)' }}
-                        >
-                          #{entry.rank}
-                        </span>
-                        <div
-                          className="flex h-7 w-7 items-center justify-center rounded-full text-[11px] font-bold shrink-0"
-                          style={{ background: 'var(--bg-secondary)', color: 'var(--text-secondary)' }}
-                        >
-                          {getInitials(entry)}
-                        </div>
-                        <span
-                          className="flex-1 text-sm font-medium truncate group-hover:underline"
-                          style={{ color: 'var(--text-primary)' }}
-                        >
-                          {entry.username}
-                        </span>
-                        <div className="flex items-center gap-3 text-xs shrink-0" style={{ color: 'var(--text-tertiary)' }}>
-                          <span>
-                            <span className="font-semibold" style={{ color: 'var(--text-secondary)' }}>
-                              {entry.score}
-                            </span>{' '}pts
-                          </span>
-                          <span>{entry.solvedProblems.length} solved</span>
-                        </div>
-                      </Link>
-                    ))}
-                  </div>
-                )}
-              </>
-            )}
-          </section>
-        </motion.div>
-
-        {/* ── Past Contests (collapsible) ───────────────────────────────────── */}
+        {/* ── Secondary content tabs ─────────────────────────────────────── */}
         <motion.section
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, margin: '-40px' }}
           transition={{ duration: 0.4 }}
         >
-          <button
-            type="button"
-            onClick={handlePastToggle}
-            className="flex w-full items-center justify-between rounded-xl px-4 py-3 text-left transition-all hover:border-brand/40"
-            style={{
-              background: 'var(--bg-elevated)',
-              border: '1px solid var(--border-primary)',
-            }}
-          >
-            <div className="flex items-center gap-2">
-              <History className="h-5 w-5" style={{ color: 'var(--primary)' }} />
-              <span className="font-semibold" style={{ color: 'var(--text-primary)' }}>
-                Past Contests
-              </span>
-              {pastLoaded && pastTotal > 0 && (
-                <span
-                  className="rounded-full px-2 py-0.5 text-[11px] font-medium"
-                  style={{ background: 'var(--bg-secondary)', color: 'var(--text-secondary)' }}
-                >
-                  {pastTotal}
-                </span>
-              )}
-            </div>
-            {pastExpanded
-              ? <ChevronUp className="h-4 w-4" style={{ color: 'var(--text-tertiary)' }} />
-              : <ChevronDown className="h-4 w-4" style={{ color: 'var(--text-tertiary)' }} />}
-          </button>
+          <TabBar
+            active={activeTab}
+            onChange={handleTabChange}
+            tabs={[
+              { key: 'leaderboard', label: 'Leaderboard', icon: <Trophy className="h-4 w-4" /> },
+              {
+                key: 'mine',
+                label: 'My Contests',
+                icon: <BookOpen className="h-4 w-4" />,
+                badge: isAuthenticated ? myContests.length : undefined,
+              },
+              { key: 'past', label: 'Past Contests', icon: <History className="h-4 w-4" />, badge: pastLoaded ? pastTotal : undefined },
+            ]}
+          />
 
-          {pastExpanded && (
-            <div className="mt-3">
-              {pastError && <ErrorBanner message={pastError} />}
-              {pastLoading ? (
-                <div className="space-y-2">
-                  {Array.from({ length: 3 }).map((_, i) => <PastContestSkeleton key={i} />)}
-                </div>
-              ) : pastContests.length === 0 ? (
-                <EmptyState
-                  icon={<History className="h-6 w-6" />}
-                  title="No past contests yet"
-                  message="Once contests finish, their problems gradually unlock on the Problems page for practice."
-                  action={
-                    <Link
-                      href="/problems"
-                      className="inline-flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-semibold hover:opacity-90"
-                      style={{ background: 'var(--primary)', color: '#fff' }}
-                    >
-                      <Target className="h-4 w-4" />
-                      Practice problems
-                    </Link>
-                  }
-                />
-              ) : (
-                <>
+          <div className="mt-6">
+            {/* Leaderboard panel */}
+            {activeTab === 'leaderboard' && (
+              <div>
+                <SectionHeader icon={<Trophy className="h-5 w-5" />} title="Top Performers" />
+                {leaderboardContestTitle && (
+                  <p className="-mt-2 mb-3 truncate text-xs text-tertiary">
+                    From: <span className="text-secondary">{leaderboardContestTitle}</span>
+                  </p>
+                )}
+                {lbError && <ErrorBanner message={lbError} />}
+                {lbLoading ? (
+                  <LeaderboardSkeleton />
+                ) : leaderboard.length === 0 ? (
+                  <EmptyState
+                    icon={<Trophy className="h-6 w-6" />}
+                    title="No leaderboard data yet"
+                    message="Once a contest ends, the top performers will appear here. Be the first to claim the crown!"
+                  />
+                ) : (
+                  <>
+                    {podium.length >= 1 && <PodiumRow podium={podium} />}
+
+                    {rest.length > 0 && (
+                      <div className="mx-auto mt-2 max-w-2xl space-y-1.5">
+                        {rest.map((entry) => (
+                          <Link
+                            key={entry.username}
+                            href={`/user/${entry.username}`}
+                            className="group flex items-center gap-3 rounded-xl border border-border-primary bg-elevated px-3 py-2.5 transition-all hover:border-brand/40"
+                          >
+                            <span className="w-6 shrink-0 text-right text-xs font-bold text-tertiary">#{entry.rank}</span>
+                            <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-secondary text-[11px] font-bold text-secondary">
+                              {getInitials(entry)}
+                            </div>
+                            <span className="flex-1 truncate text-sm font-medium text-primary group-hover:underline">
+                              {entry.username}
+                            </span>
+                            <div className="flex shrink-0 items-center gap-3 text-xs text-tertiary">
+                              <span>
+                                <span className="font-semibold text-secondary">{entry.score}</span> pts
+                              </span>
+                              <span>{entry.solvedProblems.length} solved</span>
+                            </div>
+                          </Link>
+                        ))}
+                      </div>
+                    )}
+                  </>
+                )}
+              </div>
+            )}
+
+            {/* My Contests panel */}
+            {activeTab === 'mine' && (
+              <div>
+                <SectionHeader icon={<BookOpen className="h-5 w-5" />} title="My Contests" count={myLoading ? undefined : myContests.length} />
+                {myError && <ErrorBanner message={myError} />}
+                {!isAuthenticated ? (
+                  <EmptyState
+                    icon={<Users className="h-6 w-6" />}
+                    title="Log in to see your contests"
+                    message="Track your registrations and contest history once you're signed in."
+                    action={
+                      <Link
+                        href={`/accounts/login?redirect=${encodeURIComponent('/contests')}`}
+                        className="inline-flex items-center gap-2 rounded-xl bg-brand px-4 py-2 text-xs font-semibold text-inverse hover:opacity-90"
+                      >
+                        <Sparkles className="h-4 w-4" />
+                        Log in
+                      </Link>
+                    }
+                  />
+                ) : myLoading ? (
                   <div className="space-y-2">
-                    {pastContests.map((c) => (
-                      <PastContestRow key={c._id} c={c} />
+                    {Array.from({ length: 3 }).map((_, i) => (
+                      <MyContestSkeleton key={i} />
                     ))}
                   </div>
-                  {pastTotal > pastContests.length && (
-                    <p className="mt-3 text-xs text-center" style={{ color: 'var(--text-tertiary)' }}>
-                      Showing {pastContests.length} of {pastTotal} contests
-                    </p>
-                  )}
-                </>
-              )}
-            </div>
-          )}
+                ) : myContests.length === 0 ? (
+                  <EmptyState
+                    icon={<Users className="h-6 w-6" />}
+                    title="You haven't participated yet"
+                    message="Register for an upcoming contest or join a live one above to see your history here."
+                  />
+                ) : (
+                  <div className="space-y-2">
+                    {myContests.map((c) => (
+                      <div
+                        key={c._id}
+                        className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border-primary bg-elevated px-4 py-3 transition-all hover:border-brand/40"
+                      >
+                        <div className="min-w-0 flex-1">
+                          <Link href={`/contests/${c._id}`} className="block truncate text-sm font-semibold text-primary hover:underline">
+                            {c.title}
+                          </Link>
+                          <div className="mt-0.5 flex flex-wrap gap-3 text-xs text-tertiary">
+                            <span>{formatDate(c.startTime)}</span>
+                            <span
+                              className={`font-medium capitalize ${
+                                c.status === 'running' ? 'text-success' : c.status === 'upcoming' ? 'text-brand' : 'text-tertiary'
+                              }`}
+                            >
+                              {c.status === 'running' ? '● Live' : c.status}
+                            </span>
+                          </div>
+                        </div>
+                        <Link
+                          href={`/contests/${c._id}`}
+                          className="shrink-0 rounded-lg border border-border-primary bg-secondary px-3 py-1.5 text-xs font-medium text-secondary transition-opacity hover:opacity-80"
+                        >
+                          {c.status === 'running' ? 'Enter' : c.status === 'upcoming' ? 'View' : 'Results'}
+                        </Link>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Past Contests panel */}
+            {activeTab === 'past' && (
+              <div>
+                <SectionHeader icon={<History className="h-5 w-5" />} title="Past Contests" count={pastLoaded ? pastTotal : undefined} />
+                {pastError && <ErrorBanner message={pastError} />}
+                {pastLoading ? (
+                  <div className="space-y-2">
+                    {Array.from({ length: 3 }).map((_, i) => (
+                      <PastContestSkeleton key={i} />
+                    ))}
+                  </div>
+                ) : pastContests.length === 0 ? (
+                  <EmptyState
+                    icon={<History className="h-6 w-6" />}
+                    title="No past contests yet"
+                    message="Once contests finish, their problems gradually unlock on the Problems page for practice."
+                    action={
+                      <Link
+                        href="/problems"
+                        className="inline-flex items-center gap-2 rounded-xl bg-brand px-4 py-2 text-xs font-semibold text-inverse hover:opacity-90"
+                      >
+                        <Target className="h-4 w-4" />
+                        Practice problems
+                      </Link>
+                    }
+                  />
+                ) : (
+                  <>
+                    <div className="space-y-2">
+                      {pastContests.map((c) => (
+                        <PastContestRow key={c._id} c={c} />
+                      ))}
+                    </div>
+                    {pastTotal > pastContests.length && (
+                      <p className="mt-3 text-center text-xs text-tertiary">
+                        Showing {pastContests.length} of {pastTotal} contests
+                      </p>
+                    )}
+                  </>
+                )}
+              </div>
+            )}
+          </div>
         </motion.section>
       </div>
 

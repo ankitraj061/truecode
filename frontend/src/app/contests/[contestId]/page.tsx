@@ -4,10 +4,13 @@ import React, { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useSelector } from 'react-redux';
+import { motion } from 'framer-motion';
+import { ArrowLeft, Trophy, Users, Clock, CalendarDays, Info } from 'lucide-react';
 import type { RootState } from '@/app/store/store';
 import { contestAPI, type ContestDetail, type LeaderboardEntry } from '@/app/utils/contestAPI';
 import Footer from '@/app/components/Footer';
 import Loader from '@/app/components/TruckLoader';
+import { useNow, formatCountdown, getInitials, PodiumRow } from '../_shared';
 
 function formatDate(s: string) {
   return new Date(s).toLocaleString(undefined, {
@@ -33,6 +36,7 @@ export default function ContestDetailPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [registering, setRegistering] = useState(false);
+  const now = useNow();
 
   useEffect(() => {
     if (!isInitialized || !contestId) return;
@@ -91,32 +95,37 @@ export default function ContestDetailPage() {
 
   const canEnter = contest.registered && (contest.status === 'running' || contest.status === 'ended');
   const showRegister = contest.status === 'upcoming' && !contest.registered;
+  const podium = leaderboard.slice(0, 3);
+  const rest = leaderboard.slice(3);
 
   return (
     <div className="min-h-screen bg-primary">
-      <div className="max-w-7xl mx-auto px-6 py-8">
-        <div className="mb-6">
-          <Link href="/contests" className="text-sm text-brand hover:underline">← Contests</Link>
-        </div>
+      <div className="max-w-7xl mx-auto px-4 py-8 sm:px-6">
+        <Link
+          href="/contests"
+          className="mb-6 inline-flex items-center gap-1.5 text-sm font-medium text-secondary transition-colors hover:text-brand"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          Contests
+        </Link>
 
         {error && (
-          <div className="rounded-lg border border-error/50 bg-error/10 px-4 py-3 text-sm text-error mb-6">
+          <div className="mb-6 rounded-lg border border-error/50 bg-error/10 px-4 py-3 text-sm text-error">
             {error}
           </div>
         )}
 
-        <div className="mb-8 rounded-2xl border border-border-primary bg-elevated/70 p-5 lg:p-6">
+        <motion.div
+          className="mb-8 rounded-2xl border border-border-primary bg-elevated/70 p-5 lg:p-6"
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4, ease: 'easeOut' }}
+        >
           <div className="flex flex-wrap items-start justify-between gap-4">
-            <div>
-              <h1 className="text-2xl font-bold text-primary">{contest.title}</h1>
-              <p className="text-secondary mt-1 max-w-2xl">{contest.description}</p>
-              <div className="mt-3 flex flex-wrap gap-4 text-sm text-tertiary">
-                <span>Start: {formatDate(contest.startTime)}</span>
-                <span>End: {formatDate(contest.endTime)}</span>
-                <span>Duration: {formatDuration(contest.duration)}</span>
-                <span>{contest.participantCount} participants</span>
+            <div className="min-w-0 flex-1">
+              <div className="flex flex-wrap items-center gap-2">
                 <span
-                  className={`rounded-full px-2 py-0.5 font-medium capitalize ${
+                  className={`rounded-full px-2 py-0.5 text-xs font-medium capitalize ${
                     contest.status === 'upcoming'
                       ? 'bg-secondary text-primary'
                       : contest.status === 'running'
@@ -124,11 +133,31 @@ export default function ContestDetailPage() {
                         : 'bg-tertiary text-secondary'
                   }`}
                 >
-                  {contest.status}
+                  {contest.status === 'running' ? '● Live' : contest.status}
+                </span>
+                {contest.status !== 'ended' && (
+                  <span className={`text-xs font-medium ${contest.status === 'running' ? 'text-success' : 'text-brand'}`}>
+                    {contest.status === 'running'
+                      ? `Ends in ${formatCountdown(contest.endTime, now, 'end')}`
+                      : `Starts in ${formatCountdown(contest.startTime, now, 'start')}`}
+                  </span>
+                )}
+              </div>
+              <h1 className="mt-2 text-2xl font-bold text-primary">{contest.title}</h1>
+              <p className="mt-1 max-w-2xl text-secondary">{contest.description}</p>
+              <div className="mt-3 flex flex-wrap gap-4 text-sm text-tertiary">
+                <span className="flex items-center gap-1.5">
+                  <CalendarDays className="h-4 w-4" /> {formatDate(contest.startTime)}
+                </span>
+                <span className="flex items-center gap-1.5">
+                  <Clock className="h-4 w-4" /> {formatDuration(contest.duration)}
+                </span>
+                <span className="flex items-center gap-1.5">
+                  <Users className="h-4 w-4" /> {contest.participantCount} participants
                 </span>
               </div>
             </div>
-            <div className="flex gap-2">
+            <div className="flex shrink-0 gap-2">
               {showRegister && (
                 <button
                   type="button"
@@ -146,44 +175,53 @@ export default function ContestDetailPage() {
               )}
             </div>
           </div>
-        </div>
+        </motion.div>
 
-        <div className="mb-8 rounded-xl border border-border-primary bg-elevated p-6">
-          <h2 className="text-lg font-semibold text-primary mb-4 flex items-center">
-            <svg className="w-5 h-5 mr-2 text-brand" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
+        <motion.div
+          className="mb-8 rounded-xl border border-border-primary bg-elevated p-6"
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4, ease: 'easeOut', delay: 0.05 }}
+        >
+          <h2 className="mb-4 flex items-center text-lg font-semibold text-primary">
+            <Info className="mr-2 h-5 w-5 text-brand" />
             How the contest works
           </h2>
           <ul className="space-y-3 text-sm text-secondary">
-            <li className="flex items-start">
-              <span className="text-brand font-medium mr-2">Scoring:</span>
+            <li className="flex flex-col gap-0.5 sm:flex-row sm:items-start sm:gap-0">
+              <span className="shrink-0 font-medium text-brand sm:mr-2">Scoring:</span>
               Each problem has a point value (shown next to the problem). You get that many points when you solve it correctly. Defaults: Easy = 1 pt, Medium = 2 pts, Hard = 3 pts (admins can set custom scores).
             </li>
-            <li className="flex items-start">
-              <span className="text-brand font-medium mr-2">Penalty:</span>
+            <li className="flex flex-col gap-0.5 sm:flex-row sm:items-start sm:gap-0">
+              <span className="shrink-0 font-medium text-brand sm:mr-2">Penalty:</span>
               For each wrong submission on a problem before your first correct answer, <strong>5 minutes</strong> are added to your total penalty. Correct submissions do not add penalty.
             </li>
-            <li className="flex items-start">
-              <span className="text-brand font-medium mr-2">Ranking:</span>
+            <li className="flex flex-col gap-0.5 sm:flex-row sm:items-start sm:gap-0">
+              <span className="shrink-0 font-medium text-brand sm:mr-2">Ranking:</span>
               Leaderboard is sorted by <strong>total score (highest first)</strong>, then by <strong>total penalty (lowest first)</strong>. So more points beat fewer; with the same score, lower penalty wins.
             </li>
-            <li className="flex items-start">
-              <span className="text-brand font-medium mr-2">How to get maximum points:</span>
+            <li className="flex flex-col gap-0.5 sm:flex-row sm:items-start sm:gap-0">
+              <span className="shrink-0 font-medium text-brand sm:mr-2">How to get maximum points:</span>
               Solve all problems and minimize wrong submissions. Read the problem carefully, test with examples, then submit. Every wrong attempt costs 5 minutes of penalty.
             </li>
-            <li className="flex items-start">
-              <span className="text-brand font-medium mr-2">After the contest:</span>
+            <li className="flex flex-col gap-0.5 sm:flex-row sm:items-start sm:gap-0">
+              <span className="shrink-0 font-medium text-brand sm:mr-2">After the contest:</span>
               All contest problems become available on the normal Problems page so you can practice anytime.
             </li>
           </ul>
-        </div>
+        </motion.div>
 
-        <div className="grid gap-8 lg:grid-cols-2">
+        <motion.div
+          className="grid gap-8 lg:grid-cols-2"
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: '-40px' }}
+          transition={{ duration: 0.4 }}
+        >
           <section>
-            <h2 className="text-lg font-semibold text-primary mb-3">Problems</h2>
+            <h2 className="mb-3 text-lg font-semibold text-primary">Problems</h2>
             {contest.problems.length === 0 ? (
-              <p className="text-secondary text-sm">No problems in this contest.</p>
+              <p className="text-sm text-secondary">No problems in this contest.</p>
             ) : (
               <ul className="space-y-2 rounded-xl border border-border-primary bg-elevated p-4">
                 {contest.problems.map((p, idx) => {
@@ -200,16 +238,19 @@ export default function ContestDetailPage() {
                     <li key={isUpcoming ? `q-${order}` : p._id}>
                       <Link
                         href={href}
-                        className={`flex items-center justify-between rounded-lg px-3 py-2 transition-colors ${
-                          hasDetails ? 'hover:bg-secondary text-primary' : 'text-tertiary cursor-default pointer-events-none'
+                        className={`flex items-center justify-between gap-3 rounded-lg px-3 py-2.5 transition-colors ${
+                          hasDetails ? 'text-primary hover:bg-secondary' : 'cursor-default pointer-events-none text-tertiary'
                         }`}
                       >
-                        <span className="font-medium">
-                          {isUpcoming ? `Q${order}` : `Q${order}. ${p.title ?? 'Problem'}`}
+                        <span className="flex items-center gap-2.5 font-medium">
+                          <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-secondary text-xs font-bold text-secondary">
+                            {order}
+                          </span>
+                          {isUpcoming ? `Question ${order}` : (p.title ?? 'Problem')}
                         </span>
                         {hasDetails && p.difficulty != null && (
                           <span
-                            className={`rounded px-1.5 py-0.5 text-xs capitalize ${
+                            className={`shrink-0 rounded px-1.5 py-0.5 text-xs capitalize ${
                               p.difficulty === 'easy'
                                 ? 'bg-success/20 text-success'
                                 : p.difficulty === 'medium'
@@ -230,39 +271,47 @@ export default function ContestDetailPage() {
           </section>
 
           <section>
-            <h2 className="text-lg font-semibold text-primary mb-3">Leaderboard</h2>
-            <div className="overflow-hidden rounded-xl border border-border-primary bg-elevated">
-              {leaderboard.length === 0 ? (
-                <p className="p-4 text-sm text-secondary">No submissions yet.</p>
-              ) : (
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="border-b border-border-primary bg-secondary/50">
-                      <th className="px-3 py-2 text-left font-medium text-primary">Rank</th>
-                      <th className="px-3 py-2 text-left font-medium text-primary">User</th>
-                      <th className="px-3 py-2 text-right font-medium text-primary">Score</th>
-                      <th className="px-3 py-2 text-right font-medium text-primary">Penalty</th>
-                      <th className="px-3 py-2 text-right font-medium text-primary">Time</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {leaderboard.map((row) => (
-                      <tr key={row.userId} className="border-b border-border-primary/70">
-                        <td className="px-3 py-2 font-medium text-primary">{row.rank}</td>
-                        <td className="px-3 py-2 text-primary">{row.username}</td>
-                        <td className="px-3 py-2 text-right text-primary">{row.score}</td>
-                        <td className="px-3 py-2 text-right text-secondary">{row.penalty} min</td>
-                        <td className="px-3 py-2 text-right text-secondary">
-                          {row.totalTimeMinutes.toFixed(0)} min
-                        </td>
-                      </tr>
+            <h2 className="mb-3 flex items-center gap-2 text-lg font-semibold text-primary">
+              <Trophy className="h-5 w-5 text-brand" />
+              Leaderboard
+            </h2>
+            {leaderboard.length === 0 ? (
+              <div className="rounded-xl border border-border-primary bg-elevated p-4">
+                <p className="text-sm text-secondary">No submissions yet.</p>
+              </div>
+            ) : (
+              <>
+                {podium.length > 0 && <PodiumRow podium={podium} />}
+                {rest.length > 0 && (
+                  <div className="mt-2 space-y-1.5">
+                    {rest.map((entry) => (
+                      <Link
+                        key={entry.userId}
+                        href={`/user/${entry.username}`}
+                        className="group flex items-center gap-3 rounded-xl border border-border-primary bg-elevated px-3 py-2.5 transition-all hover:border-brand/40"
+                      >
+                        <span className="w-6 shrink-0 text-right text-xs font-bold text-tertiary">#{entry.rank}</span>
+                        <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-secondary text-[11px] font-bold text-secondary">
+                          {getInitials(entry)}
+                        </div>
+                        <span className="flex-1 truncate text-sm font-medium text-primary group-hover:underline">
+                          {entry.username}
+                        </span>
+                        <div className="flex shrink-0 items-center gap-3 text-xs text-tertiary">
+                          <span>
+                            <span className="font-semibold text-secondary">{entry.score}</span> pts
+                          </span>
+                          <span>{entry.penalty}m penalty</span>
+                          <span>{entry.totalTimeMinutes.toFixed(0)}m</span>
+                        </div>
+                      </Link>
                     ))}
-                  </tbody>
-                </table>
-              )}
-            </div>
+                  </div>
+                )}
+              </>
+            )}
           </section>
-        </div>
+        </motion.div>
       </div>
       <Footer />
     </div>

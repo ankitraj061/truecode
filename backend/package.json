@@ -9,7 +9,8 @@
     "start": "node dist/index.js",
     "test": "echo \"Error: no test specified\" && exit 1",
     "seed:admin": "tsx src/scripts/seedAdmin.ts",
-    "seed:problems": "tsx src/scripts/seedProblems.ts"
+    "seed:problems": "tsx src/scripts/seedProblems.ts",
+    "seed:contests": "tsx src/scripts/seedContests.ts"
   },
   "author": "",
   "license": "ISC",

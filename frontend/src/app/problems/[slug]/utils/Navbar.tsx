@@ -175,7 +175,7 @@ export default function Navbar() {
 
   const handleProfileClick = () => {
     if (user?.username) {
-      router.push(`/${user.username}`);
+      router.push(`/user/${user.username}`);
     }
   };
 
